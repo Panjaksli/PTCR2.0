@@ -9,6 +9,16 @@ enum obj_enum {
 	o_pol, o_qua, o_sph, o_vox, o_bla
 };
 
+inline const char* obj_enum_str(int val) {
+	switch (val) {
+	case o_pol: return "Polygon";
+	case o_qua: return "Quad";
+	case o_sph: return "Sphere";
+	case o_vox: return "Voxel";
+	default: return "Blank";
+	};
+}
+
 struct obj_flags {
 	obj_flags(obj_enum type, bool bvh, bool lig, bool fog = 0) : flag((type & 0x0F) | (bvh << 7) | (lig << 6) | (fog << 5)) {}
 	operator obj_enum() const { return obj_enum(flag & 0x0F); }

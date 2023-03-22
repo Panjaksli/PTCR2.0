@@ -1,5 +1,110 @@
+#include <regex>
 #include "scenes.h"
-
+//C++ is terrible,but really TERRIBLE at parsing text
+//Note to self, never ever use C/C++ again for parsing anything
+void scn_load(scene& scn, const char* filename) {
+	std::string name(filename);
+	if (name.empty())return;
+	if (name.find(".scn") == std::string::npos)
+		name = name + ".scn";
+	std::ifstream file(name);
+	if (!file.is_open())
+	{
+		name = "scenes/" + name;
+		file = std::ifstream(name);
+		if (!file.is_open())
+		{
+			printf("File not found !\n");
+			return;
+		}
+	}
+	scn.world.clear();
+	//scn.opt = scene_opt();
+	std::stringstream file_buff;
+	file_buff << file.rdbuf();
+	std::string line = "";
+	std::string pref = "";
+	while (std::getline(file_buff, line))
+	{
+		if (line[0] == '*')continue;
+		vector<char> buff1(40);
+		vector<char> buff2(40);
+		vector<char> buff3(40);
+		uint mat = 0, bvh = 1, lig = 0;
+		float scl = 0;
+		float3 off, q, a, b, c;
+		float r = 0;
+		if (sscanf_s(line.c_str(), "poly mat=%u bvh=%u lig=%u off=%f,%f,%f,%f data=%f,%f,%f,%f,%f,%f,%f,%f,%f",
+			&mat, &bvh, &lig, &off.x, &off.y, &off.z, &scl, &a.x, &a.y, &a.z, &b.x, &b.y, &b.z, &c.x, &c.y, &c.z) > 0)
+		{
+			scn.world.add_mesh(poly(a, b, c), off, scl, mat, !bvh, lig);
+		}
+		else if (sscanf_s(line.c_str(), "quad mat=%u bvh=%u lig=%u off=%f,%f,%f,%f data=%f,%f,%f,%f,%f,%f,%f,%f,%f",
+			&mat, &bvh, &lig, &off.x, &off.y, &off.z, &scl, &a.x, &a.y, &a.z, &b.x, &b.y, &b.z, &c.x, &c.y, &c.z) > 0)
+		{
+			scn.world.add_mesh(quad(a, b, c), off, scl, mat, !bvh, lig);
+		}
+		else if (sscanf_s(line.c_str(), "sphere mat=%u bvh=%u lig=%u off=%f,%f,%f,%f data=%f,%f,%f,%f",
+			&mat, &bvh, &lig, &off.x, &off.y, &off.z, &scl, &q.x, &q.y, &q.z, &r) > 0)
+		{
+			scn.world.add_mesh(sphere(q, r), off, scl, mat, !bvh, lig);
+		}
+		else if (sscanf_s(line.c_str(), "voxel mat=%u bvh=%u lig=%u off=%f,%f,%f,%f data=%f,%f,%f,%f",
+			&mat, &bvh, &lig, &off.x, &off.y, &off.z, &scl, &q.x, &q.y, &q.z, &r) > 0)
+		{
+			scn.world.add_mesh(voxel(q, r), off, scl, mat, !bvh, lig);
+		}
+		else if (sscanf_s(line.c_str(), "mesh mat=%u bvh=%u lig=%u off=%f,%f,%f,%f data=%s",
+			&mat, &bvh, &lig, &off.x, &off.y, &off.z, &scl, buff1.data(), 40) > 0)
+		{
+			scn.world.add_mesh(load_mesh(buff1.data()), off, scl, mat, !bvh, lig);
+		}
+		else if (sscanf_s(line.c_str(), "albedo type=%u rgb=%s mer=%s nor=%s scl=%f ir=%f",
+			&mat, buff1.data(), 40, buff2.data(), 40, buff3.data(), 40, &scl, &r) > 0)
+		{
+			vec3 rgb, mer, nor;
+			//WHY ?
+			texture t1 = sscanf_s(buff1.data(), "%f,%f,%f,%f", &rgb[0], &rgb[1], &rgb[2], &rgb[3]) >= 3 ? texture(rgb) : texture(buff1.data());
+			texture t2 = sscanf_s(buff2.data(), "%f,%f,%f,%f", &mer[0], &mer[1], &mer[2], &mer[3]) >= 3 ? texture(mer) : texture(buff2.data());
+			texture t3 = sscanf_s(buff3.data(), "%f,%f,%f,%f", &nor[0], &nor[1], &nor[2], &nor[3]) >= 3 ? texture(nor) : texture(buff3.data());
+			scn.world.add_mat(albedo(t1, t2, t3, scl, r), (mat_enum)mat);
+		}
+		else if (sscanf_s(line.c_str(), "skybox rgb=%s",buff1.data(), 40) > 0)
+		{
+			vec3 rgb;
+			texture t1 = sscanf_s(buff1.data(), "%f,%f,%f,%f", &rgb[0], &rgb[1], &rgb[2], &rgb[3]) >= 3 ? texture(rgb) : texture(buff1.data());
+			albedo sky(t1, vec3(0, 1, 0));
+			scn.set_skybox(sky);
+		}
+	}
+	file.close();
+	scn.opt.en_bvh = scn.world.en_bvh;
+	scn.cam.moving = 1;
+	scn.world.build_bvh(1, scn.opt.node_size);
+}
+void scn_load(scene& scn, int n) {
+	scn.world.clear();
+	scn.opt = scene_opt();
+	scn.cam.reset_opt();
+	switch (n) {
+	case 1: scn1(scn); break;
+	case 2: scn2(scn); break;
+	case 3: scn3(scn); break;
+	case 4: scn4(scn); break;
+	case 5: scn5(scn); break;
+	case 6: scn6(scn); break;
+	case 7: scn7(scn); break;
+	case 8: scn8(scn); break;
+	default: scn1(scn); break;
+	}
+	scn.opt.en_bvh = scn.world.en_bvh;
+	scn.cam.moving = 1;
+#if TEST
+	scn.opt.en_fog = 0;
+	scn.cam.bokeh = 0;
+#endif
+	scn.world.build_bvh(1, scn.opt.node_size);
+}
 void scn1(scene& scn) {
 	albedo gre(vec3(0.7, 0.9, 0.7, 0), vec3(0, 0, 0), vec3(0.5, 0.5, 1), 1, 1.2);
 	albedo carpet(vec3(0.8, 0.2, 0.2, 1), vec3(0, 0, 1), "snow_normal", 10);
@@ -68,7 +173,7 @@ void scn3(scene& scn) {
 void scn4(scene& scn) {
 	albedo gre(vec3(0.7, 0.9, 0.7, 0), vec3(0, 0, 0), vec3(0.5, 0.5, 1), 1, 1.2);
 	albedo yel(vec3(0.5, 0.3, 0.0, 1), vec3(0, 0, 1), "snow_normal", 10);
-	albedo wat("water", vec3(1, 0, 0), "water_normal", 20,1.333);
+	albedo wat("water", vec3(1, 0, 0), "water_normal", 20, 1.333);
 	albedo blu(vec3(0.1, 0.28, 0.8, 1), vec3(0.5, 0, 0.1));
 	scn.world.add_mat(yel, mat_mix);
 	scn.world.add_mat(gre, mat_mix);
@@ -79,7 +184,7 @@ void scn4(scene& scn) {
 	scn.world.add_mesh(quad(vec3(-10, 0, -10), vec3(-10, 0, 10), vec3(10, eps, -10)), vec3(0, 1, 0), 1.f, 0, 1, 0);
 	scn.world.add_mesh(bunny, vec3(-0.44, 0.8, -1), 6.f, 1);
 	scn.world.add_mesh(teapot, vec3(0.7, 1, -1), 0.25f, 2);
-	scn.world.add_mesh(voxel(vec3(0, 0, 0), 50), vec3(0, -48.8, 0), 1.f, 3, 1, 0,1);
+	scn.world.add_mesh(voxel(vec3(0, 0, 0), 50), vec3(0, -48.8, 0), 1.f, 3, 1, 0, 1);
 	scn.cam.autofocus = 0;
 	scn.cam.foc_t = 1.556;
 	scn.cam.exposure = 1.f;
@@ -203,10 +308,9 @@ std::vector<poly> load_mesh(const char* filename, vec3 off, float scale, bool fl
 		return load_MSH((name + ".msh").c_str(), off, scale, flip);
 	else if (std::ifstream(name + ".obj").good() || std::ifstream("objects/" + name + ".obj").good())
 	{
-		printf("Generated .msh file!\n");
 		OBJ_to_MSH((name + ".obj").c_str());
+		printf("Generated .msh file!\n");
 		return load_MSH((name + ".msh").c_str(), off, scale, flip);
-		//return load_OBJ((name + ".obj").c_str(), off, scale, flip);
 	}
 	else {
 		printf("INVALID MESH: %s!!!!!\n", filename);
@@ -223,7 +327,10 @@ void OBJ_to_MSH(const char* filename) {
 		name = "objects/" + name;
 		file = std::ifstream(name);
 		if (!file.is_open())
-			throw "File not found !";
+		{
+			printf("File not found !\n");
+			return;
+		}
 	}
 	std::stringstream file_buff;
 	file_buff << file.rdbuf();
@@ -233,18 +340,18 @@ void OBJ_to_MSH(const char* filename) {
 	std::string pref = "";
 	while (std::getline(file_buff, line))
 	{
-		if (line[0] == 'v') {
-			char b;
-			float3 tmp;
-			sscanf_s(line.c_str(), "%c %f %f %f", &b, 1, &tmp.x, &tmp.y, &tmp.z);
-			vert.emplace_back(tmp);
+		float3 ftmp;
+		uint3 utmp;
+		if (sscanf_s(line.c_str(), "v %f %f %f", &ftmp.x, &ftmp.y, &ftmp.z) > 1) {
+			vert.emplace_back(ftmp);
 		}
-		else if (line[0] == 'f') {
-			char b;
-			uint3 tmp;
-			sscanf_s(line.c_str(), "%c %u %u %u", &b, 1, &tmp.x, &tmp.y, &tmp.z);
-			tmp.x -= 1; tmp.y -= 1; tmp.z -= 1;
-			face.emplace_back(tmp);
+		else if (sscanf_s(line.c_str(), "f %u%*[^ ]%u%*[^ ]%u", &utmp.x, &utmp.y, &utmp.z) > 1) {
+			utmp.x -= 1; utmp.y -= 1; utmp.z -= 1;
+			face.emplace_back(utmp);
+		}
+		else if (sscanf_s(line.c_str(), "f %u %u %u", &utmp.x, &utmp.y, &utmp.z) > 1) {
+			utmp.x -= 1; utmp.y -= 1; utmp.z -= 1;
+			face.emplace_back(utmp);
 		}
 	}
 	file.close();
@@ -269,7 +376,10 @@ std::vector<poly> load_OBJ(const char* filename, vec3 off, float scale, bool fli
 	{
 		file = std::ifstream("objects/" + name);
 		if (!file.is_open())
-			throw "File not found !";
+		{
+			printf("File not found !\n");
+			return std::vector<poly>();
+		}
 	}
 	std::stringstream file_buff;
 	file_buff << file.rdbuf();
@@ -282,18 +392,18 @@ std::vector<poly> load_OBJ(const char* filename, vec3 off, float scale, bool fli
 	{
 		//C version is 2x faster
 #if 1
-		if (line[0] == 'v') {
-			char b;
-			float3 tmp;
-			sscanf_s(line.c_str(), "%c %f %f %f", &b, 1, &tmp.x, &tmp.y, &tmp.z);
-			vert.emplace_back(tmp);
+		float3 ftmp;
+		uint3 utmp;
+		if (sscanf_s(line.c_str(), "v %f %f %f", &ftmp.x, &ftmp.y, &ftmp.z) > 1) {
+			vert.emplace_back(ftmp);
 		}
-		else if (line[0] == 'f') {
-			char b;
-			uint3 tmp;
-			sscanf_s(line.c_str(), "%c %u %u %u", &b, 1, &tmp.x, &tmp.y, &tmp.z);
-			tmp.x -= 1; tmp.y -= 1; tmp.z -= 1;
-			face.emplace_back(tmp);
+		else if (sscanf_s(line.c_str(), "f %u%*[^ ]%u%*[^ ]%u", &utmp.x, &utmp.y, &utmp.z) > 1) {
+			utmp.x -= 1; utmp.y -= 1; utmp.z -= 1;
+			face.emplace_back(utmp);
+		}
+		else if (sscanf_s(line.c_str(), "f %u %u %u", &utmp.x, &utmp.y, &utmp.z) > 1) {
+			utmp.x -= 1; utmp.y -= 1; utmp.z -= 1;
+			face.emplace_back(utmp);
 		}
 #else
 		std::stringstream ss;
@@ -434,12 +544,12 @@ std::vector<poly> generate_mesh(uint seed, vec3 off, float scale, bool flip) {
 	for (int i = 0; i < dim - 1; i++) {
 		for (int j = 0; j < dim - 1; j++)
 		{
-				int l = i * dim + j;
-				int r = i * dim + j + 1;
-				int dl = (i + 1) * dim + j;
-				int dr = (i + 1) * dim + j + 1;
-				face.emplace_back(uint3(l, r, dr));
-				face.emplace_back(uint3(dl, l, dr));
+			int l = i * dim + j;
+			int r = i * dim + j + 1;
+			int dl = (i + 1) * dim + j;
+			int dr = (i + 1) * dim + j + 1;
+			face.emplace_back(uint3(l, r, dr));
+			face.emplace_back(uint3(dl, l, dr));
 		}
 	}
 

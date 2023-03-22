@@ -9,7 +9,7 @@ class camera
 {
 public:
 	camera() {}
-	camera(uint _w, uint _h, float fov, mat4 _T = mat4()) :T(_T), CCD(_w, _h), fov(fov), tfov(tan(0.5f * torad(fov))), iw(1.0 / _w), ih(1.0 / _h), asp((float)_w / _h), speed(0.02) {}
+	camera(uint _w, uint _h, float fov, mat4 _T = mat4()) :T(_T), CCD(_w, _h), fov(fov), tfov(tan(0.5f * torad(fov))), iw(1.0 / _w), ih(1.0 / _h), asp((float)_w / _h), speed(1) {}
 	mat4 T = mat4();
 	sensor CCD = sensor(1280, 720);
 	uint& w = CCD.w, & h = CCD.h;

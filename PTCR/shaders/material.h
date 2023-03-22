@@ -14,12 +14,22 @@ struct matrec {
 	uchar sd = 0; // specular / diff
 };
 
+constexpr int mat_cnt = 5;
 enum mat_enum {
 	mat_mix, mat_ggx, mat_vnd, mat_lig, mat_las
 };
 
+inline const char* mat_enum_str(int val) {
+	switch (val) {
+	case mat_mix: return "Mix";
+	case mat_ggx: return "GGX";
+	case mat_vnd: return "VNDF";
+	case mat_lig: return "Light";
+	default: return "Dir. light";
+	};
+}
+
 namespace material {
-	constexpr int mat_cnt = 5;
 	__forceinline void mix(const ray& r, const hitrec& rec, const albedo& tex, matrec& mat) {
 		//simple mix of lambertian and mirror reflection/transmission + emission
 		vec3 rgb = tex.rgb(rec.u, rec.v);
@@ -50,6 +60,7 @@ namespace material {
 		bool metal = rafl() < mu;
 		bool opaque = rafl() < rgb.w();
 		bool mirror = ir * sqrtf(1.f - HoV * HoV) > 1.f || Fr > rafl();
+		//transparecny + refraction handling
 		if ((opaque && metal) || mirror) {
 			mat.P = rec.P + rec.N * eps;
 			mat.L = reflect(r.D, H);
@@ -83,6 +94,7 @@ namespace material {
 		vec3 N = normal_map(rec.N, nor);
 		onb n = onb(N);
 		vec3 V = n.local(-r.D);
+		//sample microfacet normal according to rougness coefficient
 		vec3 H = sa_ggx(a);
 		vec3 L = reflect(-V, H);
 		float NoV = V.z();
@@ -163,7 +175,7 @@ namespace material {
 	}
 }
 struct mat_var {
-	mat_var();
+	mat_var() {};
 	mat_var(const albedo& tex, mat_enum type) :tex(tex), type(type) {}
 
 	__forceinline void sample(const ray& r, const hitrec& rec, matrec& mat)const {

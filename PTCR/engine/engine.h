@@ -16,7 +16,9 @@ public:
 	void process_overlay();
 	void draw_scene();
 	void render_loop();
-
+	void object_menu();
+	void camera_menu();
+	void add_object();
 private:
 	scene Scene;
 	SDL_Window* window;
@@ -34,6 +36,7 @@ private:
 	double fps = 0;
 	double ft = 0;
 	double dt = 1;
+	double avg_dt = 1;
 	float scale = 1.f;
 	float fogdens = 0;
 	float move_mul = 1.f;
@@ -42,5 +45,6 @@ private:
 	bool overlay = true;
 	bool tap_to_focus = false;
 	bool running = true;
-	bool obj_menu = false;
+	bool add_obj = false;
+	bool obj_delta = false;
 };

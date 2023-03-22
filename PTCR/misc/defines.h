@@ -13,7 +13,7 @@ using uchar = unsigned char;
 using uint = unsigned int;
 #define TEST 0
 #define GAMMA2 1
-#define DEBUG 0
+#define DEBUG 1
 #define USE_SSE (1 && __SSE2__)
 #define WIDTH 960
 #define HEIGHT 720

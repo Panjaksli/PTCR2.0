@@ -3,22 +3,22 @@
 #pragma pack(push,4)
 class albedo {
 public:
-	albedo(const texture& _rgb = texture(vec3(0.5,0,0.5)), const texture& _mer = texture(vec3(0, 0, 1)),
+	albedo(const texture& _rgb = texture(vec3(0.5, 0, 0.5, 1)), const texture& _mer = texture(vec3(0, 0, 1)),
 		const texture& _nor = texture(vec3(0.5, 0.5, 1)), float _rep = 1.f, float _ir = 1.f) :
-		_rgb(_rgb), _mer(_mer), _nor(_nor),rep(_rep),_ir(_ir) {}
-	__forceinline vec3 rgb(float u=0, float v=0)const {
-		vec3 rgb = _rgb.sample(rep*u, rep*v);
+		_rgb(_rgb), _mer(_mer), _nor(_nor), rep(_rep), _ir(_ir) {}
+	__forceinline vec3 rgb(float u = 0, float v = 0)const {
+		vec3 rgb = _rgb.sample(rep * u, rep * v);
 #if GAMMA2
-		return rgb * vec3(rgb,1);
+		return rgb * vec3(rgb, 1);
 #else 
 		return rgb;
 #endif
 	}
-	__forceinline vec3 mer(float u=0, float v=0)const {
-		return _mer.sample(rep*u, rep*v);
+	__forceinline vec3 mer(float u = 0, float v = 0)const {
+		return _mer.sample(rep * u, rep * v);
 	}
-	__forceinline vec3 nor(float u=0, float v=0)const {
-		return _nor.sample(rep*u, rep*v);
+	__forceinline vec3 nor(float u = 0, float v = 0)const {
+		return _nor.sample(rep * u, rep * v);
 	}
 	__forceinline float ir()const {
 		return _ir;

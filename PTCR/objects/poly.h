@@ -9,7 +9,6 @@ public:
 	poly(vec3 _Q, vec3 _U, vec3 _V, vec3 n0, vec3 n1, vec3 n2) :Q(_Q), U(_U), V(_V), n0(n0), n1(n1), n2(n2) {}
 	inline bool hit(const ray& r, hitrec& rec) const
 	{
-		//if (!get_box().hit(r))return false;
 		//Moller-Trumbore algorithm, based on:
 		//https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
 		vec3 pV = cross(r.D, V);

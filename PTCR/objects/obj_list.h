@@ -17,6 +17,7 @@ public:
 	bool en_bvh = 1;
 	bool bvh_lin = 1;
 	bool march = 0;
+	//template is fix for incorrect volumetric fog rendering when shifting ray origin on primary rays
 	template <bool secondary = false>
 	__forceinline bool hit(const ray& sr, hitrec& rec) const {
 		ray r = sr;
@@ -75,7 +76,7 @@ public:
 		}
 		return l;
 	}
-
+	//ordered bvh traversal
 	__forceinline uchar traverse_bvh(const ray& r, hitrec& rec, uint id = 0) const {
 		const bvh_node& node = bvh[id];
 		if (node.parent)
@@ -154,6 +155,10 @@ public:
 			objects.erase(objects.begin()+id);
 			update_all();
 		}
+	}
+	void duplicate_mesh(int id) {
+			objects.push_back(objects[id]);
+			update_all();
 	}
 private:
 	template <typename T>

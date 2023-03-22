@@ -92,6 +92,9 @@ public:
 		fit();
 		return *this;
 	}
+	inline void set_mat(uint _mat) {
+		mat = _mat;
+	}
 private:
 
 	inline void fit() {
@@ -202,6 +205,9 @@ struct mesh_var {
 	}
 	void set_trans(const mat4& T) {
 		SELECT_BR(type(), set_trans(T));
+	}
+	inline void set_mat(uint mat) {
+		return s.set_mat(mat);
 	}
 	inline uint get_size()const {
 		return s.get_size();

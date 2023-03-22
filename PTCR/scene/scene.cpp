@@ -86,12 +86,13 @@ obj_flags scene::get_trans(mat4& T) const {
 	{
 		//if nothing hit, get sky
 		T = sun_pos;
+		return obj_flags(o_bla,0,0);
 	}
 	else
 	{
 		world.get_trans(opt.selected, T);
+		return world.get_flag(opt.selected);
 	}
-	return world.get_flag(opt.selected);
 }
 
 void scene::set_trans(const mat4& T) {
@@ -131,10 +132,10 @@ void scene::Render(uint* disp, uint pitch) {
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
 	for (int i = 0; i < cam.h; i++) {
 		for (int j = opt.p_mode ? (i + odd) % 2 : 0; j < cam.w; j += opt.p_mode ? 2 : 1) {
-			float t = 0;
-			vec3 xy(i, j), col(0);
 			if (cam.moving) cam.CCD.clear(i, j);
-			else xy += 0.5f * ravec();
+			float t = 0;
+			vec3 col(0);
+			vec3 xy = vec3(i,j) + 0.5f * ravec();
 			ray r = cam.optical_ray(xy.x(), xy.y());
 #if DEBUG
 			if (opt.dbg_at)		 col = raycol_at(r);
