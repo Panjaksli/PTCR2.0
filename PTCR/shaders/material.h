@@ -11,7 +11,7 @@ struct matrec {
 	vec3 P; //Adjusted hitpoint
 	vec3 L; //Ray dir: diffuse, specular
 	vec3 aten, emis; //Color
-	uchar sd = 0; // specular / diff
+	uchar sd = 0; //emissive / specular / diff
 };
 
 constexpr int mat_cnt = 5;

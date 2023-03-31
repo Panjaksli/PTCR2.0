@@ -2,6 +2,6 @@
 
 int main()
 {
-	engine Engine;
+	engine Engine(90);
 	Engine.render_loop();
 }

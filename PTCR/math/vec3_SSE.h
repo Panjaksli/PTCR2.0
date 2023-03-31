@@ -263,8 +263,9 @@ inline vec3 rapvec() {
 inline vec3 ravec() {
 	return 2 * vec3(_mm_rafl_ps()) - 1;
 }
-inline vec3 ravec(float min, float max) {
-	return vec3(_mm_rafl_ps(min, max));
+inline vec3 ravec(vec3 min, vec3 max) {
+	return min + (max - min) * _mm_rafl_ps();
 }
+
 
 

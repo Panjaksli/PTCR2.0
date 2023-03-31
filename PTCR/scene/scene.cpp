@@ -16,7 +16,8 @@ vec3 scene::cam_collision(vec3 v, float dt) const {
 		vec3 d = v + eps * ravec();
 		ray r = ray(cam.T.P(), d, true);
 		if (world.hit(r, rec) && rec.t - d.len() * dt <= eps) {
-			return rec.N * (d.len() - rec.t * dt) * dot(rec.N, -r.D) / dot(r.D, norm(v));
+			vec3 V = rec.N * (d.len() - rec.t * dt) * dot(rec.N, -r.D) / dot(r.D, norm(v));
+			return clamp(V, -abs(v), abs(v));
 		}
 	}
 	return 0;
@@ -37,16 +38,17 @@ vec3 scene::cam_fps(vec3 d) const {
 	return (d.x() * fw + d.y() * up + d.z() * si) * cam.speed;
 }
 void scene::cam_move(vec3 dir, float dt) {
-	static vec3 V = 0;
+	vec3& V = cam.V;
 	vec3 G = vec3(0, -9.81, 0);
 	vec3 F0 = cam.free ? cam_free(dir) : cam_fps(dir);
-	vec3 F = F0;// + G;
+	vec3 F = F0;
 	V += F * dt;
 	V += cam_collision(V, dt);
 	V += cam_collision(V, dt);
 	V += cam_collision(V, dt);
 	if (eq0(cam_collision(V, dt))) cam.move(V * dt);
 	V -= fminf(10 * dt, 1) * V;
+	V = min(max(V, infn), infp);
 }
 void scene::cam_autofocus() {
 	if (cam.autofocus) {
@@ -86,7 +88,7 @@ obj_flags scene::get_trans(mat4& T) const {
 	{
 		//if nothing hit, get sky
 		T = sun_pos;
-		return obj_flags(o_bla,0,0);
+		return obj_flags(o_bla, 0, 0);
 	}
 	else
 	{
@@ -113,68 +115,73 @@ void scene::set_skybox(const albedo& bg)
 	opt.skybox = true;
 }
 void scene::Render(uint* disp, uint pitch) {
-	cam_autofocus();
-	cam.CCD.dt(opt.samples);
-	cam.CCD.set_disp(disp, pitch);
-	if (cam.moving)cam.CCD.spp = 0.f;
 	static bool odd = 0;
 	bool old_lisa = opt.li_sa;
 	bool old_sunsa = opt.sun_sa;
 	float blink_t = (hpi * clock()) / CLOCKS_PER_SEC;
-	world.en_bvh = opt.en_bvh && world.bvh.size() > 0;
-	opt.li_sa = opt.li_sa && world.lights.size() > 0;
-	world.lw = 1.f / world.lights.size();
-	opt.sun_sa = opt.sun_sa && opt.sky && !opt.skybox;
-	opt.inv_sa = 1.f / fmaxf(opt.samples, 1);
+	cam_autofocus();
+	cam.CCD.set_disp(disp, pitch);
+	if (cam.moving)cam.CCD.spp = 0.f;
+	if (cam.CCD.spp < opt.max_spp) {
+		cam.CCD.dt(opt.samples);
+		world.en_bvh = opt.en_bvh && world.bvh.size() > 0;
+		opt.li_sa = opt.li_sa && world.lights.size() > 0;
+		opt.sun_sa = opt.sun_sa && opt.sky && !opt.skybox;
+		opt.inv_sa = 1.f / fmaxf(opt.samples, 1);
 #if DEBUG
-	opt.inv_sa = opt.dbg_at || opt.dbg_n || opt.dbg_uv || opt.dbg_t ? 1.f : opt.inv_sa;
+		opt.inv_sa = opt.dbg_at || opt.dbg_n || opt.dbg_uv || opt.dbg_t ? 1.f : opt.inv_sa;
 #endif
-#pragma omp parallel for collapse(2) schedule(dynamic, 100)
-	for (int i = 0; i < cam.h; i++) {
-		for (int j = opt.p_mode ? (i + odd) % 2 : 0; j < cam.w; j += opt.p_mode ? 2 : 1) {
-			if (cam.moving) cam.CCD.clear(i, j);
-			float t = 0;
-			vec3 col(0);
-			vec3 xy = vec3(i,j) + 0.5f * ravec();
-			ray r = cam.optical_ray(xy.x(), xy.y());
-#if DEBUG
-			if (opt.dbg_at)		 col = raycol_at(r);
-			else if (opt.dbg_n && opt.dbg_uv)  col = raycol_face(r);
-			else if (opt.dbg_n)  col = raycol_n(r);
-			else if (opt.dbg_uv) col = raycol_uv(r);
-			else if (opt.dbg_t)  col = raycol_t(r);
-			else col = raycol(r, t);
-#else
-			col = raycol(r, t);
-#endif
-			cam.add(i, j, col);
-		}
-	}
-	if (opt.p_mode) {
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
 		for (int i = 0; i < cam.h; i++) {
-			for (int j = (i + !odd) % 2; j < cam.w; j += 2) {
+			for (int j = opt.p_mode ? (i + odd) % 2 : 0; j < cam.w; j += opt.p_mode ? 2 : 1) {
 				if (cam.moving) cam.CCD.clear(i, j);
-				vec3 rgb[4];
-				rgb[0] = cam.CCD.get(i, fmax_int(j - 1, 0));
-				rgb[1] = cam.CCD.get(i, fmin_int(j + 1, cam.w - 1));
-				rgb[2] = cam.CCD.get(fmax_int(i - 1, 0), j);
-				rgb[3] = cam.CCD.get(fmin_int(i + 1, cam.h - 1), j);
-				vec3 col = med4(rgb);
-				cam.add(i, j, col / col.w() / cam.exposure);
+				hitrec rec;
+				vec3 xy = vec3(i, j) + 0.5f * ravec();
+				ray r = cam.optical_ray(xy.x(), xy.y());
+#if DEBUG
+				if (opt.dbg_at)		 cam.add_raw(i, j, raycol_at(r));
+				else if (opt.dbg_n)   cam.add_raw(i, j, raycol_n(r));
+				else if (opt.dbg_uv)  cam.add_raw(i, j, raycol_uv(r));
+				else if (opt.dbg_f)  cam.add_raw(i, j, raycol_f(r));
+				else if (opt.dbg_e)  cam.add_raw(i, j, raycol_e(r));
+				else if (opt.dbg_t)  cam.add_raw(i, j, raycol_t(r));
+				else  cam.add(i, j, raycol(r, rec));
+#else
+				cam.add(i, j, raycol(r, t));
+#endif
+				;
+			}
+		}
+		if (opt.p_mode) {
+#pragma omp parallel for collapse(2) schedule(dynamic, 100)
+			for (int i = 0; i < cam.h; i++) {
+				for (int j = (i + !odd) % 2; j < cam.w; j += 2) {
+					if (cam.moving) cam.CCD.clear(i, j);
+					vec3 rgb[4];
+					rgb[0] = cam.CCD.get(i, fmax_int(j - 1, 0));
+					rgb[1] = cam.CCD.get(i, fmin_int(j + 1, cam.w - 1));
+					rgb[2] = cam.CCD.get(fmax_int(i - 1, 0), j);
+					rgb[3] = cam.CCD.get(fmin_int(i + 1, cam.h - 1), j);
+					vec3 col = med4(rgb);
+					cam.add(i, j, col / col.w() / cam.exposure);
+				}
 			}
 		}
 	}
 	float blink = 0.05f * (1 - fabsf(sinf(blink_t)));
+	
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
 	for (int i = 0; i < cam.h; i++) {
 		for (int j = 0; j < cam.w; j++) {
 			uint off = i * pitch + j;
 			vec3 rgb = cam.get_med(i, j, opt.med_thr);
-			if (opt.selected != -1) {
-				aabb aura = world.objects[opt.selected].get_box();
+			if (opt.selected > -1) {
+				hitrec rec;
 				ray r = cam.optical_ray(i, j);
-				if (aura.hit(r))bgr(rgb.fact() + blink, cam.CCD.disp[off]);
+				aabb aura = object_at(opt.selected).get_box();
+				if (aura.hit(r)) {
+					bgr(rgb.fact() + blink, cam.CCD.disp[off]);
+				}
 				else bgr(rgb, cam.CCD.disp[off]);
 			}
 			else bgr(rgb, cam.CCD.disp[off]);

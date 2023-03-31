@@ -19,6 +19,7 @@ public:
 	void object_menu();
 	void camera_menu();
 	void add_object();
+	void add_material();
 private:
 	scene Scene;
 	SDL_Window* window;
@@ -31,7 +32,7 @@ private:
 	SDL_Event event;
 	event_handler handle;
 	mat4 T;
-	vec3 TP = 0, TA = 0;
+	vec3 TP = 0, TA = 0, TD = 0;
 	double max_fps = 90;
 	double fps = 0;
 	double ft = 0;
@@ -46,5 +47,6 @@ private:
 	bool tap_to_focus = false;
 	bool running = true;
 	bool add_obj = false;
-	bool obj_delta = false;
+	bool add_mat = false;
+	//bool obj_delta = false;
 };

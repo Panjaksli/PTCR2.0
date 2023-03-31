@@ -34,13 +34,13 @@ public:
 		uchar any_hit = false;
 		for (uint i = 0; i < size; i++)
 			any_hit |= prim[i].move(P).hit(r, rec);
-		rec.mat = any_hit ? mat : rec.mat;
+		//rec.mat = any_hit ? mat : rec.mat;
 		return any_hit;
 	}
 	__forceinline bool hit(const ray& r, hitrec& rec, uint prim_id) const
 	{
 		bool any_hit = prim[prim_id].move(P).hit(r, rec);
-		rec.mat = any_hit ? mat : rec.mat;
+		//rec.mat = any_hit ? mat : rec.mat;
 		return any_hit;
 	}
 	__forceinline float pdf(const ray& r, uint prim_id)const {
@@ -96,7 +96,6 @@ public:
 		mat = _mat;
 	}
 private:
-
 	inline void fit() {
 		bbox = aabb();
 		for (uint i = 0; i < size; i++)
@@ -181,18 +180,12 @@ struct mesh_var {
 	__forceinline bool hit(const ray& r, hitrec& rec) const
 	{
 		if (!s.get_box().hit(r))return false;
-		bool any_hit;
-		SELECT_FUN(type(), any_hit, hit(r, rec), false);
-		rec.fog = any_hit ? rec.face || fog() : rec.fog;
-		return any_hit;
+		SELECT_RE(type(), hit(r, rec), false);
 	}
 
 	__forceinline bool hit(const ray& r, hitrec& rec, uint prim_id) const
 	{
-		bool any_hit;
-		SELECT_FUN(type(), any_hit, hit(r, rec, prim_id), false);
-		rec.fog = any_hit ? rec.face || fog() : rec.fog;
-		return any_hit;
+		SELECT_RE(type(), hit(r, rec, prim_id), false);
 	}
 
 	__forceinline float pdf(const ray& r, uint prim_id) const
@@ -256,7 +249,11 @@ struct mesh_raw {
 	mesh_raw(aabb bbox, uint obje_id, uint prim_id) : obje_id(obje_id), prim_id(prim_id) {}
 	__forceinline bool hit(const mesh_var* obj, const ray& r, hitrec& rec) const
 	{
-		return obj[obje_id].hit(r, rec, prim_id);
+		if (obj[obje_id].hit(r, rec, prim_id)) {
+			rec.idx = obje_id;
+			return true;
+		}
+		return false;
 	}
 	__forceinline float pdf(const mesh_var* obj, const ray& r) const
 	{
@@ -268,6 +265,15 @@ struct mesh_raw {
 	uint obje_id;
 	uint prim_id;
 };
+
+//struct instance {
+//	mat4 T, Ti;
+//	aabb bbox;
+//	uint *_mat = nullptr;
+//	uint mat;
+//	uint idx;
+//};
+
 
 #pragma pack(pop)
 

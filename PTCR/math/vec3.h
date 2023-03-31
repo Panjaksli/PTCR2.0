@@ -7,6 +7,10 @@
 #endif
 
 //common functions
+
+inline vec3 todeg(vec3 a) { return a * (180.0f / pi); }
+inline vec3 torad(vec3 a) { return a * (pi / 180.0f); }
+
 inline vec3 fma(vec3 a, vec3 b, vec3 c) {
 	return a * b + c;
 }
@@ -180,13 +184,19 @@ inline bool cmp_avg(const vec3& a, const vec3& b) {
 inline bool cmp_val(const float& a, const float& b) {
 	return a < b;
 };
+
 inline vec3 avg9(vec3* x) {
 	vec3 sum;
 	for (int i = 0; i < 9; i++)
 		sum += x[i];
 	return sum * (1.f / 9.f);
 }
-
+inline vec3 avg_n(vec3* x, const int n) {
+	vec3 sum;
+	for (int i = 0; i < n; i++)
+		sum += x[i];
+	return sum * (1.f / n);
+}
 inline void swap_vec3(vec3* x, uint i, uint j) {
 	vec3 t1 = x[i];
 	vec3 t2 = x[j];
@@ -274,8 +284,6 @@ inline vec3 bilat_5x5(const vec3* x) {
 	}
 	return y / w;
 }
-
-
 inline vec3 median2d3(const vec3* data, int i, int j, int h, int w, float thr) {
 	vec3 x[9];
 	if (thr <= eps)return data[i * w + j];

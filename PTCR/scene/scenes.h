@@ -15,5 +15,5 @@ std::vector<poly> load_mesh(const char* filename, vec3 off = 0, float scale = 1.
 std::vector<poly> load_OBJ(const char* filename, vec3 off = 0, float scale = 1.f, bool flip_face = 0);
 std::vector<poly> load_MSH(const char* filename, vec3 off = 0, float scale = 1.f, bool flip_face = 0);
 std::vector<poly> generate_mesh(uint seed, vec3 off, float scale, bool flip = 0);
-void scn_load(scene& scn, const char* filename);
+bool scn_load(scene& scn, const char* filename, bool update_only = 0);
 void scn_load(scene& scn, int n);

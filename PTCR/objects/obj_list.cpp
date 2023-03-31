@@ -15,11 +15,8 @@ obj_flags obj_list::get_flag(int id) const
 }
 int obj_list::get_id(const ray& r, hitrec& rec) const
 {
-	if (!bbox.hit(r)) return -1;
-	int res = -1;
-	for (int i = 0; i < objects.size(); i++)
-		if (objects[i].hit(r, rec))res = i;
-	return res;
+	if (hit(r, rec))return rec.idx;
+	else return -1;
 }
 void obj_list::get_trans(const int id, mat4& T)const
 {
@@ -37,6 +34,10 @@ void obj_list::fit() {
 		bbox.join(obj.get_box());
 }
 void obj_list::obj_create() {
+	if (objects.size() == 0) {
+		en_bvh = false;
+		return;
+	}
 	obj_bvh.clear();
 	size_t size = 0;
 	for (uint i = 0; i < objects.size(); i++) {
@@ -53,41 +54,36 @@ void obj_list::obj_create() {
 }
 void obj_list::update_lights() {
 	lights.clear();
-	float lum = 0;
+	float none = 0;
+	float total = 0;
+	float bvh = 0;
 	for (uint i = 0; i < objects.size(); i++)
 	{
 		if (objects[i].light()) {
-			lum += 1;//objects[i].get_size();
+			if (objects[i].bvh()) bvh += objects[i].get_size();
+			else none += 1.f;
+			total += 1;
 			lights.emplace_back(i);
 		}
 	}
-	lw = 1.f / lum;
+	lw_tot = total > 0 ? 1.f / total : 0;
+	lw_non = none > 0 ? 1.f / none : 0;
+	lw_bvh = bvh > 0 ? 1.f / bvh : 0;
 }
-void obj_list::update_nonbvh(uint node_size) {
+void obj_list::update_nonbvh() {
 	nonbvh.clear();
 	for (uint i = 0; i < objects.size(); i++)
 	{
 		if (!objects[i].bvh())nonbvh.emplace_back(i);
 	}
-	build_bvh(true, node_size);
 }
 void obj_list::update_lists() {
-	lights.clear();
-	nonbvh.clear();
-	float lum = 0;
-	for (uint i = 0; i < objects.size(); i++)
-	{
-		if (!objects[i].bvh())nonbvh.emplace_back(i);
-		if (objects[i].light()) {
-			lum += 1;//objects[i].get_size();
-			lights.emplace_back(i);
-		}
-	}
-	lw = 1.f / lum;
+	update_lights();
+	update_nonbvh();
 }
-void obj_list::update_all() {
+void obj_list::update_all(uint node_size) {
 	update_lists();
-	build_bvh();
+	build_bvh(1,node_size);
 }
 void obj_list::obj_update() {
 	//#pragma omp parallel for schedule(static,64)
@@ -99,12 +95,13 @@ void obj_list::rebuild_bvh(bool print, uint node_size) {
 	bvh_builder(print, node_size);
 }
 void obj_list::build_bvh(bool print, uint node_size) {
+	fit();
 	obj_create();
 	bvh_builder(print, node_size);
 }
 void obj_list::bvh_builder(bool print, uint node_size) {
 	bvh.clear();
-	if (obj_bvh.size() == 0) {
+	if (obj_bvh.size() == 0 || objects.size() == 0) {
 		en_bvh = false;
 		return;
 	}

@@ -4,10 +4,14 @@
 
 bool texture::load(const std::string filename) {
 	int n = 4;
-	int width=0, height=0;
-	data = stbi_load(filename.c_str(), &width, &height, &n, 4);
-	w = width;
-	h = height;
-	return data != nullptr;
+	int width = 0, height = 0;
+	uchar* tmp = stbi_load(filename.c_str(), &width, &height, &n, 4);
+	if (tmp != nullptr) {
+		data = tmp;
+		w = width;
+		h = height;
+		return true;
+	}
+	return false;
 }
 

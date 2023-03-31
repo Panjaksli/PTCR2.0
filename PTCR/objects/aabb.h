@@ -76,9 +76,8 @@ struct aabb {
 		//t = infp;
 		return false;
 	}
-	__forceinline bool shift(ray& r) const {
-		bool ins = inside(r.O);
-		if (ins) return true;
+	__forceinline bool shift(ray& r, float &t) const {
+		if (inside(r.O)) return true;
 		vec3 t1 = (pmin - r.O) * r.iD;
 		vec3 t2 = (pmax - r.O) * r.iD;
 		vec3 tmin = min(t1, t2);
@@ -86,7 +85,8 @@ struct aabb {
 		float mint = max(tmin);
 		float maxt = min(tmax);
 		if (mint < maxt && maxt > 0) {
-			r.O = r.at(mint - eps);
+			t = 0.999f * mint;
+			r.O = r.at(t);
 			return true;
 		}
 		return false;

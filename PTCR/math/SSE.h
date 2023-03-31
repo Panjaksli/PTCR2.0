@@ -54,10 +54,9 @@ inline __m128 _mm_fsqrt_ps(__m128 n) {
 	i = _mm_add_epi32(i, _mm_set1_epi32(0x1fbd5f5f));
 	return _mm_castsi128_ps(i);
 }
-/*
-FROM:
-https://stackoverflow.com/questions/47025373/fastest-implementation-of-the-natural-exponential-function-using-sse
-*/
+
+//FROM:
+//https://stackoverflow.com/questions/47025373/fastest-implementation-of-the-natural-exponential-function-using-sse
 inline __m128 _mm_expf_ps(__m128 x)
 {
 	__m128 t, f, e, p, r;
@@ -82,22 +81,12 @@ inline __m128 _mm_expf_ps(__m128 x)
 	return r;
 }
 
-
-//inline __m128 sqrt(__m128 n) {
-//	//__asm__("sqrtps %1, %0" : "+x" (n));
-//	return _mm_sqrt_ps(n);
-//}
-
-/*
-https://geometrian.com/programming/tutorials/cross-product/index.php
-*/
+//From:
+//https://geometrian.com/programming/tutorials/cross-product/index.php
 __forceinline __m128 _mm_cross_ps(__m128 const& u, __m128 const& v) {
 	__m128 tmp0 = _mm_shuffle_ps(u, u, _MM_SHUFFLE(3, 0, 2, 1));
 	__m128 tmp1 = _mm_shuffle_ps(v, v, _MM_SHUFFLE(3, 1, 0, 2));
 	__m128 tmp2 = _mm_shuffle_ps(u, u, _MM_SHUFFLE(3, 1, 0, 2));
 	__m128 tmp3 = _mm_shuffle_ps(v, v, _MM_SHUFFLE(3, 0, 2, 1));
-	return _mm_sub_ps(
-		_mm_mul_ps(tmp0, tmp1),
-		_mm_mul_ps(tmp2, tmp3)
-	);
+	return _mm_sub_ps(_mm_mul_ps(tmp0, tmp1),_mm_mul_ps(tmp2, tmp3));
 }

@@ -5,17 +5,17 @@
 class ggx_pdf {
 public:
 	ggx_pdf() {}
-	ggx_pdf(vec3 _N,vec3 _V, vec3 _L, float _a) : N(_N),V(_V), L(_L), a(_a) {}
+	ggx_pdf(vec3 _N, vec3 _V, vec3 _L, float _a) : N(_N), V(_V), L(_L), a(_a) {}
 
 	inline float value(vec3 _L) const {
 		vec3 H = norm(V + _L);
 		float NoH = dot(N, H);
-		return DGGX(NoH, a) * NoH / (4.f * absdot(V,H));
+		return DGGX(NoH, a) * NoH / (4.f * absdot(V, H));
 	}
 	inline vec3 generate() const {
 		return L;
 	}
-	vec3 N,V,L;
+	vec3 N, V, L;
 	float a;
 };
 
@@ -67,7 +67,7 @@ public:
 		//a bit of geometry
 		float dp = dot(V, T * vec3(0, 1, 0));
 		constexpr float pdf = sun_angle * sun_angle * ipi;
-		if(dp<maxdp)return 0;
+		if (dp < maxdp)return 0;
 		return pdf / dp;
 	}
 	inline vec3 generate() const {
@@ -76,7 +76,7 @@ public:
 		vec3 V = T * norm(vec3(r[0], sun_angle, r[1]));
 		return V;
 	}
-	const mat4&T;
+	const mat4& T;
 	vec3 O;
 };
 template <class P1, class P2>
@@ -92,7 +92,13 @@ public:
 		else
 			return p2.generate();
 	}
-
+	inline vec3 generate(bool& dir) const {
+		dir = 0;
+		if (rafl() < 0.5f)
+			return p1.generate();
+		dir = 1;
+		return p2.generate();
+	}
 	const P1& p1;
 	const P2& p2;
 };
@@ -102,7 +108,7 @@ class bias_pdf {
 public:
 	bias_pdf(const P1& _p1, const P2& _p2, float b) :p1(_p1), p2(_p2), b(b) {}
 	inline float value(vec3 V) const {
-		return  lerpf(p1.value(V),p2.value(V),b);
+		return  lerpf(p1.value(V), p2.value(V), b);
 	}
 	inline vec3 generate() const {
 		if (rafl() < b)

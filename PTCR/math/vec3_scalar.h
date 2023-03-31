@@ -265,6 +265,6 @@ inline vec3 rapvec() {
 inline vec3 ravec() {
 	return 2.f * vec3(rafl(), rafl(), rafl()) - 1.f;
 }
-inline vec3 ravec(float min, float max) {
-	return vec3(rafl(min, max), rafl(min, max), rafl(min, max));
+inline vec3 ravec(vec3 min, vec3 max) {
+	return min + (max - min) * rapvec();
 }

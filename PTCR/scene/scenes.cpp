@@ -1,10 +1,8 @@
-#include <regex>
 #include "scenes.h"
-//C++ is terrible,but really TERRIBLE at parsing text
-//Note to self, never ever use C/C++ again for parsing anything
-void scn_load(scene& scn, const char* filename) {
+//Simple text format
+bool scn_load(scene& scn, const char* filename, bool update_only) {
 	std::string name(filename);
-	if (name.empty())return;
+	if (name.empty())return false;
 	if (name.find(".scn") == std::string::npos)
 		name = name + ".scn";
 	std::ifstream file(name);
@@ -15,26 +13,24 @@ void scn_load(scene& scn, const char* filename) {
 		if (!file.is_open())
 		{
 			printf("File not found !\n");
-			return;
+			return false;
 		}
 	}
 	scn.world.clear();
-	//scn.opt = scene_opt();
+	scn.opt.en_bvh = true;
 	std::stringstream file_buff;
 	file_buff << file.rdbuf();
 	std::string line = "";
-	std::string pref = "";
 	while (std::getline(file_buff, line))
 	{
-		if (line[0] == '*')continue;
 		vector<char> buff1(40);
 		vector<char> buff2(40);
 		vector<char> buff3(40);
-		uint mat = 0, bvh = 1, lig = 0;
-		float scl = 0;
+		uint mat = 0, bvh = 1, lig = 0, val = 0;
+		float scl = 0, r = 0, fval = 0;
 		float3 off, q, a, b, c;
-		float r = 0;
-		if (sscanf_s(line.c_str(), "poly mat=%u bvh=%u lig=%u off=%f,%f,%f,%f data=%f,%f,%f,%f,%f,%f,%f,%f,%f",
+		if (line[0] == 0 || line[0] == '*') { continue; }
+		else if (sscanf_s(line.c_str(), "poly mat=%u bvh=%u lig=%u off=%f,%f,%f,%f data=%f,%f,%f,%f,%f,%f,%f,%f,%f",
 			&mat, &bvh, &lig, &off.x, &off.y, &off.z, &scl, &a.x, &a.y, &a.z, &b.x, &b.y, &b.z, &c.x, &c.y, &c.z) > 0)
 		{
 			scn.world.add_mesh(poly(a, b, c), off, scl, mat, !bvh, lig);
@@ -69,18 +65,34 @@ void scn_load(scene& scn, const char* filename) {
 			texture t3 = sscanf_s(buff3.data(), "%f,%f,%f,%f", &nor[0], &nor[1], &nor[2], &nor[3]) >= 3 ? texture(nor) : texture(buff3.data());
 			scn.world.add_mat(albedo(t1, t2, t3, scl, r), (mat_enum)mat);
 		}
-		else if (sscanf_s(line.c_str(), "skybox rgb=%s",buff1.data(), 40) > 0)
+		else if (sscanf_s(line.c_str(), "skybox=%s",buff1.data(), 40) > 0)
 		{
 			vec3 rgb;
 			texture t1 = sscanf_s(buff1.data(), "%f,%f,%f,%f", &rgb[0], &rgb[1], &rgb[2], &rgb[3]) >= 3 ? texture(rgb) : texture(buff1.data());
 			albedo sky(t1, vec3(0, 1, 0));
 			scn.set_skybox(sky);
 		}
+		else if (!update_only) {
+		if (sscanf_s(line.c_str(), "bounces=%u", &val) > 0) scn.opt.bounces = val;
+		else if (sscanf_s(line.c_str(), "samples=%u", &val) > 0) scn.opt.samples = val;
+		else if (sscanf_s(line.c_str(), "en_fog=%u", &val) > 0) scn.opt.en_fog = val;
+		else if (sscanf_s(line.c_str(), "en_bvh=%u", &val) > 0) scn.opt.en_bvh = val;
+		else if (sscanf_s(line.c_str(), "en_sky=%u", &val) > 0) scn.opt.sky = val;
+		else if (sscanf_s(line.c_str(), "en_box=%u", &val) > 0) scn.opt.skybox = val;
+		else if (sscanf_s(line.c_str(), "cam_collision=%u", &val) > 0) scn.cam.collision = val;
+		else if (sscanf_s(line.c_str(), "cam_blur=%u", &val) > 0) scn.cam.bokeh = val;
+		else if (sscanf_s(line.c_str(), "cam_fov=%f", &fval) > 0) scn.cam.set_fov(fval);
+		else if (sscanf_s(line.c_str(), "cam_speed=%f", &fval) > 0) scn.cam.speed = fval;
+		else if (sscanf_s(line.c_str(), "cam_pos=%f,%f,%f", &off.x,&off.y,&off.z) > 0) scn.cam.T.set_P(off);
+		}
 	}
 	file.close();
+	scn.cam.V = 0;
 	scn.opt.en_bvh = scn.world.en_bvh;
 	scn.cam.moving = 1;
 	scn.world.build_bvh(1, scn.opt.node_size);
+	scn.world.update_lists();
+	return true;
 }
 void scn_load(scene& scn, int n) {
 	scn.world.clear();
@@ -103,6 +115,8 @@ void scn_load(scene& scn, int n) {
 	scn.opt.en_fog = 0;
 	scn.cam.bokeh = 0;
 #endif
+	scn.cam.V = 0;
+	scn.world.update_lists();
 	scn.world.build_bvh(1, scn.opt.node_size);
 }
 void scn1(scene& scn) {
@@ -155,7 +169,7 @@ void scn2(scene& scn) {
 	scn.world.add_mesh(voxel(vec3(0, 1.9, 0, 0.1)), 0, 1, 2, 0, 1);
 	scn.sun_pos = rotat_mat4(vec3(-1, 0, 0));
 	scn.cam.setup(mat4(vec3(2, 1, 0), vec3(0, hpi, 0)), 90, 10);
-	scn.world.en_bvh = 1;
+	scn.world.en_bvh = 0;
 }
 void scn3(scene& scn) {
 	for (int i = 0; i <= 10; i++) {
@@ -553,6 +567,8 @@ std::vector<poly> generate_mesh(uint seed, vec3 off, float scale, bool flip) {
 		}
 	}
 
+#if SMOOTH_SHADING
+	//per-vertex normals
 	std::vector<poly> polys(face.size());
 	std::vector<vec3> nrms(vert.size(), vec3());
 	for (uint j = 0; j < face.size(); j++) {
@@ -567,5 +583,15 @@ std::vector<poly> generate_mesh(uint seed, vec3 off, float scale, bool flip) {
 	//polygons from triangles and normals
 	for (uint j = 0; j < face.size(); j++)
 		polys[j].set_nor(nrms[face[j].x], nrms[face[j].y], nrms[face[j].z]);
+#else
+	std::vector<poly> polys; polys.reserve(face.size());
+	for (const auto& f : face)
+	{
+		vec3 a = vert[f.x];
+		vec3 b = vert[f.y];
+		vec3 c = vert[f.z];
+		polys.emplace_back(flip ? poly(a, c, b) : poly(a, b, c));
+	}
+#endif
 	return polys;
 }

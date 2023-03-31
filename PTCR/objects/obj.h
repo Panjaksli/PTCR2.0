@@ -66,9 +66,8 @@ struct hitrec
 	vec3 N, P;
 	float t = infp;
 	float u, v;
-	uint mat;
+	uint idx;
 	bool face;
-	bool fog;
 };
 
 #include "material.h"

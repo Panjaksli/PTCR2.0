@@ -16,7 +16,17 @@ inline float fsqrt(float x)
 	i = 0x1fbd5f5f + (i >> 1); //532316802 //0x1fbd5f5f
 	return *(float*)&i;
 }
-
+//fast logf, pow2, expf
+//based on: http://www.machinedlearnings.com/2011/06/fast-approximate-logarithm-exponential.html
+inline float fpow2f(float p)
+{
+	uint i = (1 << 23) * (p + 126.94269504f);
+	return *(float*)&i;
+}
+inline float fexpf(float p)
+{
+	return fpow2f(1.442695040f * p);
+}
 inline float flogf(float x)
 {
 	return  *(uint*)&x * 8.2546954e-8f - 87.94167f;
