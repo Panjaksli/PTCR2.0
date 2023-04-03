@@ -62,10 +62,10 @@ inline vec3 reflect(vec3 v, vec3 n)
 {
 	return v - 2.f * dot(v, n) * n;
 }
-inline vec3 refract(vec3 v, vec3 n, float eta) {
+inline vec3 refract(vec3 v, vec3 n, float ir) {
 	float NoV = dot(v, n);
-	float k = 1.f - eta * eta * (1.f - NoV * NoV);
-	return eta * v - (eta * NoV + sqrtf(fabsf(k))) * n;
+	float k = 1.f - ir * ir * (1.f - NoV * NoV);
+	return ir * v - (ir * NoV + sqrtf(fabsf(k))) * n;
 }
 inline vec3 poly_nis(vec3 u, vec3 v) {
 	vec3 uv = cross(u, v);
@@ -102,14 +102,14 @@ inline vec3 cossin(float x) {
 	t = mod(t, pi2);
 	t = fabs(t - pi) - hpi;
 	vec3 y = fast_sin(t);
-	return vec3(y.x(), y.y(), 0, 0);
+	return vec3(y.x(), y.y());
 }
 inline vec3 sincos(float x) {
 	vec3 t(x - hpi, x);
 	t = mod(t, pi2);
 	t = fabs(t - pi) - hpi;
 	vec3 y = fast_sin(t);
-	return vec3(y.x(), y.y(), 0, 0);
+	return vec3(y.x(), y.y());
 }
 
 inline float luminance(vec3 rgb)

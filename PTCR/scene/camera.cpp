@@ -9,12 +9,14 @@ void camera::update()
 }
 void camera::move(vec3 dir) {
 	if (near0(dir))return;
+	P += dir;
 	T.add_P(dir);
 	moving = 1;
 }
-void camera::set_P(vec3 P)
+void camera::set_P(vec3 pos)
 {
-	T.set_P(P);
+	this->P = pos;
+	T.set_P(pos);
 	moving = 1;
 }
 void camera::rotate(float alfa, float beta, float gamma)
@@ -48,6 +50,7 @@ void camera::reset_opt() {
 }
 void camera::setup(mat4 _T, float _fov, float _fstop) {
 	T = _T;
+	P = T.P();
 	fov = _fov;
 	fstop = _fstop;
 	update();

@@ -29,7 +29,7 @@ bool scn_load(scene& scn, const char* filename, bool update_only) {
 		uint mat = 0, bvh = 1, lig = 0, val = 0;
 		float scl = 0, r = 0, fval = 0;
 		float3 off, q, a, b, c;
-		if (line[0] == 0 || line[0] == '*') { continue; }
+		if (line[0] == '\0' || line[0] == '*') { continue; }
 		else if (sscanf_s(line.c_str(), "poly mat=%u bvh=%u lig=%u off=%f,%f,%f,%f data=%f,%f,%f,%f,%f,%f,%f,%f,%f",
 			&mat, &bvh, &lig, &off.x, &off.y, &off.z, &scl, &a.x, &a.y, &a.z, &b.x, &b.y, &b.z, &c.x, &c.y, &c.z) > 0)
 		{
@@ -83,7 +83,7 @@ bool scn_load(scene& scn, const char* filename, bool update_only) {
 		else if (sscanf_s(line.c_str(), "cam_blur=%u", &val) > 0) scn.cam.bokeh = val;
 		else if (sscanf_s(line.c_str(), "cam_fov=%f", &fval) > 0) scn.cam.set_fov(fval);
 		else if (sscanf_s(line.c_str(), "cam_speed=%f", &fval) > 0) scn.cam.speed = fval;
-		else if (sscanf_s(line.c_str(), "cam_pos=%f,%f,%f", &off.x,&off.y,&off.z) > 0) scn.cam.T.set_P(off);
+		else if (sscanf_s(line.c_str(), "cam_pos=%f,%f,%f", &off.x,&off.y,&off.z) > 0) scn.cam.set_P(off);
 		}
 	}
 	file.close();
@@ -187,7 +187,7 @@ void scn3(scene& scn) {
 void scn4(scene& scn) {
 	albedo gre(vec3(0.7, 0.9, 0.7, 0), vec3(0, 0, 0), vec3(0.5, 0.5, 1), 1, 1.2);
 	albedo yel(vec3(0.5, 0.3, 0.0, 1), vec3(0, 0, 1), "snow_normal", 10);
-	albedo wat("water", vec3(1, 0, 0), "water_normal", 20, 1.333);
+	albedo wat("water", vec3(0, 0, 0), "water_normal", 20, 1.333);
 	albedo blu(vec3(0.1, 0.28, 0.8, 1), vec3(0.5, 0, 0.1));
 	scn.world.add_mat(yel, mat_mix);
 	scn.world.add_mat(gre, mat_mix);
@@ -218,7 +218,7 @@ void scn5(scene& scn) {
 	albedo red(vec3(0.45, 0.12, 0.12, 1), vec3(0, 0, 1));
 	albedo blue(vec3(0.12, 0.12, 0.45, 1), vec3(0, 0, 1));
 	albedo light(vec3(1), vec3(0, 100, 0));
-	albedo clear(vec3(0.73, 0.73, 0.73, 0), vec3(1, 0, 0.1), vec3(0.5, 0.5, 1), 1, 1.5);
+	albedo clear(vec3(0.73, 0.73, 0.73, 0), vec3(0, 0, 0.1), vec3(0.5, 0.5, 1), 1, 1.5);
 	albedo mirror(vec3(0.73, 0.73, 0.73, 1.f), vec3(1, 0, 0.1));
 	scn.world.add_mat(white, mat_mix);
 	scn.world.add_mat(red, mat_mix);
@@ -249,8 +249,8 @@ void scn5(scene& scn) {
 
 void scn6(scene& scn) {
 	albedo gnd(vec3(0.8, 0.4, 0.3, 1), vec3(0, 0, 0));
-	albedo trans(vec3(0.7, 0.7, 0.99, 0), vec3(1, 0, 0.2), vec3(0.5, 0.5, 1), 1, 1.2);
-	albedo trans2(vec3(0.99, 0.7, 0.7, 0), vec3(1, 0, 0.2), vec3(0.5, 0.5, 1), 1, 1.2);
+	albedo trans(vec3(0.7, 0.7, 0.99, 0), vec3(0, 0, 0.2), vec3(0.5, 0.5, 1), 1, 1.2);
+	albedo trans2(vec3(0.99, 0.7, 0.7, 0), vec3(0, 0, 0.2), vec3(0.5, 0.5, 1), 1, 1.2);
 	albedo red(vec3(0.8, 0.1, 0.1, 1), vec3(1, 0, 0.1));
 	albedo blue(vec3(0.1, 0.1, 0.8, 1), vec3(1, 0, 0.1));
 	scn.world.add_mat(gnd, mat_ggx);

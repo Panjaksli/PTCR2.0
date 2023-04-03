@@ -59,7 +59,7 @@ void scene::cam_autofocus() {
 }
 void scene::cam_manufocus(float py, float px) {
 	if (!cam.autofocus) {
-		ray r(cam.focus_ray(py * cam.ih, px * cam.iw));
+		ray r(cam.pinhole_ray(vec3(px,py)));
 		cam.foc_t = fminf(closest_t(r), 1e6);
 		cam.moving = 1;
 	}
@@ -71,7 +71,7 @@ int scene::get_id(const ray& r, hitrec& rec) const
 
 int scene::get_id(float py, float px)
 {
-	ray r(cam.focus_ray(py * cam.ih, px * cam.iw));
+	ray r(cam.pinhole_ray(vec3(px,py)));
 	hitrec rec;
 	int id = get_id(r, rec);
 	opt.selected = id;
@@ -119,10 +119,12 @@ void scene::Render(uint* disp, uint pitch) {
 	bool old_lisa = opt.li_sa;
 	bool old_sunsa = opt.sun_sa;
 	float blink_t = (hpi * clock()) / CLOCKS_PER_SEC;
+	float blink = 0.05f * (1 - fabsf(sinf(blink_t)));
 	cam_autofocus();
 	cam.CCD.set_disp(disp, pitch);
 	if (cam.moving)cam.CCD.spp = 0.f;
-	if (cam.CCD.spp < opt.max_spp) {
+	bool paused = !cam.moving && opt.paused;
+	if (cam.CCD.spp < opt.max_spp && !paused) {
 		cam.CCD.dt(opt.samples);
 		world.en_bvh = opt.en_bvh && world.bvh.size() > 0;
 		opt.li_sa = opt.li_sa && world.lights.size() > 0;
@@ -136,8 +138,8 @@ void scene::Render(uint* disp, uint pitch) {
 			for (int j = opt.p_mode ? (i + odd) % 2 : 0; j < cam.w; j += opt.p_mode ? 2 : 1) {
 				if (cam.moving) cam.CCD.clear(i, j);
 				hitrec rec;
-				vec3 xy = vec3(i, j) + 0.5f * ravec();
-				ray r = cam.optical_ray(xy.x(), xy.y());
+				vec3 xy = vec3(j, i) + 0.5f * ravec();
+				ray r = cam.optical_ray(xy);
 #if DEBUG
 				if (opt.dbg_at)		 cam.add_raw(i, j, raycol_at(r));
 				else if (opt.dbg_n)   cam.add_raw(i, j, raycol_n(r));
@@ -167,24 +169,45 @@ void scene::Render(uint* disp, uint pitch) {
 				}
 			}
 		}
-	}
-	float blink = 0.05f * (1 - fabsf(sinf(blink_t)));
-	
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
-	for (int i = 0; i < cam.h; i++) {
-		for (int j = 0; j < cam.w; j++) {
-			uint off = i * pitch + j;
-			vec3 rgb = cam.get_med(i, j, opt.med_thr);
-			if (opt.selected > -1) {
-				hitrec rec;
-				ray r = cam.optical_ray(i, j);
-				aabb aura = object_at(opt.selected).get_box();
-				if (aura.hit(r)) {
-					bgr(rgb.fact() + blink, cam.CCD.disp[off]);
+		for (int i = 0; i < cam.h; i++) {
+			for (int j = 0; j < cam.w; j++) {
+				uint off = i * pitch + j;
+				vec3 rgb = cam.get_med(i, j, opt.med_thr);
+				if (opt.selected > -1) {
+					hitrec rec;
+					ray r = cam.pinhole_ray(vec3(j,i));
+					aabb aura = object_at(opt.selected).get_box();
+					if (aura.hit(r)) {
+						bgr(rgb.fact() + blink, cam.CCD.disp[off]);
+					}
+					else bgr(rgb, cam.CCD.disp[off]);
 				}
 				else bgr(rgb, cam.CCD.disp[off]);
 			}
-			else bgr(rgb, cam.CCD.disp[off]);
+		}
+	}
+	else {
+		//THIS IS NOT A DUPLICATE CODE
+		//fixes 100% usage even when rendering is paused (cannot have 2 pragma omp under "if" and one outside, threads are spinlocked)
+		//thus this part has to be scalar !!! 
+		for (int i = 0; i < cam.h; i++) {
+			for (int j = 0; j < cam.w; j++) {
+				uint off = i * pitch + j;
+				vec3 rgb = cam.get_med(i, j, opt.med_thr);
+				if (opt.selected > -1) {
+					hitrec rec;
+					ray r = cam.optical_ray(i, j);
+					aabb aura = object_at(opt.selected).get_box();
+					float t = infp;
+					if (aura.hit(r,t)) {
+						vec3 highlight = blink;
+						bgr(rgb.fact() + highlight, cam.CCD.disp[off]);
+					}
+					else bgr(rgb, cam.CCD.disp[off]);
+				}
+				else bgr(rgb, cam.CCD.disp[off]);
+			}
 		}
 	}
 	odd = !odd && opt.re_sam;

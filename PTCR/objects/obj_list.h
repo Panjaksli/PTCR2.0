@@ -69,10 +69,22 @@ public:
 
 
 	}
+	__forceinline bool visible(const ray& r, uint idx)const {
+		hitrec rec;
+		return hit(r, rec) && rec.idx == idx;
+	}
 	__forceinline vec3 rand_to(vec3 O) const {
 		uint id = raint(lights.size() - 1);
 		const uint light = lights[id];
-		return objects[light].rand_to(O);
+		return rand_idx(O, light);
+	}
+	__forceinline vec3 rand_to(vec3 O, uint &idx) const {
+		uint id = raint(lights.size() - 1);
+		idx = lights[id];
+		return rand_idx(O, idx);
+	}
+	__forceinline vec3 rand_idx(vec3 O, uint idx) const {
+		return objects[idx].rand_to(O);
 	}
 	__forceinline ray rand_from(uint& light) const {
 		uint id = raint(lights.size() - 1);

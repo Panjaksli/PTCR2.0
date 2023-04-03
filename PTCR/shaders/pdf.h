@@ -51,7 +51,9 @@ public:
 	inline vec3 generate() const {
 		return world.rand_to(O);
 	}
-
+	inline vec3 generate(uint &idx) const {
+		return world.rand_to(O,idx);
+	}
 	const obj_list& world;
 	vec3 O;
 };

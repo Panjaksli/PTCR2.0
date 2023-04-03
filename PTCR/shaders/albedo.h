@@ -5,7 +5,7 @@ class albedo {
 public:
 	albedo(const texture& _rgb = texture(vec3(0.5, 0, 0.5, 1)), const texture& _mer = texture(vec3(0, 0, 1)),
 		const texture& _nor = texture(vec3(0.5, 0.5, 1)), float _rep = 1.f, float _ir = 1.f) :
-		_rgb(_rgb), _mer(_mer), _nor(_nor), rep(_rep), _ir(_ir) {}
+		_rgb(_rgb), _mer(_mer), _nor(_nor), rep(_rep), ir(_ir) {}
 	__forceinline vec3 rgb(float u = 0, float v = 0)const {
 		vec3 rgb = _rgb.sample(rep * u, rep * v);
 #if GAMMA2
@@ -14,14 +14,21 @@ public:
 		return rgb;
 #endif
 	}
+	__forceinline vec3 specular(float u = 0, float v = 0)const {
+#if GAMMA2
+		return spec * vec3(spec,1);
+#else 
+		return spec;
+#endif
+	}
+	__forceinline vec3 liniear(float u = 0, float v = 0)const {
+		return _rgb.sample(rep * u, rep * v);
+	}
 	__forceinline vec3 mer(float u = 0, float v = 0)const {
 		return _mer.sample(rep * u, rep * v);
 	}
 	__forceinline vec3 nor(float u = 0, float v = 0)const {
 		return _nor.sample(rep * u, rep * v);
-	}
-	__forceinline float ir()const {
-		return _ir;
 	}
 	vec3 get_rgb()
 	{
@@ -52,12 +59,6 @@ public:
 	{
 		_nor.set_col(col);
 	}
-	float& get_rep() {
-		return rep;
-	}
-	float& get_ir() {
-		return _ir;
-	}
 	void clear() {
 		_rgb.clear();
 		_mer.clear();
@@ -65,7 +66,9 @@ public:
 	}
 private:
 	texture _rgb, _mer, _nor;
-	float rep;
-	float _ir = 1.f;
+public:
+	vec3 spec = 0;
+	float rep = 1.f;
+	float ir = 1.f;
 };
 #pragma pack(pop)

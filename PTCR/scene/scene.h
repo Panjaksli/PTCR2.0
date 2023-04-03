@@ -12,7 +12,7 @@ struct scene_opt {
 	vec3 sky_dawn = vec3(0.5, 0.05, 0.1);
 	vec3 fog_col = 1;
 	int selected = -1;
-	float max_spp = infp;
+	int max_spp = infp;
 	float res_scale = 1.f;
 	float res_rate = 1.f;
 	float p_life = 0.9f;
@@ -40,6 +40,7 @@ struct scene_opt {
 	bool dbg_light = 0;
 	bool dbg_direct = 1;
 #endif
+	bool paused = 0;
 	bool recur = 0;
 	bool p_mode = 1;
 };

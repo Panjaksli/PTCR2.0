@@ -227,10 +227,6 @@ void engine::camera_menu() {
 		Scene.opt.i_life = 1.f / Scene.opt.p_life;
 		Scene.cam.moving = 1;
 	}
-	int maxfps = max_fps;
-	ImGui::DragInt("Max FPS", &maxfps,1, 10, 240);
-	max_fps = maxfps;
-	ImGui::DragFloat("Max SPP", &Scene.opt.max_spp,1,1,infp,"%.0f", CLAMP);
 	ImGui::DragInt("Samples", &Scene.opt.samples, 0.1, 0, 1000, 0, CLAMP);
 	Scene.cam.moving |= ImGui::DragInt("Bounces", &Scene.opt.bounces, 0.1, 0, 1000, 0, CLAMP);
 	ImGui::DragFloat("MED filter", &Scene.opt.med_thr, 0.001f, 0.0f, 1.f, "%.3f", CLAMP);
@@ -249,7 +245,7 @@ void engine::camera_menu() {
 	Scene.cam.moving |= ImGui::Checkbox("Debug Face", &Scene.opt.dbg_f);
 	Scene.cam.moving |= ImGui::Checkbox("Debug Edge", &Scene.opt.dbg_e);	ImGui::SameLine();
 	Scene.cam.moving |= ImGui::Checkbox("Debug t", &Scene.opt.dbg_t);
-	Scene.cam.moving |= ImGui::Checkbox("Debug lighting", &Scene.opt.dbg_light);
+	Scene.cam.moving |= ImGui::Checkbox("Debug lighting", &Scene.opt.dbg_light); ImGui::SameLine();
 	if (Scene.opt.dbg_light)
 	{
 		ImGui::SameLine();
@@ -257,7 +253,12 @@ void engine::camera_menu() {
 	}
 	Scene.cam.moving |= ImGui::Checkbox("Normal maps", &use_normal_maps);
 #endif
-	ImGui::Text("%.2f ms %.1f FPS,SPP %.3g", 1000.0f / fps, fps, Scene.cam.CCD.spp);
+	int maxfps = max_fps;
+	ImGui::DragInt("Max FPS", &maxfps, 1, 10, 240);
+	max_fps = maxfps;
+	ImGui::DragInt("Max SPP", &Scene.opt.max_spp, 1000, 1, infp, "%d", ImGuiSliderFlags_Logarithmic); 
+	ImGui::Text("%.2f ms %.1f FPS,SPP %.3d", 1000.0f / fps, fps, (int)Scene.cam.CCD.spp); ImGui::SameLine();
+	ImGui::Checkbox("Pause", &Scene.opt.paused);
 	ImGui::End();
 }
 
@@ -378,10 +379,11 @@ void engine::object_menu() {
 				Scene.cam.moving = true;
 				Scene.world.duplicate_mat(mat);
 			}
-			Scene.cam.moving |= ImGui::ColorEdit4("Col", col._xyz, ImGuiColorEditFlags_Float);
-			Scene.cam.moving |= ImGui::ColorEdit3("Mer", mer._xyz, ImGuiColorEditFlags_Float);
-			Scene.cam.moving |= ImGui::DragFloat("Rep", &alb.get_rep(), 1, 0);
-			Scene.cam.moving |= ImGui::DragFloat("Ir", &alb.get_ir(), 0.01f, 1.f, 4.f);
+			Scene.cam.moving |= ImGui::ColorEdit4("Albedo", col._xyz, ImGuiColorEditFlags_Float);
+			Scene.cam.moving |= ImGui::ColorEdit3("MER", mer._xyz, ImGuiColorEditFlags_Float);
+			Scene.cam.moving |= ImGui::ColorEdit4("Tint", alb.spec._xyz, ImGuiColorEditFlags_Float);
+			Scene.cam.moving |= ImGui::DragFloat("Scale", &alb.rep, 1, 0);
+			Scene.cam.moving |= ImGui::DragFloat("IOR", &alb.ir, 0.01f, 1.f, 4.f);
 			if (!skip_set) {
 				Scene.world.materials[mat].type = (mat_enum)type;
 				alb.set_rgb(col);
