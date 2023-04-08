@@ -176,9 +176,9 @@ void scene::Render(uint* disp, uint pitch) {
 		for (int i = 0; i < cam.h; i++) {
 			for (int j = 0; j < cam.w; j++) {
 				uint off = i * pitch + j;
-				vec3 rgb = cam.get_med(i, j, opt.med_thr);
+				vec3 rgb = cam.get_med(i, j, opt.med_thr * !opt.framegen);
 				rgb[3] = cam.CCD.time / cam.exposure;
-				if (opt.selected < world.objects.size()) {
+				if (opt.selected < world.objects.size() && !opt.framegen) {
 					hitrec rec;
 					ray r = cam.pinhole_ray(vec3(j, i));
 					aabb aura = object_at(opt.selected).get_box();
@@ -198,9 +198,9 @@ void scene::Render(uint* disp, uint pitch) {
 		for (int i = 0; i < cam.h; i++) {
 			for (int j = 0; j < cam.w; j++) {
 				uint off = i * pitch + j;
-				vec3 rgb = cam.get_med(i, j, opt.med_thr);
+				vec3 rgb = cam.get_med(i, j, opt.med_thr * !opt.framegen);
 				rgb[3] = cam.CCD.time / cam.exposure;
-				if (opt.selected > -1) {
+				if (opt.selected < world.objects.size() &&!opt.framegen) {
 					hitrec rec;
 					ray r = cam.optical_ray(i, j);
 					aabb aura = object_at(opt.selected).get_box();
@@ -249,21 +249,26 @@ void scene::Reproject(const projection& proj, uint* disp, uint pitch) {
 			uint off = i * cam.w + j;
 			uint off2 = i * pitch + j;
 			float fact = cam.CCD.time / cam.exposure;
+			if(opt.framegen){
+			bgr(vec3(cam.CCD.buff[off], fact), cam.CCD.disp[off2]);
+			}
+			else
 			bgr(vec3(cam.CCD.buff[off], fact), cam.CCD.disp[off2]);
 		}
 	}
-	//#pragma omp parallel for collapse(2) schedule(dynamic, 100)
-	//	for (int i = 0; i < cam.h; i++) {
-	//		for (int j = 0; j < cam.w; j++) {
-	//			uint off = i * cam.w + j;
-	//			vec3 base = cam.CCD.data[off];
-	//			vec3 changed = cam.CCD.buff[off];
-	//			float fact = cam.CCD.time / cam.exposure;
-	//			if((base-changed).len2() < 0.001f) bgr(vec3(changed, fact), cam.CCD.disp[off]);
-	//			else bgr(vec3(base, fact), cam.CCD.disp[off]);
-	//			
-	//		}
-	//	}
+	/*#pragma omp parallel for collapse(2) schedule(dynamic, 100)
+		for (int i = 0; i < cam.h; i++) {
+			for (int j = 0; j < cam.w; j++) {
+				uint off = i * cam.w + j;
+				uint off2 = i * pitch + j;
+				vec3 base = cam.CCD.data[off];
+				vec3 changed = cam.CCD.buff[off];
+				float fact = cam.CCD.time / cam.exposure;
+				if((base-changed).len2() < 0.001f) bgr(vec3(changed, fact), cam.CCD.disp[off]);
+				else bgr(vec3(base, fact), cam.CCD.disp[off2]);
+				
+			}
+		}*/
 }
 
 void scene::Screenshot(bool reproject) const {

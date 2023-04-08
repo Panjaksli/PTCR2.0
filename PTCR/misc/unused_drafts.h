@@ -317,12 +317,15 @@ void scene::Reproject(const mat4& T, float tfov, uint* disp, uint pitch) {
 	for (int i = 0; i < cam.h; i++) {
 		for (int j = 0; j < cam.w; j++) {
 			uint off = i * cam.w + j;
-			vec3 base = cam.CCD.data[off];
-			vec3 changed = cam.CCD.buff[off];
+			uint off2 = i * pitch + j;
 			float fact = cam.CCD.time / cam.exposure;
-			if ((base - changed).len2() < 0.001f) bgr(vec3(changed, fact), cam.CCD.disp[off]);
+			vec3 col[9];
+			kernel(cam.CCD.buff.data(), col, i, j, cam.h, cam.w);
+			vec3 out = max(col[4], med9(col));
+			vec3 base = cam.CCD.data[off];
+			if ((base - out).len2() < 0.001f) bgr(vec3(out, fact), cam.CCD.disp[off]);
 			else bgr(vec3(base, fact), cam.CCD.disp[off]);
-
+			bgr(vec3(out, fact), cam.CCD.disp[off2]);
 		}
 	}
 }

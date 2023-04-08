@@ -24,6 +24,7 @@ struct scene_opt {
 	int bounces = 10;
 	int node_size = 2;
 	int samples = 2;
+	bool framegen = 0;
 	bool en_fog = 1;
 	bool en_bvh = 1;
 	bool sky = 1;
@@ -208,7 +209,7 @@ private:
 		if (opt.en_fog) {
 			for (int i = 0; i < opt.samples; i++)
 				col += volumetric_pt<true>(r, opt.bounces, rec, hit) * opt.inv_sa;
-			rec.t = col[3];
+			//rec.t = col[3];
 		}
 		else {
 			if (!hit) col = sky(r.D);

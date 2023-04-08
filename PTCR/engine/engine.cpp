@@ -101,7 +101,7 @@ void engine::draw_scene() {
 		proj = projection(Scene.cam.T, Scene.cam.CCD.w, Scene.cam.CCD.h, Scene.cam.tfov);
 		Scene.Render(disp, pitch / 4);
 	}
-	//reproject = !reproject;
+	if(Scene.opt.framegen)reproject = !reproject;
 	SDL_UnlockTexture(frame);
 	SDL_RenderCopy(renderer, frame, 0, &viewport);
 	ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
@@ -269,7 +269,11 @@ void engine::camera_menu() {
 		Scene.cam.moving |= ImGui::Checkbox("Direct", &Scene.opt.dbg_direct);
 	}
 	Scene.cam.moving |= ImGui::Checkbox("Normal maps", &use_normal_maps);
-	ImGui::Checkbox("Reproject", &reproject);
+	ImGui::Checkbox("Reproject", &reproject); ImGui::SameLine();
+	//WIP
+	if (ImGui::Checkbox("Framegen", &Scene.opt.framegen)){
+		reproject = 0;
+	}
 #endif
 	int maxfps = max_fps;
 	ImGui::DragInt("Max FPS", &maxfps, 1, 10, 240);
