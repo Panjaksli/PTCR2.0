@@ -34,17 +34,15 @@ public:
 		uchar any_hit = false;
 		for (uint i = 0; i < size; i++)
 			any_hit |= prim[i].move(P).hit(r, rec);
-		//rec.mat = any_hit ? mat : rec.mat;
 		return any_hit;
 	}
 	__forceinline bool hit(const ray& r, hitrec& rec, uint prim_id) const
 	{
 		bool any_hit = prim[prim_id].move(P).hit(r, rec);
-		//rec.mat = any_hit ? mat : rec.mat;
 		return any_hit;
 	}
 	__forceinline float pdf(const ray& r, uint prim_id)const {
-		return prim[prim_id].move(P).pdf(r);
+		return prim[prim_id].move(P).pdf(r) / size;
 	}
 	__forceinline float pdf(const ray& r)const {
 		if (size == 1)return prim[0].move(P).pdf(r);

@@ -5,13 +5,18 @@
 #include "albedo.h"
 #include "samplers.h"
 #include "shading.h"
+enum refl_type {
+	refl_none, refl_diff, refl_spec, refl_tran
+};
 
 struct matrec {
 	vec3 N;	//Normal from normal map
 	vec3 P; //Adjusted hitpoint
 	vec3 L; //Ray dir: diffuse, specular
 	vec3 aten, emis; //Color
-	uchar sd = 0; //emissive / specular / diff
+	float a = 0; // Rougness
+	float ir = 1.f;
+	uchar refl = refl_none;
 };
 
 constexpr int mat_cnt = 5;
@@ -49,25 +54,26 @@ namespace material {
 		float NoV = fabsf(V.z());
 		float NoL = L.z();
 		float NoH = H.z();
-		float HoV = absdot(H, V);
+		float HoV = dot(H, V);
 		vec3 F = fres_spec(HoV, F0);
 		vec3 Fs = fres_spec(HoV, tex.specular());
 		bool spec = rafl() < F.w();
 		if (spec) {
-			if (NoL <= 0) return;
-			mat.aten = mix(F.fact(),Fs,tex.spec.w()) * (use_vndf ? VNDF_GGX(NoL, NoV, a) : GGX(NoL, NoV, a) * HoV / (NoV * NoH));
+			if (NoL <= 0 || HoV <= 0) return;
+			mat.aten = mix(F.fact(), Fs, tex.spec.w()) * (use_vndf ? VNDF_GGX(NoL, NoV, a) : GGX(NoL, NoV, a) * HoV / (NoV * NoH));
 			mat.L = n.world(L);
-			mat.sd = rafl() < a ? 2 : 1;
+			mat.refl = refl_spec;
 		}
 		else {
 			mat.aten = rgb;
 			mat.L = n.world(sa_cos());
-			mat.sd = 2;
+			mat.refl = refl_diff;
 		}
+		mat.a = a;
 		mat.N = N;
 		mat.P = rec.P + rec.N * eps;
 		mat.emis = rgb * em;
-		mat.sd *= not0(mat.aten);
+		mat.refl *= not0(mat.aten);
 	}
 	__forceinline void mixed(const ray& r, const hitrec& rec, const albedo& tex, matrec& mat) {
 		//simple mix of lambertian and mirror reflection/transmission + emission
@@ -78,21 +84,20 @@ namespace material {
 		float em = mer.y();
 		float ro = mer.z();
 		float a = ro * ro;
-		float ir = tex.ir;
-		float n1 = rec.face ? 1.f : ir;
-		float n2 = rec.face ? ir : 1.f;
+		float n1 = rec.face ? mat.ir : mat.ir == 1.f ? tex.ir : mat.ir;
+		float n2 = rec.face ? tex.ir : tex.ir == n1 ? 1.f : tex.ir;
 		bool opaque = rafl() < rgb.w();
 		vec3 N = normal_map(rec.N, nor);
 		onb n(N);
 
-		//perfect diffuse / solid
+		//perfect diffuse && solid
 		if (mu < eps && ro > 1 - eps && opaque) {
 			mat.aten = rgb;
 			mat.L = n.world(sa_cos());
 			mat.N = N;
 			mat.P = rec.P + rec.N * eps;
 			mat.emis = rgb * em;
-			mat.sd = 2 * not0(mat.aten);
+			mat.refl = refl_diff * not0(mat.aten);
 			return;
 		}
 		else if (opaque)return ggx(r, rec, tex, mat);
@@ -101,21 +106,30 @@ namespace material {
 		float Fr = fresnel(HoV, n1, n2, mu);
 		bool refl = Fr > rafl();
 		if (refl) {
+			mat.L = reflect(r.D, H);
+			float NoV = absdot(-r.D,N);
+			float NoL = dot(N,mat.L);
+			float NoH = dot(N, H);
+			if (NoL <= 0)return;
 			vec3 F0 = mix(0.04f, vec3(rgb, 1), mu);
 			vec3 F = fres_spec(HoV, F0).fact();
 			vec3 Fs = fres_spec(HoV, tex.specular());
-			mat.aten = rec.face ? mix(F, Fs, tex.spec.w()) : rgb;
+			mat.aten = rec.face ? mix(F, Fs, tex.spec.w()) * GGX(NoL, NoV, a) * HoV / (NoV * NoH) : rgb;
 			mat.P = rec.P + rec.N * eps;
-			mat.L = reflect(r.D, H);
+			mat.refl = rec.face ? refl_spec : refl_tran;
 		}
 		else {
 			mat.aten = rgb;
 			mat.P = rec.P - rec.N * eps;
 			mat.L = refract(r.D, H, n1 / n2);
+			mat.refl = refl_tran;
+			mat.ir = n2;
 		}
+		//if (!rec.face)mat.aten *= saturate(expf(-20.f * rec.t * (1.f - rgb)));
+		mat.a = a;
 		mat.N = N;
 		mat.emis = em * rgb;
-		mat.sd = not0(mat.aten);
+		mat.refl *= not0(mat.aten);
 	}
 	__forceinline void vndf(const ray& r, const hitrec& rec, const albedo& tex, matrec& mat) {
 		return ggx<1>(r, rec, tex, mat);

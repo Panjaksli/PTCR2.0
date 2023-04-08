@@ -9,13 +9,13 @@ enum obj_enum {
 	o_pol, o_qua, o_sph, o_vox, o_bla
 };
 
-inline const char* obj_enum_str(int val) {
+inline const char* obj_enum_str(int val, bool mesh = 0) {
 	switch (val) {
 	case o_pol: return "Polygon";
 	case o_qua: return "Quad";
 	case o_sph: return "Sphere";
 	case o_vox: return "Voxel";
-	default: return "Blank";
+	default: return mesh ? "Mesh" : "Blank";
 	};
 }
 
@@ -66,7 +66,7 @@ struct hitrec
 	vec3 N, P;
 	float t = infp;
 	float u, v;
-	uint idx;
+	uint idx = -1;
 	bool face;
 };
 

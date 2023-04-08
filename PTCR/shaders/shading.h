@@ -15,9 +15,8 @@ inline float DGGX(float NoH, float a)
 inline float MGGX(float NoV, float a)
 {
 	float a2 = a * a;
-	float d3 = sqrtf(a2 + (1.f + a2) * NoV * NoV) + NoV;
-	return 2.f * NoV / d3;
-
+	float d3 = sqrtf(a2 + (1.0f - a2) * NoV * NoV) + NoV;
+	return 2.0f * NoV / d3;
 }
 inline float GGX(float NoL, float NoV, float a)
 {
@@ -26,13 +25,10 @@ inline float GGX(float NoL, float NoV, float a)
 	float d2 = NoL * sqrtf(a2 + (1.0f - a2) * NoV * NoV);
 	return 2.0f * NoL * NoV / (d1 + d2);
 }
+
 inline float VNDF_GGX(float NoL, float NoV, float a)
 {
-	float a2 = a * a;
-	float d1 = NoV * sqrtf(a2 + (1.0f - a2) * NoL * NoL);
-	float d2 = NoL * sqrtf(a2 + (1.0f - a2) * NoV * NoV);
-	float d3 = sqrtf(a2 + (1.f + a2) * NoV * NoV) + NoV;
-	return NoL * d3 / (d1 + d2);
+	return GGX(NoL, NoV, a) / MGGX(NoV, a);
 }
 inline float fres_spec(float NoV, float F0)
 {
@@ -68,15 +64,15 @@ inline float fres_conductor(float NoV, float ir, float k) {
 
 inline float fresnel(float NoV, float n1, float n2) {
 	float n = (n1 / n2);
-	if(n1 > n2){
-	float sinx2 = n * n * (1.0f - NoV * NoV);
-	if (sinx2 > 1.0f) return 1.0f;
-	NoV = sqrtf(1.0f - sinx2);
+	if (n1 > n2) {
+		float sinx2 = n * n * (1.0f - NoV * NoV);
+		if (sinx2 > 1.0f) return 1.0f;
+		NoV = sqrtf(1.0f - sinx2);
 	}
 	return fres_refl(NoV, n);
 }
 
-inline float fresnel(float NoV, float n1, float n2, float mu) {
+inline float fresnel(float& NoV, float n1, float n2, float mu) {
 	float n = (n1 / n2);
 	if (n1 > n2) {
 		float sinx2 = n * n * (1.0f - NoV * NoV);

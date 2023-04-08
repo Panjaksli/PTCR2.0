@@ -4,8 +4,8 @@
 class albedo {
 public:
 	albedo(const texture& _rgb = texture(vec3(0.5, 0, 0.5, 1)), const texture& _mer = texture(vec3(0, 0, 1)),
-		const texture& _nor = texture(vec3(0.5, 0.5, 1)), float _rep = 1.f, float _ir = 1.f) :
-		_rgb(_rgb), _mer(_mer), _nor(_nor), rep(_rep), ir(_ir) {}
+		const texture& _nor = texture(vec3(0.5, 0.5, 1)), float _rep = 1.f, float _ir = 1.f, vec3 _spec = 0) :
+		_rgb(_rgb), _mer(_mer), _nor(_nor), spec(_spec), rep(_rep), ir(_ir) {}
 	__forceinline vec3 rgb(float u = 0, float v = 0)const {
 		vec3 rgb = _rgb.sample(rep * u, rep * v);
 #if GAMMA2
@@ -16,12 +16,12 @@ public:
 	}
 	__forceinline vec3 specular(float u = 0, float v = 0)const {
 #if GAMMA2
-		return spec * vec3(spec,1);
+		return spec * vec3(spec, 1);
 #else 
 		return spec;
 #endif
 	}
-	__forceinline vec3 liniear(float u = 0, float v = 0)const {
+	__forceinline vec3 linear(float u = 0, float v = 0)const {
 		return _rgb.sample(rep * u, rep * v);
 	}
 	__forceinline vec3 mer(float u = 0, float v = 0)const {

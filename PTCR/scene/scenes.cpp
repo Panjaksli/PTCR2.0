@@ -217,6 +217,10 @@ void scn5(scene& scn) {
 	albedo green(vec3(0.12, 0.45, 0.12, 1), vec3(0, 0, 1));
 	albedo red(vec3(0.45, 0.12, 0.12, 1), vec3(0, 0, 1));
 	albedo blue(vec3(0.12, 0.12, 0.45, 1), vec3(0, 0, 1));
+	/*albedo white(vec3(0.73, 0.73, 0.73, 1), vec3(1, 0, 1));
+	albedo green(vec3(0.12, 0.45, 0.12, 1), vec3(1, 0, 1));
+	albedo red(vec3(0.45, 0.12, 0.12, 1), vec3(1, 0, 1));
+	albedo blue(vec3(0.12, 0.12, 0.45, 1), vec3(1, 0, 1));*/
 	albedo light(vec3(1), vec3(0, 100, 0));
 	albedo clear(vec3(0.73, 0.73, 0.73, 0), vec3(0, 0, 0.1), vec3(0.5, 0.5, 1), 1, 1.5);
 	albedo mirror(vec3(0.73, 0.73, 0.73, 1.f), vec3(1, 0, 0.1));
@@ -234,12 +238,14 @@ void scn5(scene& scn) {
 	scn.world.add_mesh(quad(vec3(0, 0, 0), vec3(0, 0, -l), vec3(0, l, 0)), 0, 1, 1);
 	scn.world.add_mesh(quad(vec3(l, 0, 0), vec3(l, 0, -l), vec3(l, l, 0)), 0, 1, 2);
 	scn.world.add_mesh(quad(vec3(0.213, l - eps, -0.227), vec3(0.343, l - eps, -0.227), vec3(0.213, l - eps, -0.332)), 0, 1, 6, 0, 1);
-	scn.world.add_mesh(sphere(vec3(l / 4, 0.1, -l / 4, 0.1)), 0, 1, 0);
+    scn.world.add_mesh(sphere(vec3(l / 4, 0.1, -l / 4, 0.1)), 0, 1, 0);
 	scn.world.add_mesh(sphere(vec3(l - l / 4, 0.1, -l / 4, 0.1)), 0, 1, 4);
 	scn.world.add_mesh(sphere(vec3(l / 2, 0.1, -l + l / 4, 0.1)), 0, 1, 5);
 	scn.opt.ninv_fog = -2;
 	scn.opt.sky = false;
+	scn.opt.en_fog = 0;
 	scn.cam.exposure = 1.f;
+	scn.opt.samples = 10;
 	scn.opt.bounces = 10;
 	scn.opt.p_life = 0.9f;
 	scn.opt.i_life = 1.f / 0.9f;

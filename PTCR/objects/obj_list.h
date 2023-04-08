@@ -13,9 +13,7 @@ public:
 	vector<mat_var> materials;
 	vector<uint> lights;
 	vector<uint> nonbvh;
-	float lw_bvh = 0;
 	float lw_tot = 0;
-	float lw_non = 0;
 	bool en_bvh = 1;
 	bool bvh_lin = 1;
 	bool march = 0;
@@ -25,40 +23,27 @@ public:
 	__forceinline bool hit(const ray& sr, hitrec& rec) const {
 		ray r = sr;
 		float dt = 0;
-		if (secondary ? !bbox.hit(r) : !bbox.shift(r, dt)) return false;
-		uchar any_hit = false;
+		if (secondary ? bbox.hit(r) : bbox.shift(r, dt)){
 		if (en_bvh) {
-			for (const auto& obj : nonbvh) {
-				if (objects[obj].hit(r, rec)) {
-					any_hit = true;
-					rec.idx = obj;
-				}
-			}
-			if (bvh[0].bbox.hit(r)) any_hit |= traverse_bvh(r, rec, 0);
+			for (const auto& obj : nonbvh)
+				rec.idx = objects[obj].hit(r, rec) ? obj : rec.idx;
+			if (bvh[0].bbox.hit(r)) traverse_bvh(r, rec, 0);
 		}
 		else {
-			for (uint i = 0; i < objects.size(); i++) {
-				if (objects[i].hit(r, rec)) {
-					any_hit = true;
-					rec.idx = i;
-				}
+			for (uint obj = 0; obj < objects.size(); obj++) {
+				rec.idx = objects[obj].hit(r, rec) ? obj : rec.idx;
 			}
 		}
-
-		if (any_hit) {
-			if (!secondary) rec.t += dt;
-			//rec.mat = objects[rec.idx].get_mat();
-			//rec.fog = objects[rec.idx].fog();
-
 		}
-		return any_hit;
+		if (!secondary) rec.t += dt;
+		return rec.idx != -1;
 	}
 	__forceinline float pdf(const ray& r)const {
 		float y = 0.f;
 		if (en_bvh) {
 			for (const auto& light : lights)
 				if (!objects[light].bvh())y += objects[light].pdf(r);
-			return (lw_non > 0 ? y * lw_non : 0) + (lw_bvh > 0 ? bvh_pdf(r) * lw_bvh : 0);
+			return (y + bvh_pdf(r)) * lw_tot;
 		}
 		else {
 			for (const auto& light : lights) {
@@ -78,7 +63,7 @@ public:
 		const uint light = lights[id];
 		return rand_idx(O, light);
 	}
-	__forceinline vec3 rand_to(vec3 O, uint &idx) const {
+	__forceinline vec3 rand_to(vec3 O, uint& idx) const {
 		uint id = raint(lights.size() - 1);
 		idx = lights[id];
 		return rand_idx(O, idx);
@@ -102,10 +87,10 @@ public:
 	void rebuild_bvh(bool print = 0, uint node_size = 2);
 	void update_bvh(bool print = 0, uint node_size = 2);
 	void bvh_builder(bool print, uint node_size);
-	int get_id(const ray& r, hitrec& rec) const;
-	void get_trans(const int id, mat4& T) const;
-	obj_flags get_flag(int id) const;
-	void set_trans(const int id, const mat4& T, uint node_size = 2);
+	uint get_id(const ray& r, hitrec& rec) const;
+	void get_trans(uint id, mat4& T) const;
+	obj_flags get_flag(uint id) const;
+	void set_trans(uint id, const mat4& T, uint node_size = 2);
 
 	void add_mat(const albedo& tex, const mat_enum type) {
 		add_mat(mat_var(tex, type));
@@ -127,7 +112,7 @@ public:
 		if (id < materials.size()) {
 			materials.erase(materials.begin() + id);
 			for (auto& obj : objects) {
-				if (obj.get_mat() >= id)obj.set_mat(obj.get_mat() - 1);
+				if (obj.get_mat() >= id && obj.get_mat() != -1)obj.set_mat(obj.get_mat() - 1);
 			}
 		}
 	}

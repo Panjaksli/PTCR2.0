@@ -5,10 +5,12 @@
 class sensor {
 public:
 	sensor() {}
-	sensor(uint _w, uint _h) : data(_w* _h), w(_w), h(_h), n(_w* _h) {}
+	sensor(uint _w, uint _h) : data(_w* _h), buff(_w* _h), w(_w), h(_h), n(_w* _h) {}
 	vector<vec3> data;
+	vector<vec3> buff;
 	uint* disp = nullptr;
 	uint w = 0, h = 0, n = 0, pitch = 0;
+	float time = 0.f;
 	float spp = 0.f;
 	inline void clear(uint i) {
 		data[i] = vec3();
@@ -17,7 +19,6 @@ public:
 		uint off = i * w + j;
 		data[off] = vec3();
 	}
-
 	__forceinline void add(uint i, uint j, const vec3& rgb) {
 		uint off = i * w + j;
 		data[off] += fixnan(rgb);
@@ -44,7 +45,7 @@ public:
 	}
 	__forceinline void out_med(uint i, uint j, float thr) {
 		uint off = i * pitch + j;
-		bgr(median2d3(data.data(),i,j,h,w, thr), disp[off]);
+		bgr(median2d3(data.data(), i, j, h, w, thr), disp[off]);
 	}
 
 	inline void set_disp(uint* _disp, uint _pitch) {
@@ -53,6 +54,10 @@ public:
 	}
 	inline void dt(float _t = 1.f) {
 		spp += _t;
+		time += 1.f;
+	}
+	inline void reset() {
+		spp = time = 0;
 	}
 	void clear();
 	void resize(uint _w, uint _h);

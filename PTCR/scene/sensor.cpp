@@ -11,6 +11,7 @@ void sensor::resize(uint _w, uint _h) {
 	h = _h;
 	n = w * h;
 	data.resize(n);
+	buff.resize(n);
 }
 
 void sensor::outrgb() {

@@ -15,7 +15,7 @@ void camera::move(vec3 dir) {
 }
 void camera::set_P(vec3 pos)
 {
-	this->P = pos;
+	P = pos;
 	T.set_P(pos);
 	moving = 1;
 }

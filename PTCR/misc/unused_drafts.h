@@ -284,3 +284,45 @@ for (int m = 1; m <= 4; m = m << 1) {
 	y += med9(x);
 }
 return y;
+
+
+//REPROJECTION
+////////////////////////////////////
+void scene::Reproject(const mat4& T, float tfov, uint* disp, uint pitch) {
+	cam.CCD.set_disp(disp, pitch);
+	for (int i = 0; i < cam.CCD.n; i++)cam.CCD.buff[i] = vec3(0, 0, 0, infp);
+#pragma omp parallel for collapse(2) schedule(dynamic, 100)
+	for (int i = 0; i < cam.h; i++) {
+		for (int j = 0; j < cam.w; j++) {
+			uint off = i * cam.w + j;
+			vec3 xy = cam.SS(vec3(j, i));
+			float dist = cam.CCD.data[off].w() / cam.CCD.time;
+			vec3 pt = T.P() + norm(T.vec(xy)) * dist;
+			vec3 spt = cam.T.inverse().pnt(pt);
+			vec3 dir = spt / dist;
+			vec3 uv = dir / fabsf(dir.z());
+			if (fabsf(uv[2] + 1.f) > 0.01f)continue;
+			uv *= tfov / cam.tfov;
+			uv = cam.inv_SS(uv);
+			//uv += rapvec();
+			uint x = uv[0];
+			uint y = uv[1];
+			if (y < cam.h && x < cam.w) {
+				if (dist <= cam.CCD.buff[y * cam.w + x].w()) cam.CCD.buff[y * cam.w + x] = vec3(cam.CCD.data[off], dist);
+			}
+
+		}
+	}
+#pragma omp parallel for collapse(2) schedule(dynamic, 100)
+	for (int i = 0; i < cam.h; i++) {
+		for (int j = 0; j < cam.w; j++) {
+			uint off = i * cam.w + j;
+			vec3 base = cam.CCD.data[off];
+			vec3 changed = cam.CCD.buff[off];
+			float fact = cam.CCD.time / cam.exposure;
+			if ((base - changed).len2() < 0.001f) bgr(vec3(changed, fact), cam.CCD.disp[off]);
+			else bgr(vec3(base, fact), cam.CCD.disp[off]);
+
+		}
+	}
+}

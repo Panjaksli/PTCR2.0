@@ -3,7 +3,15 @@
 #include "mat4.h"
 #include "ray.h"
 #include "obj.h"
-#include "physics.h"
+
+struct projection {
+	projection() {}
+	projection(mat4 T, float w, float h, float tfov) :T(T), w(w), h(h),asp(w/h), tfov(tfov) {}
+	mat4 T;
+	float w, h;
+	float asp;
+	float tfov;
+};
 
 class camera
 {
@@ -11,10 +19,10 @@ public:
 	camera() {}
 	camera(uint _w, uint _h, float fov, mat4 _T = mat4()) :T(_T), CCD(_w, _h), P(T.P()), fov(fov), tfov(tan(0.5f * torad(fov))), iw(1.0 / _w), ih(1.0 / _h), asp((float)_w / _h), speed(1) {}
 	mat4 T = mat4();
-	sensor CCD = sensor(1280, 720);
+	sensor CCD;// = sensor(1280, 720);
 	vec3 P = 0;
 	vec3 V = 0;
-	uint& w = CCD.w, & h = CCD.h;
+	uint& w = CCD.w, &h = CCD.h;
 	float fov = 90, tfov = tan(0.5f * torad(fov));
 	float hfov = 0;
 	float iw = 1.f / w, ih = 1.f / h, asp = float(w) / h;
@@ -35,7 +43,7 @@ public:
 	__forceinline ray optical_ray(vec3 xy) const
 	{
 		if (!bokeh)return pinhole_ray(xy);
-		xy = SS(xy);// +vec3(0, 0, lens_cor * (xy[0] / asp * xy[0] / asp + xy[1] * xy[1]));
+		xy = SS(xy) +vec3(0, 0, lens_cor * (xy[0] / asp * xy[0] / asp + xy[1] * xy[1]));
 		vec3 D = foc_t * xy;
 		vec3 r = T.vec(foc_l * sa_disk() / fstop);
 		return ray(P - r, T.vec(D + r), true);
@@ -55,9 +63,8 @@ public:
 
 	__forceinline void add(uint y, uint x, vec3 rgb)
 	{
-		CCD.add(y, x, vec3(rgb, 1.f / exposure));
+		CCD.add(y, x, rgb);
 	}
-
 	__forceinline void add_raw(uint y, uint x, vec3 rgb)
 	{
 		CCD.add(y, x, vec3(rgb, 1));
@@ -91,13 +98,28 @@ public:
 	void reset_opt();
 	void setup(mat4 _T, float _fov, float _fstop = 16);
 	void set_fov(float _fov);
-
-private:
 	inline vec3 SS(vec3 xy) const {
 		xy = 2.f * (xy + 0.5f) * vec3(iw, ih) - 1.f;
 		xy *= tfov * vec3(asp, -1);
 		return vec3(xy[0], xy[1], -1);
 	}
+	inline vec3 inv_SS(vec3 xy) const {
+		xy /= tfov * vec3(asp, -1);
+		xy = (xy + 1.f) * 0.5f * vec3(w, h);
+		return xy;
+	}
+	inline vec3 SS(vec3 xy, const projection& proj) const {
+		xy = 2.f * (xy + 0.5f) / vec3(proj.w, proj.h) - 1.f;
+		xy *= proj.tfov * vec3(proj.asp, -1);
+		return vec3(xy[0], xy[1], -1);
+	}
+	inline vec3 inv_SS(vec3 xy, const projection& proj) const {
+		xy /= proj.tfov * vec3(proj.asp, -1);
+		xy = (xy + 1.f) * 0.5f * vec3(proj.w, proj.h);
+		return xy;
+	}
+private:
+	
 	inline float m_to_fov(float m) {
 		return 2.f * atanf(diagonal / (2.f * m));
 	}

@@ -42,7 +42,7 @@ Simplified by ME
 inline vec3 sa_ggx(float a) {
 	float r[2]; rafl_tuple(r);
 	const float phi = pi2 * r[0];
-	float z2 = (1.0f - r[1]) / ((a * a - 1.0f) * r[1] + 1.0f);
+	float z2 = (1.0f - r[1]) / (r[1] * (a * a - 1.0f) + 1.0f);
 	vec3 d = sqrtf(1.f - z2) * cossin(phi);
 	return d + vec3(0, 0, sqrtf(z2));
 }
@@ -54,7 +54,7 @@ inline vec3 sa_vndf(vec3 V_, float ro)
 	float r[2]; rafl_tuple(r);
 	vec3 scl = vec3(ro, ro, 1.f, 1.f);
 	vec3 V = norm(scl * V_);
-	vec3 T1 = (V.z() < 0.9999f) ? norm(cross(V, vec3(0, 0, 1))) : vec3(1, 0, 0);
+	vec3 T1 = V.z() < 0.999f ? norm(cross(V, vec3(0, 0, 1))) : vec3(1, 0, 0);
 	vec3 T2 = cross(T1, V);
 	float a = 1.f / (1.f + V.z());
 	float b = r[1] - a;
@@ -65,7 +65,6 @@ inline vec3 sa_vndf(vec3 V_, float ro)
 	float P2 = neg ? ang.y() : ang.y() * V.z();
 	float P3 = sqrtf(fabsf(1.f - P1 * P1 - P2 * P2));
 	vec3 N = P1 * T1 + P2 * T2 + P3 * V;
-	N.xyz[2] = fmaxf(N.z(), 0);
 	N = norm(scl * N);
 	return N;
 }

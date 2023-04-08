@@ -9,20 +9,20 @@ void obj_list::clear()
 	nonbvh.clear();
 	bbox = aabb();
 }
-obj_flags obj_list::get_flag(int id) const
+obj_flags obj_list::get_flag(uint id) const
 {
 	return objects[id].flag;
 }
-int obj_list::get_id(const ray& r, hitrec& rec) const
+uint obj_list::get_id(const ray& r, hitrec& rec) const
 {
-	if (hit(r, rec))return rec.idx;
-	else return -1;
+	hit(r, rec);
+	return rec.idx;
 }
-void obj_list::get_trans(const int id, mat4& T)const
+void obj_list::get_trans(uint id, mat4& T)const
 {
 	T = objects[id].get_trans();
 }
-void obj_list::set_trans(int id, const mat4& T, uint node_size) {
+void obj_list::set_trans(uint id, const mat4& T, uint node_size) {
 	objects[id].set_trans(T);
 	if (objects[id].bvh())
 		update_bvh(0, node_size);
@@ -54,21 +54,15 @@ void obj_list::obj_create() {
 }
 void obj_list::update_lights() {
 	lights.clear();
-	float none = 0;
-	float total = 0;
-	float bvh = 0;
+	lw_tot = 0;
 	for (uint i = 0; i < objects.size(); i++)
 	{
 		if (objects[i].light()) {
-			if (objects[i].bvh()) bvh += objects[i].get_size();
-			else none += 1.f;
-			total += 1;
+			lw_tot++;
 			lights.emplace_back(i);
 		}
 	}
-	lw_tot = total > 0 ? 1.f / total : 0;
-	lw_non = none > 0 ? 1.f / none : 0;
-	lw_bvh = bvh > 0 ? 1.f / bvh : 0;
+	lw_tot = lw_tot > 0 ? 1.f / lw_tot : 0;
 }
 void obj_list::update_nonbvh() {
 	nonbvh.clear();

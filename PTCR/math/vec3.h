@@ -126,9 +126,10 @@ inline void pack_rgb(vec3 col, uint& bgr)
 {
 	bgr = pack_rgb(col.x(), col.y(), col.z(), col.w()); //store to bgr pixel
 }
-
+template <bool normalize = 1>
 inline void bgr(vec3 col, uint& bgr, uchar a = 255)
 {
+	if(normalize){
 	col /= col.w(); //divide by sample count
 #if GAMMA2
 	col = sqrt(col); //gamma correction to sRGB
@@ -136,11 +137,13 @@ inline void bgr(vec3 col, uint& bgr, uchar a = 255)
 	col = saturate(col);//clamp 0 - 1
 	col *= 255.f; //multiply by 8bit max value
 	col += 0.5f * ravec();//dithering using noise
+	}
 	bgr = pack_bgr(col.x(), col.y(), col.z(), a); //store to bgr pixel
 }
-
+template <bool normalize = 1>
 inline void rgb(vec3 col, uint& rgb, uchar a = 255)
 {
+	if (normalize){
 	col /= col.w();
 #if GAMMA2
 	col = sqrt(col);
@@ -148,8 +151,10 @@ inline void rgb(vec3 col, uint& rgb, uchar a = 255)
 	col = saturate(col);
 	col *= 255.f;
 	col += 0.5f * ravec();
+	}
 	rgb = pack_rgb(col.x(), col.y(), col.z(), a);
 }
+
 inline vec3 srgb(vec3 col)
 {
 	col /= col.w(); //divide by sample count
@@ -161,9 +166,6 @@ inline vec3 srgb(vec3 col)
 	col += 0.5f * ravec();//dithering using noise
 	return col;
 }
-
-
-
 
 inline vec3 unrgb(const uint& rgb) {
 	vec3 v;

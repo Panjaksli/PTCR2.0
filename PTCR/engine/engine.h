@@ -31,6 +31,7 @@ private:
 	SDL_Rect menu;
 	SDL_Event event;
 	event_handler handle;
+	projection proj;
 	mat4 T;
 	vec3 TP = 0, TA = 0, TD = 0;
 	double max_fps = 90;
@@ -42,6 +43,7 @@ private:
 	float fogdens = 0;
 	float move_mul = 1.f;
 	int scn_n = 0;
+	bool reproject = false;
 	bool den_view = true;
 	bool overlay = true;
 	bool tap_to_focus = false;

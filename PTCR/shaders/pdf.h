@@ -6,11 +6,10 @@ class ggx_pdf {
 public:
 	ggx_pdf() {}
 	ggx_pdf(vec3 _N, vec3 _V, vec3 _L, float _a) : N(_N), V(_V), L(_L), a(_a) {}
-
 	inline float value(vec3 _L) const {
 		vec3 H = norm(V + _L);
 		float NoH = dot(N, H);
-		return DGGX(NoH, a) * NoH / (4.f * absdot(V, H));
+		return  DGGX(NoH, a) * NoH / (4.f * absdot(H, V));
 	}
 	inline vec3 generate() const {
 		return L;
@@ -18,7 +17,6 @@ public:
 	vec3 N, V, L;
 	float a;
 };
-
 class cos_pdf {
 public:
 	cos_pdf() {}
@@ -75,7 +73,7 @@ public:
 	inline vec3 generate() const {
 		//simplify sun projection as simple cone sampling
 		vec3 r = sa_disk();
-		vec3 V = T * norm(vec3(r[0], sun_angle, r[1]));
+		vec3 V = T.vec(norm(vec3(r[0], sun_angle, r[1])));
 		return V;
 	}
 	const mat4& T;
@@ -110,10 +108,10 @@ class bias_pdf {
 public:
 	bias_pdf(const P1& _p1, const P2& _p2, float b) :p1(_p1), p2(_p2), b(b) {}
 	inline float value(vec3 V) const {
-		return  lerpf(p1.value(V), p2.value(V), b);
+		return lerpf(p1.value(V), p2.value(V), b);
 	}
 	inline vec3 generate() const {
-		if (rafl() < b)
+		if (rafl() > b)
 			return p1.generate();
 		else
 			return p2.generate();
