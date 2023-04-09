@@ -1,3 +1,4 @@
+#include <future>
 #include "engine.h"
 
 #if DEBUG
@@ -63,14 +64,16 @@ void engine::process_input() {
 					Scene.cam_manufocus(scale * y, scale * x);
 			}
 			if (handle.motion && handle.lmb)
-				Scene.cam.rotate(0, -torad(0.9 * handle.xvec), -torad(0.9 * handle.yvec));
+				Scene.cam.rotate(sensitivity * torad(vec3(0, -handle.xvec, -handle.yvec)));
 		}
 	}
 	if (ImGui::GetIO().WantCaptureKeyboard) handle.reset_keys();
 	if (handle[SDL_SCANCODE_LSHIFT])move_mul = 2.0;
 	else move_mul = 1.0;
-	vec3 movement = 10 * move_mul * vec3(handle[SDL_SCANCODE_W] - handle[SDL_SCANCODE_S], handle[SDL_SCANCODE_SPACE] - handle[SDL_SCANCODE_LCTRL], handle[SDL_SCANCODE_D] - handle[SDL_SCANCODE_A]);
-	Scene.cam_move(movement, dt);
+	vec3 move = 10 * move_mul * vec3(handle[SDL_SCANCODE_W] - handle[SDL_SCANCODE_S], handle[SDL_SCANCODE_SPACE] - handle[SDL_SCANCODE_LCTRL], handle[SDL_SCANCODE_D] - handle[SDL_SCANCODE_A]);
+	vec3 pan = vec3(0, handle[SDL_SCANCODE_LEFT] - handle[SDL_SCANCODE_RIGHT], handle[SDL_SCANCODE_UP] - handle[SDL_SCANCODE_DOWN]);
+	Scene.cam_move(move, dt);
+	Scene.cam.rotate(sensitivity * pan * dt);
 	if (handle[SDL_SCANCODE_F1])overlay = !overlay, handle[SDL_SCANCODE_F1] = 0;
 	Scene.get_trans(T);
 	TP = T.P(); TA = T.A(); TD = todeg(TA);
@@ -89,23 +92,40 @@ void engine::process_overlay() {
 		ImGui::Render();
 	}
 }
+
 void engine::draw_scene() {
 	uint* disp = nullptr;
 	int pitch = viewport.w * 4;
 	SDL_LockTexture(frame, 0, (void**)&disp, &pitch);
 	if (reproject) {
-		Scene.Reproject(proj, disp, pitch / 4);
+		if (Scene.opt.framegen)reproject = !reproject;
+		auto fut = std::async(std::launch::deferred, [this,pitch,disp]() {
+			double nor_t = normal_t;
+			double gen_t = timer();
+			Scene.Reproject(proj, disp, pitch / 4);
+			double delay = fmax(0,nor_t * 0.5 - timer(gen_t));
+			SDL_Delay(1000 * delay);
+			SDL_UnlockTexture(frame);
+			SDL_RenderCopy(renderer, frame, 0, &viewport);
+			ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
+			SDL_RenderPresent(renderer);
+		}
+		);
+		fut.get();
 	}
 	else
 	{
+		normal_t = timer();
 		proj = projection(Scene.cam.T, Scene.cam.CCD.w, Scene.cam.CCD.h, Scene.cam.tfov);
 		Scene.Render(disp, pitch / 4);
+		SDL_UnlockTexture(frame);
+		SDL_RenderCopy(renderer, frame, 0, &viewport);
+		ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
+		SDL_RenderPresent(renderer);
+		normal_t = timer(normal_t);
+		if (Scene.opt.framegen)reproject = !reproject;
 	}
-	if(Scene.opt.framegen)reproject = !reproject;
-	SDL_UnlockTexture(frame);
-	SDL_RenderCopy(renderer, frame, 0, &viewport);
-	ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
-	SDL_RenderPresent(renderer);
+
 }
 
 void engine::add_object() {
@@ -188,9 +208,6 @@ void engine::camera_menu() {
 	ImGui::SetNextWindowPos(ImVec2(menu.x, 0));
 	ImGui::SetNextWindowSize(ImVec2(menu.w, menu.h / 2));
 	ImGui::Begin("Camera settings");
-	if (ImGui::Button("Screenshot")) {
-		Scene.Screenshot(reproject);
-	}
 	static char scn_name[40];
 	ImGui::InputText("SCN File", scn_name, 40);
 	if (ImGui::Button("Load Scene")) {
@@ -206,6 +223,10 @@ void engine::camera_menu() {
 			reproject = false;
 		}
 	}
+	ImGui::SameLine();
+	if (ImGui::Button("Screenshot")) {
+		Scene.Screenshot(reproject);
+	}
 	if (ImGui::SliderInt("Scene", &scn_n, 1, no_scn)) {
 		scn_load(Scene, scn_n);
 		reproject = false;
@@ -214,6 +235,7 @@ void engine::camera_menu() {
 	vec3 pos = Scene.cam.T.P();
 	if (ImGui::DragFloat3("Position", pos._xyz, 0.001))
 		Scene.cam.set_P(pos);
+	ImGui::DragFloat("Sensitivity", &sensitivity, 0.01, 0.1, 2.f, "%.2f");
 	ImGui::DragFloat("Speed", &Scene.cam.speed, 0.001, 0.001, 1e3f, "%.2f");
 	if (ImGui::DragFloat("FOV", &Scene.cam.fov, 0.1, 0.0001, 179, "%.2f"))
 	{
@@ -236,7 +258,7 @@ void engine::camera_menu() {
 		Scene.cam.autofocus = 0;
 	}
 	Scene.cam.moving |= ImGui::DragFloat("Exposure", &Scene.cam.exposure, 0.1, 0.01, 100.f, "%.2f", ImGuiSliderFlags_Logarithmic);
-	Scene.cam.moving |= ImGui::DragFloat("Lens correction", &Scene.cam.lens_cor, 0.001, -1.f, 1.f, "%.3f");
+	//Scene.cam.moving |= ImGui::DragFloat("Lens correction", &Scene.cam.lens_cor, 0.001, -1.f, 1.f, "%.3f");
 	Scene.cam.moving |= ImGui::DragFloat("F-stop", &Scene.cam.fstop, 0.1, 0.1f, 64.f, "%.2f", ImGuiSliderFlags_Logarithmic);
 	if (ImGui::DragFloat("Res scale", &scale, 0.01, 0.1f, 4, " %.2f", CLAMP)) resize(), Scene.cam.moving = true;
 	if (ImGui::DragFloat("Ray lifetime", &Scene.opt.p_life, 0.01, 0.01, 1.f, "%.2f", CLAMP))
@@ -271,7 +293,7 @@ void engine::camera_menu() {
 	Scene.cam.moving |= ImGui::Checkbox("Normal maps", &use_normal_maps);
 	ImGui::Checkbox("Reproject", &reproject); ImGui::SameLine();
 	//WIP
-	if (ImGui::Checkbox("Framegen", &Scene.opt.framegen)){
+	if (ImGui::Checkbox("Framegen", &Scene.opt.framegen)) {
 		reproject = 0;
 	}
 #endif
@@ -289,10 +311,6 @@ void engine::object_menu() {
 	ImGui::SetNextWindowSize(ImVec2(menu.w, menu.h / 2));
 	ImGui::Begin("World properties");
 	static char filename[40];
-	if (ImGui::InputText("Load skybox", filename, 40, ImGuiInputTextFlags_EnterReturnsTrue)) {
-		Scene.set_skybox(albedo(filename, Scene.skybox.mer()));
-		Scene.cam.moving = true;
-	}
 	Scene.cam.moving |= ImGui::Checkbox("Sky", &Scene.opt.sky); ImGui::SameLine();
 	Scene.cam.moving |= ImGui::Checkbox("Skybox", &Scene.opt.skybox); ImGui::SameLine();
 	Scene.cam.moving |= ImGui::Checkbox("Fog", &Scene.opt.en_fog);
@@ -302,11 +320,20 @@ void engine::object_menu() {
 		}
 		Scene.cam.moving |= ImGui::ColorEdit3("Fog color", Scene.opt.fog_col._xyz, ImGuiColorEditFlags_Float);
 	}
-	if (Scene.opt.sky && !Scene.opt.skybox) {
+	if (Scene.opt.sky) {
+		if (Scene.opt.skybox) {
+			if (ImGui::InputText("Load skybox", filename, 40, ImGuiInputTextFlags_EnterReturnsTrue)) {
+				Scene.set_skybox(albedo(filename, Scene.skybox.mer()));
+				Scene.cam.moving = true;
+			}
+		}
+		else
+		{
 		Scene.cam.moving |= ImGui::ColorEdit3("Sun noon", Scene.opt.sun_noon._xyz, ImGuiColorEditFlags_Float);
 		Scene.cam.moving |= ImGui::ColorEdit3("Sun dawn", Scene.opt.sun_dawn._xyz, ImGuiColorEditFlags_Float);
 		Scene.cam.moving |= ImGui::ColorEdit3("Sky noon", Scene.opt.sky_noon._xyz, ImGuiColorEditFlags_Float);
 		Scene.cam.moving |= ImGui::ColorEdit3("Sky dawn", Scene.opt.sky_dawn._xyz, ImGuiColorEditFlags_Float);
+		}
 	}
 	ImGui::Checkbox("BVH", &Scene.opt.en_bvh);  ImGui::SameLine();
 	if (ImGui::Checkbox("Linear", &Scene.world.bvh_lin)) {
@@ -415,7 +442,7 @@ void engine::object_menu() {
 			Scene.cam.moving |= ImGui::DragFloat("IOR", &alb.ir, 0.01f, 1.f, 4.f);
 		}
 	}
-	else if(!Scene.opt.skybox&&Scene.opt.sky){
+	else if (!Scene.opt.skybox && Scene.opt.sky) {
 		if (ImGui::DragFloat3("Rot", TA._xyz, 0.01))
 		{
 			Scene.set_trans(mat4(TP, TA));
@@ -434,14 +461,14 @@ void engine::object_menu() {
 void engine::render_loop() {
 	while (running) {
 		Scene.cam.moving |= !den_view;
-		ft = SDL_GetPerformanceCounter();
+		ft = timer();
 		process_input();
 		process_overlay();
 		draw_scene();
-		ft = (SDL_GetPerformanceCounter() - ft) / SDL_GetPerformanceFrequency();
-		double delay = fmax(0, 1.0 / max_fps - ft);
+		ft = timer(ft);
+		double delay = fmax(0, 1.0 / (Scene.opt.framegen * max_fps + max_fps) - ft);
 		SDL_Delay(1e3 * delay);
-		dt = ft + delay;//(SDL_GetPerformanceCounter() - dt) / SDL_GetPerformanceFrequency();
+		dt = ft + delay;
 		avg_dt = 0.5 * (dt + avg_dt);
 		fps = ImGui::GetIO().Framerate;
 	}

@@ -19,9 +19,19 @@ void camera::set_P(vec3 pos)
 	T.set_P(pos);
 	moving = 1;
 }
+void camera::rotate(vec3 angles)
+{
+	if (near0(angles))return;
+	vec3 A = T.A() + fov * (1.f / 90.f) * angles;
+	A._xyz[2] = (A._xyz[2] > hpi - 0.01f && A._xyz[2] < 3 * hpi + 0.01f) ? T.A()._xyz[2] : A._xyz[2];
+	T.set_A(A);
+	moving = 1;
+}
 void camera::rotate(float alfa, float beta, float gamma)
 {
-	vec3 A = T.A() + fov * (1.f / 90.f) * vec3(alfa, beta, gamma);
+	vec3 angles(alfa, beta, gamma);
+	if (near0(angles))return;
+	vec3 A = T.A() + fov * (1.f / 90.f) * angles;
 	A._xyz[2] = (A._xyz[2] > hpi - 0.01f && A._xyz[2] < 3 * hpi + 0.01f) ? T.A()._xyz[2] : A._xyz[2];
 	T.set_A(A);
 	moving = 1;

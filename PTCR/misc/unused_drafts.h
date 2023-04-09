@@ -329,3 +329,76 @@ void scene::Reproject(const mat4& T, float tfov, uint* disp, uint pitch) {
 		}
 	}
 }
+/*float scl = 1.f / 1.001f;
+			float y = (i / (float)cam.h) - 0.5f;
+			float x = (j / (float)cam.w) - 0.5f;
+			int iy = clamp_int((y * scl + 0.5f) * cam.h, 0, cam.h - 1);
+			int ix = clamp_int((x * scl + 0.5f) * cam.w, 0, cam.w - 1);*/
+			//near0(cam.CCD.buff[off]) ? cam.CCD.data[iy * cam.w + ix] :
+/*mat4 iTp = proj.T.inverse();
+#pragma omp parallel for collapse(2) schedule(dynamic, 100)
+	for (int i = 0; i < cam.h; i++) {
+		for (int j = 0; j < cam.w; j++) {
+			uint off = i * cam.w + j;
+			float dist = cam.CCD.data[off].w();
+			vec3 xy = cam.SS(vec3(j, i), proj);
+			vec3 pt = iTp.P() + iTp.vec(xy) * dist;
+			vec3 spt = cam.T.pnt(pt);
+			if (spt.z() < 0) [[likely]] {
+				vec3 dir = spt / dist;
+				vec3 uv = dir / fabsf(dir.z());
+				uv = cam.inv_SS(uv);
+				uint x = uv[0];
+				uint y = uv[1];
+				if (x < cam.w && y < cam.h && near0(cam.CCD.buff[y * cam.w + x]))
+					cam.CCD.buff[y * cam.w + x] = vec3(cam.CCD.data[off], dist);
+			}
+		}
+	}*/
+
+	//
+//#pragma omp parallel for
+int mid = cam.w / 2;
+for (int i = 0; i < cam.h; i++) {
+	for (int j = mid; j >= 0; j--) {
+		if (near0(buff[j + i * cam.w])) {
+			vec3 col = buff[j + 1 + i * cam.w];
+			buff[i * cam.w + j] = col;
+			int k;
+			for (k = j - 1; k >= 0; k--) {
+				if (near0(buff[i * cam.w + k])) {
+					buff[i * cam.w + k] = col;
+				}
+				else break;
+			}
+			j = k;
+		}
+	}
+	for (int j = mid; j < cam.w; j++) {
+		if (near0(buff[j + i * cam.w])) {
+			vec3 col = buff[j + -1 + i * cam.w];
+			buff[i * cam.w + j] = col;
+			int k;
+			for (k = j + 1; k < cam.w; k++) {
+				if (near0(buff[i * cam.w + k])) {
+					buff[i * cam.w + k] = col;
+				}
+				else break;
+			}
+			j = k;
+		}
+	}
+}
+		/*#pragma omp parallel for collapse(2) schedule(dynamic, 100)
+			for (int i = 0; i < cam.h; i++) {
+				for (int j = 0; j < cam.w; j++) {
+					uint off = i * cam.w + j;
+					uint off2 = i * pitch + j;
+					vec3 base = cam.CCD.data[off];
+					vec3 changed = cam.CCD.buff[off];
+					float fact = cam.CCD.time / cam.exposure;
+					if((base-changed).len2() < 0.001f) bgr(vec3(changed, fact), cam.CCD.disp[off]);
+					else bgr(vec3(base, fact), cam.CCD.disp[off2]);
+
+				}
+			}*/

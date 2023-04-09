@@ -87,7 +87,7 @@ public:
 		return world.objects[idx];
 	}
 private:
-	
+
 	__forceinline void sample_material(const ray& r, const hitrec& rec, matrec& mat) const {
 		uint mat_id = object_at(rec.idx).get_mat();
 		if (mat_id < world.materials.size())
@@ -209,7 +209,6 @@ private:
 		if (opt.en_fog) {
 			for (int i = 0; i < opt.samples; i++)
 				col += volumetric_pt<true>(r, opt.bounces, rec, hit) * opt.inv_sa;
-			//rec.t = col[3];
 		}
 		else {
 			if (!hit) col = sky(r.D);
@@ -217,7 +216,7 @@ private:
 				for (int i = 0; i < opt.samples; i++)
 					col += iterative_pt(r, rec, opt.bounces) * opt.inv_sa;
 		}
-		return vec3(col,rec.t);
+		return vec3(col, rec.t);
 	}
 	//Volumetric path tracing (main volumetrics logic)
 	template <bool first = false>
@@ -231,22 +230,23 @@ private:
 			ray sr = sa_fog(r.at(ft), ft, p1, p2);
 			hitrec srec;
 			bool hit = world.hit<1>(sr, srec);
-			if(first){
+			//not needed, saving for later mby
+			/*if(first){
 			if (!hit)return vec3(p1 / p2 * opt.fog_col * sky(sr.D),ft);
 			else return vec3(p1 / p2 * opt.fog_col * recur_pt(sr, srec, depth),ft);
 			}
-			else {
+			else */ {
 				if (!hit)return p1 / p2 * opt.fog_col * sky(sr.D);
 				else return p1 / p2 * opt.fog_col * recur_pt(sr, srec, depth);
 			}
 		}
 		else {
-			if (first) {
+			/*if (first) {
 				if (!hit) return vec3(sky(r.D),rec.t);
 				if (rafl() >= opt.p_life)return vec3(0,0,0,rec.t);
 				else return vec3(opt.i_life * recur_pt(r, rec, depth),rec.t);
 			}
-			else {
+			else*/ {
 				if (!hit) return sky(r.D);
 				if (rafl() >= opt.p_life)return 0;
 				else return opt.i_life * recur_pt(r, rec, depth);
@@ -335,6 +335,7 @@ private:
 		}
 		return;
 	}
+	vector<bool> generate_mask(const projection& proj);
 	//Compute basic sky color
 	__forceinline vec3 sky(vec3 V) const
 	{
@@ -369,10 +370,10 @@ private:
 #if DEBUG
 	inline vec3 dbg_ill(const ray& r) {
 		hitrec rec;
-		if (!world.hit(r, rec)) return opt.dbg_direct ? vec3(sky(r.D),rec.t) : vec3(0,0,0,rec.t);
+		if (!world.hit(r, rec)) return opt.dbg_direct ? vec3(sky(r.D), rec.t) : vec3(0, 0, 0, rec.t);
 		vec3 direct, indirect;
 		separate_pt(direct, indirect, r, rec, opt.dbg_direct ? 1 : opt.bounces);
-		return vec3(opt.dbg_direct ? direct : indirect,rec.t);
+		return vec3(opt.dbg_direct ? direct : indirect, rec.t);
 	}
 	inline vec3 dbg_f(const ray& r)const {
 		hitrec rec;
@@ -380,7 +381,7 @@ private:
 			float res = GAMMA2 ? 0.01 : 0.1;
 			return vec3(res, res, res, rec.t);
 		}
-		return vec3(rec.face,rec.face,rec.face,rec.t);
+		return vec3(rec.face, rec.face, rec.face, rec.t);
 	}
 	inline vec3 dbg_at(const ray& r)const {
 		hitrec rec; matrec mat;
@@ -389,7 +390,7 @@ private:
 			return vec3(res, res, res, rec.t);
 		}
 		sample_material(r, rec, mat);
-		return vec3(mat.aten + mat.emis,rec.t);
+		return vec3(mat.aten + mat.emis, rec.t);
 	}
 	inline vec3 dbg_n(const ray& r)const {
 		hitrec rec; matrec mat;
@@ -398,8 +399,8 @@ private:
 			return vec3(res, res, res, rec.t);
 		}
 		sample_material(r, rec, mat);
-		vec3 col = vec3((mat.N + 1.f) * 0.5f,rec.t);
-		return GAMMA2 ? col * vec3(col,1) : col;
+		vec3 col = vec3((mat.N + 1.f) * 0.5f, rec.t);
+		return GAMMA2 ? col * vec3(col, 1) : col;
 	}
 	inline vec3 dbg_uv(const ray& r)const {
 		hitrec rec;
@@ -407,7 +408,7 @@ private:
 			float res = GAMMA2 ? 0.01 : 0.1;
 			return vec3(res, res, res, rec.t);
 		}
-		return GAMMA2 ? vec3(rec.u, 0, rec.v,rec.t) * vec3(rec.u, 0, rec.v,1) : vec3(rec.u, 0, rec.v,rec.t);
+		return GAMMA2 ? vec3(rec.u, 0, rec.v, rec.t) * vec3(rec.u, 0, rec.v, 1) : vec3(rec.u, 0, rec.v, rec.t);
 	}
 	inline vec3 dbg_e(const ray& sr)const {
 		ray r = sr;
@@ -417,17 +418,17 @@ private:
 		while (world.hit(r, rec) && i++ < (opt.dbg_t ? 1 : 10)) {
 			if (i == 1) t = rec.t;
 			switch (object_at(rec.idx).type()) {
-			case o_pol: if (!(inside(rec.u, 0.01f, 0.99f) && inside(rec.v, 0.01f, 0.99f) && inside(1 - rec.u - rec.v, 0.01f, 0.99f))) return vec3(1,1,1,t); break;
+			case o_pol: if (!(inside(rec.u, 0.01f, 0.99f) && inside(rec.v, 0.01f, 0.99f) && inside(1 - rec.u - rec.v, 0.01f, 0.99f))) return vec3(1, 1, 1, t); break;
 			case o_qua: if (!(inside(rec.u, 0.01f, 0.99f) && inside(rec.v, 0.01f, 0.99f))) return vec3(1, 1, 1, t); break;
 			case o_sph: if (absdot(rec.N, r.D) < 0.15f) return vec3(1, 1, 1, t); break;
 			case o_vox: if (!(inside(rec.u, 0.01f, 0.99f) && inside(rec.v, 0.01f, 0.99f)))  return vec3(1, 1, 1, t);  break;
-			default: return vec3(0,0,0,infp);
+			default: return vec3(0, 0, 0, infp);
 			}
 			rec.t = infp;
 			r.O = rec.P + r.D * eps;
 		}
 		float res = GAMMA2 ? 0.01 : 0.1;
-		return vec3(res,res,res,t);
+		return vec3(res, res, res, t);
 	}
 	inline vec3 dbg_t(const ray& r)const {
 		float t = closest_t(r);

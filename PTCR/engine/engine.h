@@ -7,6 +7,7 @@
 #include "scenes.h"
 #include "event_handler.h"
 #include "defines.h"
+
 class engine {
 public:
 	engine(double max_fps = 90, SDL_Rect screen = { 0,0,1280,720 }, SDL_Rect viewport = { 0,0,960,720 }, SDL_Rect menu = { 960,0, 320,720 });
@@ -20,6 +21,15 @@ public:
 	void camera_menu();
 	void add_object();
 	void add_material();
+	double timer() {
+		return SDL_GetPerformanceCounter();
+	}
+	double timer(double t1) {
+		return (SDL_GetPerformanceCounter() - t1) / SDL_GetPerformanceFrequency();
+	}
+	double timer_ms(double t1) {
+		return 1000.0 * (SDL_GetPerformanceCounter() - t1) / SDL_GetPerformanceFrequency();
+	}
 private:
 	scene Scene;
 	SDL_Window* window;
@@ -37,8 +47,10 @@ private:
 	double max_fps = 90;
 	double fps = 0;
 	double ft = 0;
+	double normal_t = 0;
 	double dt = 1;
 	double avg_dt = 1;
+	float sensitivity = 1.f;
 	float scale = 1.f;
 	float fogdens = 0;
 	float move_mul = 1.f;

@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <string>
+#include <chrono>
 #include <ctime>
 #include <iostream>
 #include <fstream>
@@ -21,9 +22,6 @@ using uint = unsigned int;
 #define CLAMP ImGuiSliderFlags_AlwaysClamp
 #define LOGFAST(x) if(rafl() > 0.9f) std::cout << x << "\n"
 #define LOGSLOW(x) if(rafl() > 0.99999f) std::cout << x << "\n"
-#define SELDOM if(rafl() > 0.99999f)
-#define OFTEN if(rafl() > 0.9f)
-#define ALWAYS if(1)
 #define SMOOTH_SHADING 1
 constexpr double pi_dbl = 3.14159265358979323846;
 constexpr float sqrtpi = 1.77245385091;

@@ -32,7 +32,6 @@ inline float avg(vec3 u)
 {
 	return dot(1.f / 3.f, u);
 }
-
 inline vec3 min(vec3 u, vec3 v, vec3 w)
 {
 	return min(u, min(v, w));
@@ -57,7 +56,6 @@ inline vec3 saturate(vec3 u)
 {
 	return clamp(u, 0.f, 1.f);
 }
-
 inline vec3 reflect(vec3 v, vec3 n)
 {
 	return v - 2.f * dot(v, n) * n;
@@ -84,7 +82,6 @@ inline vec3 fast_sin(vec3 x)
 	vec3 x2 = x * x;
 	return x + x * x2 * (-1.6666656684e-1f + x2 * (8.3330251389e-3f + x2 * (-1.9807418727e-4f + x2 * 2.6019030676e-6f)));
 }
-
 inline vec3 sin(vec3 x)
 {
 	x = mod(x - hpi, pi2);
@@ -116,48 +113,15 @@ inline float luminance(vec3 rgb)
 {
 	return dot(vec3(0.2126f, 0.7152f, 0.0722f), rgb);
 }
-
-inline void pack_bgr(vec3 col, uint& bgr)
+inline uint pack_rgb(vec3 rgb)
 {
-	bgr = pack_bgr(col.x(), col.y(), col.z(), col.w()); //store to bgr pixel
+	return pack_rgb(rgb[0], rgb[1], rgb[2], rgb[3]);
 }
-
-inline void pack_rgb(vec3 col, uint& bgr)
+inline uint pack_bgr(vec3 rgb)
 {
-	bgr = pack_rgb(col.x(), col.y(), col.z(), col.w()); //store to bgr pixel
+	return pack_bgr(rgb[0], rgb[1], rgb[2], rgb[3]);
 }
-template <bool normalize = 1>
-inline void bgr(vec3 col, uint& bgr, uchar a = 255)
-{
-	if(normalize){
-	col /= col.w(); //divide by sample count
-#if GAMMA2
-	col = sqrt(col); //gamma correction to sRGB
-#endif
-	col = saturate(col);//clamp 0 - 1
-	col *= 255.f; //multiply by 8bit max value
-	col += 0.5f * ravec();//dithering using noise
-	}
-	bgr = pack_bgr(col.x(), col.y(), col.z(), a); //store to bgr pixel
-}
-template <bool normalize = 1>
-inline void rgb(vec3 col, uint& rgb, uchar a = 255)
-{
-	if (normalize){
-	col /= col.w();
-#if GAMMA2
-	col = sqrt(col);
-#endif
-	col = saturate(col);
-	col *= 255.f;
-	col += 0.5f * ravec();
-	}
-	rgb = pack_rgb(col.x(), col.y(), col.z(), a);
-}
-
-inline vec3 srgb(vec3 col)
-{
-	col /= col.w(); //divide by sample count
+inline vec3 vec8bit(vec3 col) {
 #if GAMMA2
 	col = sqrt(col); //gamma correction to sRGB
 #endif
@@ -166,8 +130,16 @@ inline vec3 srgb(vec3 col)
 	col += 0.5f * ravec();//dithering using noise
 	return col;
 }
+inline uint vec2bgr(vec3 col)
+{
+	return pack_bgr(vec8bit(col)); //store to bgr pixel
+}
+inline uint vec2rgb(vec3 col)
+{
+	return pack_rgb(vec8bit(col));
+}
 
-inline vec3 unrgb(const uint& rgb) {
+inline vec3 rgb2vec(const uint& rgb) {
 	vec3 v;
 	v.xyz[0] = rgb & 255;
 	v.xyz[1] = (rgb >> 8) & 255;
