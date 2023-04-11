@@ -3,38 +3,42 @@
 #include <iostream>
 #include "vec3.h"
 
-#pragma pack(push,2)
 class texture {
 public:
 
-	texture() : rgb(0.5, 0.5, 1, 1), solid(1) {}
-	texture(vec3 _rgb) :rgb(_rgb), solid(1) {}
-	texture(const char* _filename) : solid(1) {
+	texture() : rgb(0.5, 0.5, 1, 1) {}
+	texture(vec3 _rgb, const char* filename) {
+		*this = texture(filename);
+		this->set_col(_rgb);
+	}
+	texture(vec3 _rgb) : rgb(_rgb) { flags.set(0, 1); }
+	texture(const char* _filename) {
+		clear();
 		if (_filename != nullptr) {
 			std::string filename = std::string(_filename);
 			bool found = load(filename) || load(filename + ".jpg") || load(filename + ".png") || load(filename + ".gif") || load(filename + ".tga")
 				|| load("textures/" + filename) || load("textures/" + filename + ".jpg") || load("textures/" + filename + ".png") ||
 				load("textures/" + filename + ".gif") || load("textures/" + filename + ".tga");
 			if (!found) {
+				flags.set(0, 1);
 				rgb = vec3(0.5, 0.5, 1, 1);
 				std::cerr << "Texture not found!'" << filename << "'.\n";
 			}
-			else {
-				solid = 0;
-			}
+			flags.set(0, 0);
 		}
+		else flags.set(0, 0);
 	}
 	~texture() {
 		clear();
 	}
+
 	texture(const texture& cpy) {
 		//Did leak memory before fix :)
 		clear();
-		solid = cpy.solid;
-		if (solid) {
-			rgb = cpy.rgb;
-		}
-		else {
+		flags = cpy.flags;
+		rgb = cpy.rgb;
+		if(cpy.data != nullptr)
+		{
 			w = cpy.w, h = cpy.h;
 			data = (uchar*)malloc(w * h * 4);
 			memcpy(data, cpy.data, w * h * 4);
@@ -42,21 +46,18 @@ public:
 	}
 	const texture& operator=(const texture& cpy) {
 		clear();
-		solid = cpy.solid;
-		if (solid) {
-			rgb = cpy.rgb;
-		}
-		else {
+		flags = cpy.flags;
+		rgb = cpy.rgb;
+		if (cpy.data != nullptr) {
 			w = cpy.w, h = cpy.h;
-			//malloc because of compatibility with stbi_load
 			data = (uchar*)malloc(w * h * 4);
 			memcpy(data, cpy.data, w * h * 4);
 		}
 		return *this;
 	}
-	
+
 	__forceinline vec3 sample(float u, float v) const {
-		if (solid)return rgb;
+		if(get_solid()||data==nullptr)return rgb;
 		uint x = u * (w - 1);
 		uint y = v * (h - 1);
 		x %= w;
@@ -68,34 +69,20 @@ public:
 		uchar a = data[off + 3];
 		return vec3(r, g, b, a) * (1 / 255.f);
 	}
-	void set_tex(const char* _filename) {
-		*this = texture(_filename);
-	}
-	void set_col(vec3 _rgb) {
-		if (solid)rgb = _rgb;
-	}
-	vec3 get_col()
-	{
-		return solid ? rgb : 0;
-	}
-	void clear() {
-		if (!solid) {
-			w = h = 0;
-			if (data != nullptr)free(data);
-		}
-		rgb = 0;
-		solid = true;
-	}
+	void set_solid(bool x) {flags.set(0, x);}
+	void set_checker(bool x) {flags.set(1, x);}
+	bool get_solid()const { return flags[0]; }
+	bool get_checker()const { return flags[1]; }
+	void set_tex(const char* _filename) { *this = texture(rgb,_filename); }
+	void set_col(vec3 _rgb) {rgb = _rgb;}
+	vec3 get_col(){return rgb;}
+	void clear() { w = 0; h = 0; free(data); data = nullptr; }
+	
+	
 private:
-	union {
-		struct {
-			uint w, h;
-			uchar* data;
-		};
-		vec3 rgb;
-	};
-	bool solid = 1;
+	vec3 rgb;
+	uchar* data = nullptr;
+	uint w = 0, h = 0;
+	bitfield<uint> flags;
 	bool load(const std::string filename);
-
 };
-#pragma pack(pop)

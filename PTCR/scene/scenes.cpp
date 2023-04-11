@@ -84,6 +84,7 @@ bool scn_load(scene& scn, const char* filename, bool update_only) {
 		else if (sscanf_s(line.c_str(), "cam_fov=%f", &fval) > 0) scn.cam.set_fov(fval);
 		else if (sscanf_s(line.c_str(), "cam_speed=%f", &fval) > 0) scn.cam.speed = fval;
 		else if (sscanf_s(line.c_str(), "cam_pos=%f,%f,%f", &off.x,&off.y,&off.z) > 0) scn.cam.set_P(off);
+		else if (sscanf_s(line.c_str(), "cam_rot=%f,%f,%f", &off.x,&off.y,&off.z) > 0) scn.cam.T.set_A(off);
 		}
 	}
 	file.close();
@@ -152,7 +153,7 @@ void scn1(scene& scn) {
 void scn2(scene& scn) {
 	scn.opt.li_sa = 1;
 	albedo iron(vec3(0.7, 0.7, 0.9), vec3(1, 0, 0));
-	albedo white(vec3(0.8, 0.8, 0.8), vec3(0, 5, 0));
+	albedo white(vec3(0.8, 0.8, 0.8), vec3(0, 2.2, 0));
 	scn.world.add_mat(albedo(vec3(0.8, 0.8, 0.8, 1), vec3(0, 0, 1)), mat_mix);
 	scn.world.add_mat(iron, mat_ggx);
 	scn.world.add_mat(white, mat_lig);
@@ -217,7 +218,7 @@ void scn5(scene& scn) {
 	albedo green(vec3(0.12, 0.45, 0.12, 1), vec3(0, 0, 1));
 	albedo red(vec3(0.45, 0.12, 0.12, 1), vec3(0, 0, 1));
 	albedo blue(vec3(0.12, 0.12, 0.45, 1), vec3(0, 0, 1));
-	albedo light(vec3(1), vec3(0, 100, 0));
+	albedo light(vec3(1), vec3(0, 10, 0));
 	albedo clear(vec3(0.73, 0.73, 0.73, 0), vec3(0, 0, 0.1), vec3(0.5, 0.5, 1), 1, 1.5);
 	albedo mirror(vec3(0.73, 0.73, 0.73, 1.f), vec3(1, 0, 0.1));
 	scn.world.add_mat(white, mat_mix);
@@ -273,7 +274,7 @@ void scn6(scene& scn) {
 }
 
 void scn7(scene& scn) {
-	albedo red(vec3(0.63, 0.28, 0, 1), vec3(0.5, 20, 0.1));
+	albedo red(vec3(0.63, 0.28, 0, 1), vec3(0.5, 5, 0.1));
 	scn.world.add_mat(red, mat_las);
 	vector<poly> dragon = load_mesh("xyzrgb_dragon", 0, 1);
 	scn.world.add_mesh(dragon, 0, 1, 0);
@@ -290,9 +291,9 @@ void scn7(scene& scn) {
 }
 
 void scn8(scene& scn) {
-	albedo r(vec3(0.8, 0.1, 0.1, 1), vec3(0, 1000, 0));
-	albedo g(vec3(0.1, 0.8, 0.1, 1), vec3(0, 1000, 0));
-	albedo b(vec3(0.1, 0.1, 0.8, 1), vec3(0, 1000, 0));
+	albedo r(vec3(0.8, 0.1, 0.1, 1), vec3(0, 33, 0));
+	albedo g(vec3(0.1, 0.8, 0.1, 1), vec3(0, 33, 0));
+	albedo b(vec3(0.1, 0.1, 0.8, 1), vec3(0, 33, 0));
 	albedo a(vec3(0.95, 0.95, 0.95, 0), vec3(0, 0, 0), vec3(0.5, 0.5, 1), 1, 1.5);
 	scn.world.add_mat(a, mat_mix);
 	scn.world.add_mat(r, mat_las);

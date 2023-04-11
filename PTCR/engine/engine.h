@@ -21,11 +21,20 @@ public:
 	void camera_menu();
 	void add_object();
 	void add_material();
+	void delay(double sec) {
+		//mid precision, good efficiency
+		SDL_Delay(1000 * fmax(0, sec));
+		//double t1 = timer();
+		//while (timer(t1) < sec);
+		//std::this_thread::sleep_for(std::chrono::duration<double>(sec));
+	}
 	double timer() {
-		return SDL_GetPerformanceCounter();
+		auto t = std::chrono::high_resolution_clock::now();
+		return std::chrono::duration<double>(t.time_since_epoch()).count();
 	}
 	double timer(double t1) {
-		return (SDL_GetPerformanceCounter() - t1) / SDL_GetPerformanceFrequency();
+		auto t = std::chrono::high_resolution_clock::now();
+		return std::chrono::duration<double>(t.time_since_epoch()).count() - t1;
 	}
 	double timer_ms(double t1) {
 		return 1000.0 * (SDL_GetPerformanceCounter() - t1) / SDL_GetPerformanceFrequency();
@@ -47,15 +56,15 @@ private:
 	double max_fps = 90;
 	double fps = 0;
 	double ft = 0;
-	double normal_t = 0;
+	double nor_t = 0, gen_t = 0;
 	double dt = 1;
-	double avg_dt = 1;
 	float sensitivity = 1.f;
 	float scale = 1.f;
 	float fogdens = 0;
 	float move_mul = 1.f;
 	int scn_n = 0;
 	bool reproject = false;
+	bool frame_id = false;
 	bool den_view = true;
 	bool overlay = true;
 	bool tap_to_focus = false;

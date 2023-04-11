@@ -89,7 +89,6 @@ namespace material {
 		bool opaque = rafl() < rgb.w();
 		vec3 N = normal_map(rec.N, nor);
 		onb n(N);
-
 		//perfect diffuse && solid
 		if (mu < eps && ro > 1 - eps && opaque) {
 			mat.aten = rgb;

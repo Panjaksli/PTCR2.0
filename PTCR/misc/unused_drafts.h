@@ -402,3 +402,79 @@ for (int i = 0; i < cam.h; i++) {
 
 				}
 			}*/
+
+
+__forceinline void mixed(const ray& r, const hitrec& rec, const albedo& tex, matrec& mat) {
+	//simple mix of lambertian and mirror reflection/transmission + emission
+	vec3 rgb = tex.rgb(rec.u, rec.v);
+	vec3 mer = tex.mer(rec.u, rec.v);
+	vec3 nor = tex.nor(rec.u, rec.v);
+	float mu = mer.x();
+	float em = mer.y();
+	float ro = mer.z();
+	float a = ro * ro;
+	float wave = rafl();
+	float ior = tex.ir;
+	bool opaque = rafl() < rgb.w();
+	if (rec.face && !opaque) {
+		if (wave < 0.333f) {
+			float um = 0.65;
+			ior += 0.01f * ior / (um * um);
+			rgb *= vec3(3, 0, 0);
+		}
+		else if (wave < 0.666f) {
+			float um = 0.54;
+			ior += 0.01f * ior / (um * um);
+			rgb *= vec3(0, 3, 0);
+		}
+		else {
+			float um = 0.43;
+			ior += 0.01f * ior / (um * um);
+			rgb *= vec3(0, 0, 3);
+		}
+	}
+	float n1 = rec.face ? mat.ir : mat.ir == 1.f ? ior : mat.ir;
+	float n2 = rec.face ? ior : ior == n1 ? 1.f : ior;
+	vec3 N = normal_map(rec.N, nor);
+	onb n(N);
+	//perfect diffuse && solid
+	if (mu < eps && ro > 1 - eps && opaque) {
+		mat.aten = rgb;
+		mat.L = n.world(sa_cos());
+		mat.N = N;
+		mat.P = rec.P + rec.N * eps;
+		mat.emis = rgb * em;
+		mat.refl = refl_diff * not0(mat.aten);
+		return;
+	}
+	else if (opaque)return ggx(r, rec, tex, mat);
+	vec3 H = n.world(sa_ggx(a));
+	float HoV = absdot(H, r.D);
+	float Fr = fresnel(HoV, n1, n2, mu);
+	bool refl = Fr > rafl();
+	if (refl) {
+		mat.L = reflect(r.D, H);
+		float NoV = absdot(-r.D, N);
+		float NoL = dot(N, mat.L);
+		float NoH = dot(N, H);
+		if (NoL <= 0)return;
+		vec3 F0 = mix(0.04f, vec3(rgb, 1), mu);
+		vec3 F = fres_spec(HoV, F0).fact();
+		vec3 Fs = fres_spec(HoV, tex.specular());
+		mat.aten = rec.face ? mix(F, Fs, tex.spec.w()) * GGX(NoL, NoV, a) * HoV / (NoV * NoH) : rgb;
+		mat.P = rec.P + rec.N * eps;
+		mat.refl = rec.face ? refl_spec : refl_tran;
+	}
+	else {
+		mat.aten = rgb;
+		mat.P = rec.P - rec.N * eps;
+		mat.L = refract(r.D, H, n1 / n2);
+		mat.refl = refl_tran;
+		mat.ir = n2;
+	}
+	//if (!rec.face)mat.aten *= saturate(expf(-20.f * rec.t * (1.f - rgb)));
+	mat.a = a;
+	mat.N = N;
+	mat.emis = em * rgb;
+	mat.refl *= not0(mat.aten);
+}

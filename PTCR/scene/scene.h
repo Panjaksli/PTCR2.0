@@ -73,6 +73,7 @@ public:
 	obj_flags get_trans(mat4& T) const;
 	void Render(uint* disp, uint pitch);
 	void Reproject(const projection& proj, uint* disp, uint pitch);
+	void Gen_projection(const projection& proj);
 	void Screenshot(bool reproject = 0)const;
 	__forceinline mat_var& material_at(uint idx) {
 		return world.materials[idx];

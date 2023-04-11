@@ -79,7 +79,7 @@ public:
 	}
 	__forceinline void display(uint y, uint x, vec3 rgb)
 	{
-		CCD.out(y, x, rgb * exposure);
+		CCD.out(y, x, (GAMMA2 ? exposure : 1) * exposure * rgb);
 	}
 	void update();
 	void set_P(vec3 P);

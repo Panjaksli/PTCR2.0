@@ -169,43 +169,24 @@ void scene::Render(uint* disp, uint pitch) {
 				}
 			}
 		}
+	}
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
-		for (int i = 0; i < cam.h; i++) {
-			for (int j = 0; j < cam.w; j++) {
-				vec3 rgb = cam.get_med(i, j, opt.med_thr);
-				if (opt.selected < world.objects.size() && !opt.framegen) {
-					hitrec rec;
-					ray r = cam.pinhole_ray(vec3(j, i));
-					aabb aura = object_at(opt.selected).get_box();
-					if (aura.hit(r)) {
-						cam.display(i, j, rgb + blink);
-					}
-					else cam.display(i, j, rgb);
+	for (int i = 0; i < cam.h; i++) {
+		for (int j = 0; j < cam.w; j++) {
+			vec3 rgb = cam.get_med(i, j, opt.med_thr);
+			if (opt.selected < world.objects.size() && !opt.framegen) {
+				hitrec rec;
+				ray r = cam.pinhole_ray(vec3(j, i));
+				aabb aura = object_at(opt.selected).get_box();
+				if (aura.hit(r)) {
+					cam.display(i, j, rgb + blink);
 				}
 				else cam.display(i, j, rgb);
 			}
+			else cam.display(i, j, rgb);
 		}
 	}
-	else {
-		//THIS IS NOT A DUPLICATE CODE
-		//fixes 100% usage even when rendering is paused (cannot have 2 pragma omp under "if" and one outside, threads are spinlocked)
-		//thus this part has to be scalar !!! 
-		for (int i = 0; i < cam.h; i++) {
-			for (int j = 0; j < cam.w; j++) {
-				vec3 rgb = cam.get_med(i, j, opt.med_thr * !opt.framegen);
-				if (opt.selected < world.objects.size() && !opt.framegen) {
-					hitrec rec;
-					ray r = cam.optical_ray(i, j);
-					aabb aura = object_at(opt.selected).get_box();
-					if (aura.hit(r)) {
-						cam.display(i, j, rgb + blink);
-					}
-					else cam.display(i, j, rgb);
-				}
-				else cam.display(i, j, rgb);
-			}
-		}
-	}
+#pragma omp barrier
 	odd = !odd && opt.re_sam;
 	opt.li_sa = old_lisa;
 	opt.sun_sa = old_sunsa;
@@ -234,10 +215,9 @@ vector<bool> scene::generate_mask(const projection& proj) {
 	}
 	return mask;
 }
-void scene::Reproject(const projection& proj, uint* disp, uint pitch) {
+void scene::Gen_projection(const projection& proj) {
 	vec3* buff = cam.CCD.buff.data();
 	vec3* data = cam.CCD.data.data();
-	cam.CCD.set_disp(disp, pitch);
 	mat4 iT = cam.T.inverse();
 	for (int i = 0; i < cam.CCD.n; i++)buff[i] = vec3(0, 0, 0, 1.f / 0.f);
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
@@ -258,11 +238,14 @@ void scene::Reproject(const projection& proj, uint* disp, uint pitch) {
 			}
 		}
 	}
+}
+void scene::Reproject(const projection& proj, uint* disp, uint pitch) {
+	cam.CCD.set_disp(disp, pitch);
+	if(cam.moving||opt.framegen)Gen_projection(proj);
+	vec3* buff = cam.CCD.buff.data();
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
 	for (int i = 0; i < cam.h; i++) {
 		for (int j = 0; j < cam.w; j++) {
-			//uint off = i * cam.w + j;
-			//cam.display(i, j, buff[off]);
 			cam.display(i, j, median2d3(buff, i, j, cam.h, cam.w, opt.med_thr));
 		}
 	}

@@ -8,65 +8,30 @@ public:
 		_rgb(_rgb), _mer(_mer), _nor(_nor), spec(_spec), rep(_rep), ir(_ir) {}
 	__forceinline vec3 rgb(float u = 0, float v = 0)const {
 		vec3 rgb = _rgb.sample(rep * u, rep * v);
-#if GAMMA2
-		return rgb * vec3(rgb, 1);
-#else 
-		return rgb;
-#endif
+		return GAMMA2 ? rgb * vec3(rgb, 1) : rgb;
 	}
 	__forceinline vec3 specular(float u = 0, float v = 0)const {
-#if GAMMA2
-		return spec * vec3(spec, 1);
-#else 
-		return spec;
-#endif
+		return GAMMA2 ? spec * vec3(spec, 1) : spec;
 	}
 	__forceinline vec3 linear(float u = 0, float v = 0)const {
 		return _rgb.sample(rep * u, rep * v);
 	}
 	__forceinline vec3 mer(float u = 0, float v = 0)const {
-		return _mer.sample(rep * u, rep * v);
+		vec3 col = _mer.sample(rep * u, rep * v);
+		return GAMMA2 ? col * vec3(1,col[1],1,1) : col;
 	}
 	__forceinline vec3 nor(float u = 0, float v = 0)const {
 		return _nor.sample(rep * u, rep * v);
-	}
-	vec3 get_rgb()
-	{
-		return _rgb.get_col();
-	}
-	vec3 get_mer()
-	{
-		return _mer.get_col();
-	}
-	vec3 get_nor()
-	{
-		return _nor.get_col();
-	}
-	void set_all(vec3 rgb, vec3 mer, vec3 nor) {
-		_rgb.set_col(rgb);
-		_mer.set_col(mer);
-		_nor.set_col(nor);
-	}
-	void set_rgb(vec3 col)
-	{
-		_rgb.set_col(col);
-	}
-	void set_mer(vec3 col)
-	{
-		_mer.set_col(col);
-	}
-	void set_nor(vec3 col)
-	{
-		_nor.set_col(col);
 	}
 	void clear() {
 		_rgb.clear();
 		_mer.clear();
 		_nor.clear();
 	}
-private:
-	texture _rgb, _mer, _nor;
+
+	
 public:
+	texture _rgb, _mer, _nor;
 	vec3 spec = 0;
 	float rep = 1.f;
 	float ir = 1.f;

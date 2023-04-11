@@ -291,27 +291,26 @@ inline uint avg_rgb8888(rgba8888 x, rgba8888 y) {
 	x.a = (x.a + y.a) / 2;
 	return x.rgba;
 }
-
-struct pbool {
-	pbool() :byte(0) {}
-	pbool(uchar _byte) :byte(_byte) {}
-
+template <typename T = uchar>
+struct bitfield {
+	bitfield() :data(0) {}
+	bitfield(T data) :data(data) {}
 	inline operator bool() const {
-		return byte;
+		return (bool)data;
 	}
-	inline operator uchar()const {
-		return byte;
+	inline operator T()const {
+		return data;
 	}
-	inline void set(bool data, uchar id) {
-		uchar mask = data << id;
-		uchar temp = byte & ~mask;
-		byte = temp | mask;
+	inline void set(uchar n, bool x) {
+		data = (data & ~(1U << n)) | (x << n);
 	}
-	inline bool operator[](uchar id) {
-		return (byte >> id) & 1U;
+	inline bool get(uchar n) const{
+		return (data >> n) & 1U;
 	}
-
-	uchar byte;
+	inline bool operator[](uchar n)const {
+		return (data >> n) & 1U;
+	}
+	T data;
 };
 
 inline uint pack_rgb(uchar r, uchar g, uchar b, uchar a = 255)
