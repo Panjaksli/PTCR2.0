@@ -1,14 +1,15 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb/stb_image_write.h>
 #include <omp.h>
-#include <imgui.h>
-#include <imgui_impl_sdl.h>
-#include <imgui_impl_sdlrenderer.h>
-#include "scene.h"
+#include "Scene.h"
+#if DEBUG
+//eeewww global variable
+bool use_normal_maps = 1;
+#endif
 // a=f/m
 // v+=a*t
 // x+=v*t
-vec3 scene::cam_collision(vec3 v, float dt) const {
+vec3 Scene::cam_collision(vec3 v, float dt) const {
 	if (!cam.collision)return 0;
 	hitrec rec;
 	for (int i = 0; i < 5; i++)
@@ -22,14 +23,14 @@ vec3 scene::cam_collision(vec3 v, float dt) const {
 	}
 	return 0;
 }
-vec3 scene::cam_free(vec3 d) const {
+vec3 Scene::cam_free(vec3 d) const {
 	vec3 s = cam.T * vec3(1, 0, 0);
 	vec3 fw = cam.T * vec3(0, 0, -1), si(s.x(), 0, s.z()), up = vec3(0, 1, 0);
 	fw = norm(fw);
 	si = norm(si);
 	return  (d.x() * fw + d.y() * up + d.z() * si) * cam.speed;
 }
-vec3 scene::cam_fps(vec3 d) const {
+vec3 Scene::cam_fps(vec3 d) const {
 	vec3 f = cam.T * vec3(0, 0, -1);
 	vec3 s = cam.T * vec3(1, 0, 0);
 	vec3 fw(f.x(), 0, f.z()), si(s.x(), 0, s.z()), up = vec3(0, 1, 0);
@@ -37,7 +38,7 @@ vec3 scene::cam_fps(vec3 d) const {
 	si = norm(si);
 	return (d.x() * fw + d.y() * up + d.z() * si) * cam.speed;
 }
-void scene::cam_move(vec3 dir, float dt) {
+void Scene::cam_move(vec3 dir, float dt) {
 	vec3& V = cam.V;
 	vec3 G = vec3(0, -9.81, 0);
 	vec3 F0 = cam.free ? cam_free(dir) : cam_fps(dir);
@@ -50,26 +51,26 @@ void scene::cam_move(vec3 dir, float dt) {
 	V -= fminf(10 * dt, 1) * V;
 	V = min(max(V, infn), infp);
 }
-void scene::cam_autofocus() {
+void Scene::cam_autofocus() {
 	if (cam.autofocus) {
 		ray r(cam.focus_ray());
 		float new_t = closest_t(r);
 		cam.foc_t = 0.5 * cam.foc_t + 0.5f * new_t;
 	}
 }
-void scene::cam_manufocus(float py, float px) {
+void Scene::cam_manufocus(float py, float px) {
 	if (!cam.autofocus) {
 		ray r(cam.pinhole_ray(vec3(px, py)));
 		cam.foc_t = fminf(closest_t(r), 1e6);
 		cam.moving = 1;
 	}
 }
-uint scene::get_id(const ray& r, hitrec& rec) const
+uint Scene::get_id(const ray& r, hitrec& rec) const
 {
 	return world.get_id(r, rec);
 }
 
-uint scene::get_id(float py, float px)
+uint Scene::get_id(float py, float px)
 {
 	ray r(cam.pinhole_ray(vec3(px, py)));
 	hitrec rec;
@@ -77,13 +78,13 @@ uint scene::get_id(float py, float px)
 	opt.selected = id;
 	return id;
 }
-obj_flags scene::get_flag() const
+obj_flags Scene::get_flag() const
 {
 	if (opt.selected < world.objects.size()) return world.get_flag(opt.selected);
 	else return obj_flags(o_bla, 0, 0);
 }
 
-obj_flags scene::get_trans(mat4& T) const {
+obj_flags Scene::get_trans(mat4& T) const {
 	if (opt.selected < world.objects.size())
 	{
 		world.get_trans(opt.selected, T);
@@ -98,26 +99,50 @@ obj_flags scene::get_trans(mat4& T) const {
 	}
 }
 
-void scene::set_trans(const mat4& T) {
+void Scene::set_trans(const mat4& T) {
 	if (opt.selected < world.objects.size())
 	{
 		world.set_trans(opt.selected, T, opt.node_size);
 	}
 	else
-	{//if nothing hit, transform sky
+	{
 		sun_pos = T;
 		sun_pos.set_P(vec3());
 
 	}
 }
 
-void scene::set_skybox(const albedo& bg)
+void Scene::set_skybox(const albedo& bg)
 {
 	skybox = bg;
 	opt.skybox = true;
 }
 
-void scene::Render(uint* disp, uint pitch) {
+vector<bool> Scene::generate_mask(const projection& proj) {
+	vector<bool> mask(cam.w * cam.h, 0);
+	mat4 iT = cam.T.inverse();
+#pragma omp parallel for collapse(2) schedule(dynamic, 100)
+	for (int i = 0; i < cam.h; i++) {
+		for (int j = 0; j < cam.w; j++) {
+			uint off = i * cam.w + j;
+			float dist = cam.CCD.data[off].w();
+			vec3 xy = cam.SS(vec3(j, i), proj);
+			vec3 pt = proj.T.P() + proj.T.vec(xy) * dist;
+			vec3 spt = iT.pnt(pt);
+			if (spt.z() < 0) [[likely]] {
+				vec3 dir = spt / dist;
+				vec3 uv = dir / fabsf(dir.z());
+				uv = cam.inv_SS(uv);
+				uint x = uv[0];
+				uint y = uv[1];
+				if (x < cam.w && y < cam.h) mask[y * cam.w + x] = true;
+			}
+		}
+	}
+	return mask;
+}
+
+void Scene::Render(uint* disp, uint pitch) {
 	cam.CCD.set_disp(disp, pitch);
 	cam_autofocus();
 	static bool odd = 0;
@@ -150,7 +175,7 @@ void scene::Render(uint* disp, uint pitch) {
 				else if (opt.dbg_light)  cam.add(i, j, dbg_ill(r));
 				else cam.add(i, j, raycol(r));
 #else
-				cam.add(i, j, raycol(r, t) * inv_sa);
+				cam.add(i, j, raycol(r));
 #endif
 			}
 		}
@@ -192,30 +217,7 @@ void scene::Render(uint* disp, uint pitch) {
 	opt.sun_sa = old_sunsa;
 	cam.moving = 0;
 }
-vector<bool> scene::generate_mask(const projection& proj) {
-	vector<bool> mask(cam.w * cam.h, 0);
-	mat4 iT = cam.T.inverse();
-#pragma omp parallel for collapse(2) schedule(dynamic, 100)
-	for (int i = 0; i < cam.h; i++) {
-		for (int j = 0; j < cam.w; j++) {
-			uint off = i * cam.w + j;
-			float dist = cam.CCD.data[off].w();
-			vec3 xy = cam.SS(vec3(j, i), proj);
-			vec3 pt = proj.T.P() + proj.T.vec(xy) * dist;
-			vec3 spt = iT.pnt(pt);
-			if (spt.z() < 0) [[likely]] {
-				vec3 dir = spt / dist;
-				vec3 uv = dir / fabsf(dir.z());
-				uv = cam.inv_SS(uv);
-				uint x = uv[0];
-				uint y = uv[1];
-				if (x < cam.w && y < cam.h) mask[y * cam.w + x] = true;
-			}
-		}
-	}
-	return mask;
-}
-void scene::Gen_projection(const projection& proj) {
+void Scene::Gen_projection(const projection& proj) {
 	vec3* buff = cam.CCD.buff.data();
 	vec3* data = cam.CCD.data.data();
 	mat4 iT = cam.T.inverse();
@@ -239,9 +241,9 @@ void scene::Gen_projection(const projection& proj) {
 		}
 	}
 }
-void scene::Reproject(const projection& proj, uint* disp, uint pitch) {
+void Scene::Reproject(const projection& proj, uint* disp, uint pitch) {
 	cam.CCD.set_disp(disp, pitch);
-	if(cam.moving||opt.framegen)Gen_projection(proj);
+	if (cam.moving || opt.framegen)Gen_projection(proj);
 	vec3* buff = cam.CCD.buff.data();
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
 	for (int i = 0; i < cam.h; i++) {
@@ -250,8 +252,7 @@ void scene::Reproject(const projection& proj, uint* disp, uint pitch) {
 		}
 	}
 }
-
-void scene::Screenshot(bool reproject) const {
+void Scene::Screenshot(bool reproject) const {
 	int spp = cam.CCD.spp;
 	uint wh = cam.CCD.n;
 	uint w = cam.CCD.w;
@@ -277,15 +278,16 @@ void scene::Screenshot(bool reproject) const {
 	cout << "Saved file in: " << file << "\n";
 }
 
-void scene::save(const char* name) const {
+/*Unused*/
+void Scene::save(const char* name) const {
 	std::ofstream out;
 	out.open(std::string(name) + ".scn");
-	out.write((char*)this, sizeof(scene));
+	out.write((char*)this, sizeof(Scene));
 	out.close();
 }
-void scene::load(const char* name) {
+void Scene::load(const char* name) {
 	std::ifstream out;
 	out.open(std::string(name) + ".scn");
-	out.read((char*)this, sizeof(scene));
+	out.read((char*)this, sizeof(Scene));
 	out.close();
 }

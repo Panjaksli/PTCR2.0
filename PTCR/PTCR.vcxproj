@@ -172,7 +172,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="engine\engine.cpp" />
+    <ClCompile Include="engine\Engine.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
     <ClCompile Include="imgui\imgui_impl_sdl.cpp" />
@@ -186,11 +186,11 @@
     <ClCompile Include="objects\obj_list.cpp" />
     <ClCompile Include="PTCR.cpp" />
     <ClCompile Include="scene\camera.cpp" />
-    <ClCompile Include="scene\scene.cpp" />
+    <ClCompile Include="scene\Scene.cpp" />
     <ClCompile Include="scene\sensor.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="engine\engine.h" />
+    <ClInclude Include="engine\Engine.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imgui_impl_sdl.h" />
@@ -223,7 +223,7 @@
     <ClInclude Include="objects\poly.h" />
     <ClInclude Include="objects\voxel.h" />
     <ClInclude Include="scene\camera.h" />
-    <ClInclude Include="scene\scene.h" />
+    <ClInclude Include="scene\Scene.h" />
     <ClInclude Include="scene\sensor.h" />
     <ClInclude Include="shaders\material.h" />
     <ClInclude Include="shaders\pdf.h" />

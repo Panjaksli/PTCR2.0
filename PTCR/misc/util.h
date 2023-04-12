@@ -310,7 +310,7 @@ struct bitfield {
 	inline bool operator[](uchar n)const {
 		return (data >> n) & 1U;
 	}
-	T data;
+	T data = 0;
 };
 
 inline uint pack_rgb(uchar r, uchar g, uchar b, uchar a = 255)

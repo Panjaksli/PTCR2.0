@@ -1,5 +1,6 @@
 #pragma once
 #include "vec3.h"
+/*Unused for now*/
 class obj_phys{
 public:
 	obj_phys(vec3 X =0, vec3 V = 0, float m = 1):X(X,m),V(V){}

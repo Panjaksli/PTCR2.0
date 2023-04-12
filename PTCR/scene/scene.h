@@ -1,9 +1,7 @@
 #pragma once
-
 #include "pdf.h"
 #include "obj_list.h"
 #include "camera.h"
-
 
 struct scene_opt {
 	scene_opt() {}
@@ -47,16 +45,16 @@ struct scene_opt {
 	bool p_mode = 1;
 };
 
-class scene {
+class Scene {
 public:
 	camera cam;
 	obj_list world;
 	mat4 sun_pos;
 	scene_opt opt;
 	albedo skybox;
-	scene() {}
-	scene(camera cam, obj_list world = {}) :cam(cam), world(world) {}
-	scene(uint w, uint h, float fov, obj_list world = {}) :cam(w, h, fov), world(world) {}
+	Scene() {}
+	Scene(camera cam, obj_list world = {}) :cam(cam), world(world) {}
+	Scene(uint w, uint h, float fov, obj_list world = {}) :cam(w, h, fov), world(world) {}
 	void set_skybox(const albedo& bg);
 	void save(const char* name) const;
 	void load(const char* name);
@@ -209,13 +207,16 @@ private:
 		bool hit = world.hit<1>(r, rec);
 		if (opt.en_fog) {
 			for (int i = 0; i < opt.samples; i++)
-				col += volumetric_pt<true>(r, opt.bounces, rec, hit) * opt.inv_sa;
+				col += volumetric_pt<true>(r, opt.bounces, rec, hit);
+			col *= opt.inv_sa;
 		}
 		else {
 			if (!hit) col = sky(r.D);
-			else
+			else{
 				for (int i = 0; i < opt.samples; i++)
-					col += iterative_pt(r, rec, opt.bounces) * opt.inv_sa;
+					col += iterative_pt(r, rec, opt.bounces);
+				col *= opt.inv_sa;
+			}
 		}
 		return vec3(col, rec.t);
 	}

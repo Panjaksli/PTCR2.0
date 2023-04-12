@@ -16,7 +16,7 @@ struct matrec {
 	vec3 aten, emis; //Color
 	float a = 0; // Rougness
 	float ir = 1.f;
-	uchar refl = refl_none;
+	uint refl = refl_none;
 };
 
 constexpr int mat_cnt = 5;
@@ -103,8 +103,16 @@ namespace material {
 		vec3 H = n.world(sa_ggx(a));
 		float HoV = absdot(H, r.D);
 		float Fr = fresnel(HoV, n1, n2, mu);
-		bool refl = Fr > rafl();
-		if (refl) {
+		bool reflective = Fr > rafl();
+		bool translucent = tex.trans > rafl();
+		if (translucent) {
+			mat.aten = rgb;
+			mat.P = rec.P - rec.N * eps;
+			mat.L = refract(r.D, H, 1);
+			mat.refl = refl_tran;
+			mat.ir = 1;
+		}
+		else if (reflective) {
 			mat.L = reflect(r.D, H);
 			float NoV = absdot(-r.D,N);
 			float NoL = dot(N,mat.L);

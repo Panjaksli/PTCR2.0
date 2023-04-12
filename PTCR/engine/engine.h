@@ -4,29 +4,32 @@
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_sdlrenderer.h>
+#include <chrono>
 #include "scenes.h"
 #include "event_handler.h"
 #include "defines.h"
-
-class engine {
+//Using following naming conventions:
+//What is super important class/function = capital (Scene,Engine, Render(), etc...)
+//What is 20x nested or POD or math related = non-capital (basically everyhing else)
+//Sometimes it doesn't match neither, then I follow every other C/C++ math/graphics library (do whatever you want)
+namespace PTCR
+{
+class Engine {
 public:
-	engine(double max_fps = 90, SDL_Rect screen = { 0,0,1280,720 }, SDL_Rect viewport = { 0,0,960,720 }, SDL_Rect menu = { 960,0, 320,720 });
-	~engine();
-	void resize();
-	void process_input();
-	void process_overlay();
-	void draw_scene();
-	void render_loop();
-	void object_menu();
-	void camera_menu();
-	void add_object();
-	void add_material();
+	Engine(double max_fps = 90, SDL_Rect screen = { 0,0,1280,720 }, SDL_Rect viewport = { 0,0,960,720 }, SDL_Rect menu = { 960,0, 320,720 });
+	~Engine();
+	void Resize();
+	void Process_input();
+	void Process_overlay();
+	void Draw_scene();
+	void Render_loop();
+	void Object_menu();
+	void Camera_menu();
+	void Add_object();
+	void Add_material();
 	static void delay(double sec) {
 		//mid precision, good efficiency
 		SDL_Delay(1000 * fmax(0, sec));
-		//double t1 = timer();
-		//while (timer(t1) < sec);
-		//std::this_thread::sleep_for(std::chrono::duration<double>(sec));
 	}
 	static double timer() {
 		auto t = std::chrono::high_resolution_clock::now();
@@ -40,7 +43,7 @@ public:
 		return 1000.0 * (SDL_GetPerformanceCounter() - t1) / SDL_GetPerformanceFrequency();
 	}
 private:
-	scene Scene;
+	Scene scene;
 	SDL_Window* window;
 	SDL_Renderer* renderer;
 	SDL_Texture* frame;
@@ -73,3 +76,4 @@ private:
 	bool add_mat = false;
 	//bool obj_delta = false;
 };
+}

@@ -1,22 +1,16 @@
-#include <future>
-#include <chrono>
-#include <thread>
-#include "engine.h"
+#include "Engine.h"
 
-#if DEBUG
-bool use_normal_maps = 1;
-#endif
+namespace PTCR
+{
 
-engine::~engine() {
+Engine::~Engine() {
 	SDL_DestroyTexture(frame);
-	//SDL_DestroyTexture(frame1);
-	//SDL_DestroyTexture(frame2);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 }
 
-engine::engine(double max_fps, SDL_Rect screen, SDL_Rect viewport, SDL_Rect menu) : Scene(viewport.w, viewport.h, 90), screen(screen), viewport(viewport), menu(menu), max_fps(max_fps) {
+Engine::Engine(double max_fps, SDL_Rect screen, SDL_Rect viewport, SDL_Rect menu) : scene(viewport.w, viewport.h, 90), screen(screen), viewport(viewport), menu(menu), max_fps(max_fps) {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "direct3d11");
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "2");
@@ -30,19 +24,19 @@ engine::engine(double max_fps, SDL_Rect screen, SDL_Rect viewport, SDL_Rect menu
 	ImGui::StyleColorsDark();
 	ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
 	ImGui_ImplSDLRenderer_Init(renderer);
-	scn_load(Scene, 1);
+	scn_load(scene, 1);
 }
 
-void engine::resize() {
+void Engine::Resize() {
 	reproject = 0;
 	viewport = { 0,0,3 * screen.w / 4,screen.h };
 	menu = { 3 * screen.w / 4,0, screen.w / 4,screen.h };
-	Scene.cam.resize(viewport.w, viewport.h, scale);
+	scene.cam.resize(viewport.w, viewport.h, scale);
 	SDL_DestroyTexture(frame);
-	frame = SDL_CreateTexture(renderer, format, SDL_TEXTUREACCESS_STREAMING, Scene.cam.w, Scene.cam.h);
+	frame = SDL_CreateTexture(renderer, format, SDL_TEXTUREACCESS_STREAMING, scene.cam.w, scene.cam.h);
 	SDL_SetTextureScaleMode(frame, SDL_ScaleModeBest);
 }
-void engine::process_input() {
+void Engine::Process_input() {
 	while (SDL_PollEvent(&event))
 	{
 		ImGui_ImplSDL2_ProcessEvent(&event);
@@ -55,7 +49,7 @@ void engine::process_input() {
 				running = false;
 			if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
 				screen = { 0,0,event.window.data1, event.window.data2 };
-				resize();
+				Resize();
 			}
 		}
 
@@ -63,12 +57,12 @@ void engine::process_input() {
 			if (handle.rmb) {
 				int x, y;
 				SDL_GetMouseState(&x, &y);
-				Scene.get_id(scale * y, scale * x);
+				scene.get_id(scale * y, scale * x);
 				if (tap_to_focus)
-					Scene.cam_manufocus(scale * y, scale * x);
+					scene.cam_manufocus(scale * y, scale * x);
 			}
 			if (handle.motion && handle.lmb)
-				Scene.cam.rotate(sensitivity * torad(vec3(0, -handle.xvec, -handle.yvec)));
+				scene.cam.rotate(sensitivity * torad(vec3(0, -handle.xvec, -handle.yvec)));
 		}
 	}
 	if (ImGui::GetIO().WantCaptureKeyboard) handle.reset_keys();
@@ -76,38 +70,38 @@ void engine::process_input() {
 	else move_mul = 1.0;
 	vec3 move = 10 * move_mul * vec3(handle[SDL_SCANCODE_W] - handle[SDL_SCANCODE_S], handle[SDL_SCANCODE_SPACE] - handle[SDL_SCANCODE_LCTRL], handle[SDL_SCANCODE_D] - handle[SDL_SCANCODE_A]);
 	vec3 pan = vec3(0, handle[SDL_SCANCODE_LEFT] - handle[SDL_SCANCODE_RIGHT], handle[SDL_SCANCODE_UP] - handle[SDL_SCANCODE_DOWN]);
-	Scene.cam_move(move, dt);
-	Scene.cam.rotate(sensitivity * pan * dt);
+	scene.cam_move(move, dt);
+	scene.cam.rotate(sensitivity * pan * dt);
 	if (handle[SDL_SCANCODE_F1])overlay = !overlay, handle[SDL_SCANCODE_F1] = 0;
-	Scene.get_trans(T);
+	scene.get_trans(T);
 	TP = T.P(); TA = T.A(); TD = todeg(TA);
 }
 
-void engine::process_overlay() {
+void Engine::Process_overlay() {
 	if (overlay)
 	{
 		ImGui_ImplSDLRenderer_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
-		camera_menu();
-		object_menu();
-		add_object();
-		add_material();
+		Camera_menu();
+		Object_menu();
+		Add_object();
+		Add_material();
 		ImGui::Render();
 	}
 }
 
-void engine::draw_scene() {
+void Engine::Draw_scene() {
 	uint* disp = nullptr;
 	int pitch = viewport.w * 4;
 	SDL_LockTexture(frame, 0, (void**)&disp, &pitch);
-	if (!Scene.opt.framegen) {
+	if (!scene.opt.framegen) {
 		if (reproject) {
-			Scene.Reproject(proj, disp, pitch / 4);
+			scene.Reproject(proj, disp, pitch / 4);
 		}
 		else {
-			proj = projection(Scene.cam.T, Scene.cam.CCD.w, Scene.cam.CCD.h, Scene.cam.tfov);
-			Scene.Render(disp, pitch / 4);
+			proj = projection(scene.cam.T, scene.cam.CCD.w, scene.cam.CCD.h, scene.cam.tfov);
+			scene.Render(disp, pitch / 4);
 		}
 		SDL_UnlockTexture(frame);
 		SDL_RenderCopy(renderer, frame, 0, &viewport);
@@ -119,7 +113,7 @@ void engine::draw_scene() {
 		//static double tmr = 0;
 		if (frame_id) {
 			gen_t = timer();
-			Scene.Reproject(proj, disp, pitch / 4);
+			scene.Reproject(proj, disp, pitch / 4);
 			gen_t = timer(gen_t);
 			SDL_UnlockTexture(frame);
 			SDL_RenderCopy(renderer, frame, 0, &viewport);
@@ -131,9 +125,9 @@ void engine::draw_scene() {
 			SDL_RenderPresent(renderer);
 		}
 		else {
-			proj = projection(Scene.cam.T, Scene.cam.CCD.w, Scene.cam.CCD.h, Scene.cam.tfov);
+			proj = projection(scene.cam.T, scene.cam.CCD.w, scene.cam.CCD.h, scene.cam.tfov);
 			nor_t = timer();
-			Scene.Render(disp, pitch / 4);
+			scene.Render(disp, pitch / 4);
 			nor_t = timer(nor_t);
 			SDL_UnlockTexture(frame);
 			SDL_RenderCopy(renderer, frame, 0, &viewport);
@@ -146,7 +140,7 @@ void engine::draw_scene() {
 	}
 }
 
-void engine::add_object() {
+void Engine::Add_object() {
 	if (add_obj) {
 		static int obj_type = 0;
 		static bool is_mesh = false;
@@ -159,7 +153,7 @@ void engine::add_object() {
 		static char filename[40];
 		ImGui::Begin("Add object", &add_obj);
 		ImGui::DragFloat4("Offscale", offset._xyz, 0.01f);
-		ImGui::SliderInt("Mat##1", &mat, -1, Scene.world.materials.size() - 1, "%d", CLAMP);
+		ImGui::SliderInt("Mat##1", &mat, -1, scene.world.materials.size() - 1, "%d", CLAMP);
 		ImGui::Checkbox("No bvh##2", &skip_bvh);
 		ImGui::SameLine();
 		ImGui::Checkbox("Light##2", &is_light);
@@ -181,22 +175,22 @@ void engine::add_object() {
 		}
 		if (ImGui::Button("Load")) {
 			if (is_mesh) {
-				Scene.world.add_mesh(load_mesh(filename), offset, offset.w(), mat, skip_bvh, is_light, is_foggy);
-				if (!skip_bvh)Scene.opt.en_bvh = Scene.world.en_bvh = true;
+				scene.world.add_mesh(load_mesh(filename), offset, offset.w(), mat, skip_bvh, is_light, is_foggy);
+				if (!skip_bvh)scene.opt.en_bvh = scene.world.en_bvh = true;
 			}
-			else if (obj_type == o_pol) Scene.world.add_mesh(poly(a, b, c), offset, offset.w(), mat, skip_bvh, is_light, is_foggy);
-			else if (obj_type == o_qua) Scene.world.add_mesh(quad(a, b, c), offset, offset.w(), mat, skip_bvh, is_light, is_foggy);
-			else if (obj_type == o_sph)	Scene.world.add_mesh(sphere(q), offset, offset.w(), mat, skip_bvh, is_light, is_foggy);
-			else if (obj_type == o_vox) Scene.world.add_mesh(voxel(q), offset, offset.w(), mat, skip_bvh, is_light, is_foggy);
-			Scene.opt.selected = Scene.world.objects.size() - 1;
-			Scene.world.update_all();
-			Scene.cam.moving = true;
+			else if (obj_type == o_pol) scene.world.add_mesh(poly(a, b, c), offset, offset.w(), mat, skip_bvh, is_light, is_foggy);
+			else if (obj_type == o_qua) scene.world.add_mesh(quad(a, b, c), offset, offset.w(), mat, skip_bvh, is_light, is_foggy);
+			else if (obj_type == o_sph)	scene.world.add_mesh(sphere(q), offset, offset.w(), mat, skip_bvh, is_light, is_foggy);
+			else if (obj_type == o_vox) scene.world.add_mesh(voxel(q), offset, offset.w(), mat, skip_bvh, is_light, is_foggy);
+			scene.opt.selected = scene.world.objects.size() - 1;
+			scene.world.update_all();
+			scene.cam.moving = true;
 		}
 		ImGui::End();
 	}
 }
 
-void engine::add_material() {
+void Engine::Add_material() {
 	if (add_mat) {
 		static int type = 0;
 		static float ir = 1, scl = 1;
@@ -216,154 +210,154 @@ void engine::add_material() {
 			texture t1 = s1 ? texture(rgb) : texture(srgb);
 			texture t2 = s2 ? texture(mer) : texture(smer);
 			texture t3 = s3 ? texture(nor) : texture(snor);
-			Scene.world.add_mat(albedo(t1, t2, t3, scl, ir, spec), mat_enum(type));
+			scene.world.add_mat(albedo(t1, t2, t3, scl, ir, spec), mat_enum(type));
 		}
 		ImGui::End();
 	}
 }
 
-void engine::camera_menu() {
+void Engine::Camera_menu() {
 	ImGui::SetNextWindowPos(ImVec2(menu.x, 0));
 	ImGui::SetNextWindowSize(ImVec2(menu.w, menu.h / 2));
 	ImGui::Begin("Camera settings");
 	static char scn_name[40];
 	ImGui::InputText("SCN File", scn_name, 40);
-	if (ImGui::Button("Load Scene")) {
-		if (scn_load(Scene, scn_name, 0)) {
-			scn_n = -1, Scene.opt.en_bvh = 1;
+	if (ImGui::Button("Load scene")) {
+		if (scn_load(scene, scn_name, 0)) {
+			scn_n = -1, scene.opt.en_bvh = 1;
 			reproject = false;
 		}
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Update Scene")) {
-		if (scn_load(Scene, scn_name, 1)) {
-			scn_n = -1, Scene.opt.en_bvh = 1;
+	if (ImGui::Button("Update scene")) {
+		if (scn_load(scene, scn_name, 1)) {
+			scn_n = -1, scene.opt.en_bvh = 1;
 			reproject = false;
 		}
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Screenshot")) {
-		Scene.Screenshot(reproject);
+		scene.Screenshot(reproject);
 	}
-	if (ImGui::SliderInt("Scene", &scn_n, 1, no_scn)) {
-		scn_load(Scene, scn_n);
+	if (ImGui::SliderInt("scene", &scn_n, 1, no_scn)) {
+		scn_load(scene, scn_n);
 		reproject = false;
-		fogdens = log10f(-Scene.opt.ninv_fog);
+		fogdens = log10f(-scene.opt.ninv_fog);
 	}
-	vec3 pos = Scene.cam.T.P();
+	vec3 pos = scene.cam.T.P();
 	if (ImGui::DragFloat3("Position", pos._xyz, 0.001))
-		Scene.cam.set_P(pos);
+		scene.cam.set_P(pos);
 	ImGui::DragFloat("Sensitivity", &sensitivity, 0.01, 0.1, 2.f, "%.2f");
-	ImGui::DragFloat("Speed", &Scene.cam.speed, 0.001, 0.001, 1e3f, "%.2f");
-	if (ImGui::DragFloat("FOV", &Scene.cam.fov, 0.1, 0.0001, 179, "%.2f"))
+	ImGui::DragFloat("Speed", &scene.cam.speed, 0.001, 0.001, 1e3f, "%.2f");
+	if (ImGui::DragFloat("FOV", &scene.cam.fov, 0.1, 0.0001, 179, "%.2f"))
 	{
-		Scene.cam.moving = true;
-		Scene.cam.update();
+		scene.cam.moving = true;
+		scene.cam.update();
 	}
-	if (ImGui::Checkbox("Auto focus", &Scene.cam.autofocus))
+	if (ImGui::Checkbox("Auto focus", &scene.cam.autofocus))
 	{
-		if (Scene.cam.autofocus)tap_to_focus = 0;
-		Scene.cam.moving = true;
+		if (scene.cam.autofocus)tap_to_focus = 0;
+		scene.cam.moving = true;
 	}
 	ImGui::SameLine();
 	if (ImGui::Checkbox("Tap to focus", &tap_to_focus))
 	{
-		if (tap_to_focus)Scene.cam.autofocus = 0;
+		if (tap_to_focus)scene.cam.autofocus = 0;
 	}
-	if (ImGui::DragFloat("Foc dist", &Scene.cam.foc_t, 0.001, 0.001, infp, "%.3f"))
+	if (ImGui::DragFloat("Foc dist", &scene.cam.foc_t, 0.001, 0.001, infp, "%.3f"))
 	{
-		Scene.cam.moving = true;
-		Scene.cam.autofocus = 0;
+		scene.cam.moving = true;
+		scene.cam.autofocus = 0;
 	}
-	Scene.cam.moving |= ImGui::DragFloat("Exposure", &Scene.cam.exposure, 0.1, 0.01, 100.f, "%.2f", ImGuiSliderFlags_Logarithmic);
-	//Scene.cam.moving |= ImGui::DragFloat("Lens correction", &Scene.cam.lens_cor, 0.001, -1.f, 1.f, "%.3f");
-	Scene.cam.moving |= ImGui::DragFloat("F-stop", &Scene.cam.fstop, 0.1, 0.1f, 64.f, "%.2f", ImGuiSliderFlags_Logarithmic);
-	if (ImGui::DragFloat("Res scale", &scale, 0.01, 0.1f, 4, " %.2f", CLAMP)) resize(), Scene.cam.moving = true;
-	if (ImGui::DragFloat("Ray lifetime", &Scene.opt.p_life, 0.01, 0.01, 1.f, "%.2f", CLAMP))
+	scene.cam.moving |= ImGui::DragFloat("Exposure", &scene.cam.exposure, 0.1, 0.01, 100.f, "%.2f", ImGuiSliderFlags_Logarithmic);
+	//scene.cam.moving |= ImGui::DragFloat("Lens correction", &scene.cam.lens_cor, 0.001, -1.f, 1.f, "%.3f");
+	scene.cam.moving |= ImGui::DragFloat("F-stop", &scene.cam.fstop, 0.1, 0.1f, 64.f, "%.2f", ImGuiSliderFlags_Logarithmic);
+	if (ImGui::DragFloat("Res scale", &scale, 0.01, 0.1f, 4, " %.2f", CLAMP)) Resize(), scene.cam.moving = true;
+	if (ImGui::DragFloat("Ray lifetime", &scene.opt.p_life, 0.01, 0.01, 1.f, "%.2f", CLAMP))
 	{
-		Scene.opt.i_life = 1.f / Scene.opt.p_life;
-		Scene.cam.moving = true;
+		scene.opt.i_life = 1.f / scene.opt.p_life;
+		scene.cam.moving = true;
 	}
-	ImGui::DragInt("Samples", &Scene.opt.samples, 0.1, 0, 1000, 0, CLAMP);
-	Scene.cam.moving |= ImGui::DragInt("Bounces", &Scene.opt.bounces, 0.1, 0, 1000, 0, CLAMP);
-	ImGui::DragFloat("MED filter", &Scene.opt.med_thr, 0.001f, 0.0f, 1.f, "%.3f", CLAMP);
-	Scene.cam.moving |= ImGui::Checkbox("Light sampling", &Scene.opt.li_sa); ImGui::SameLine();
-	Scene.cam.moving |= ImGui::Checkbox("Sun sampling", &Scene.opt.sun_sa);
-	Scene.cam.moving |= ImGui::Checkbox("FPS/Freecam", &Scene.cam.free); ImGui::SameLine();
-	Scene.cam.moving |= ImGui::Checkbox("Collision", &Scene.cam.collision);
-	Scene.cam.moving |= ImGui::Checkbox("Denoise", &den_view); ImGui::SameLine();
-	Scene.cam.moving |= ImGui::Checkbox("Bokeh", &Scene.cam.bokeh);
-	Scene.cam.moving |= ImGui::Checkbox("Perf mode", &Scene.opt.p_mode); ImGui::SameLine();
-	Scene.cam.moving |= ImGui::Checkbox("Resample", &Scene.opt.re_sam);
+	ImGui::DragInt("Samples", &scene.opt.samples, 0.1, 0, 1000, 0, CLAMP);
+	scene.cam.moving |= ImGui::DragInt("Bounces", &scene.opt.bounces, 0.1, 0, 1000, 0, CLAMP);
+	ImGui::DragFloat("MED filter", &scene.opt.med_thr, 0.001f, 0.0f, 1.f, "%.3f", CLAMP);
+	scene.cam.moving |= ImGui::Checkbox("Light sampling", &scene.opt.li_sa); ImGui::SameLine();
+	scene.cam.moving |= ImGui::Checkbox("Sun sampling", &scene.opt.sun_sa);
+	scene.cam.moving |= ImGui::Checkbox("FPS/Freecam", &scene.cam.free); ImGui::SameLine();
+	scene.cam.moving |= ImGui::Checkbox("Collision", &scene.cam.collision);
+	scene.cam.moving |= ImGui::Checkbox("Denoise", &den_view); ImGui::SameLine();
+	scene.cam.moving |= ImGui::Checkbox("Bokeh", &scene.cam.bokeh);
+	scene.cam.moving |= ImGui::Checkbox("Perf mode", &scene.opt.p_mode); ImGui::SameLine();
+	scene.cam.moving |= ImGui::Checkbox("Resample", &scene.opt.re_sam);
 #if DEBUG
-	Scene.cam.moving |= ImGui::Checkbox("Debug Aten", &Scene.opt.dbg_at); ImGui::SameLine();
-	Scene.cam.moving |= ImGui::Checkbox("Debug N", &Scene.opt.dbg_n);
-	Scene.cam.moving |= ImGui::Checkbox("Debug UV", &Scene.opt.dbg_uv);	ImGui::SameLine();
-	Scene.cam.moving |= ImGui::Checkbox("Debug Face", &Scene.opt.dbg_f);
-	Scene.cam.moving |= ImGui::Checkbox("Debug Edge", &Scene.opt.dbg_e);	ImGui::SameLine();
-	Scene.cam.moving |= ImGui::Checkbox("Debug t", &Scene.opt.dbg_t);
-	Scene.cam.moving |= ImGui::Checkbox("Debug lighting", &Scene.opt.dbg_light); ImGui::SameLine();
-	if (Scene.opt.dbg_light)
+	scene.cam.moving |= ImGui::Checkbox("Debug Aten", &scene.opt.dbg_at); ImGui::SameLine();
+	scene.cam.moving |= ImGui::Checkbox("Debug N", &scene.opt.dbg_n);
+	scene.cam.moving |= ImGui::Checkbox("Debug UV", &scene.opt.dbg_uv);	ImGui::SameLine();
+	scene.cam.moving |= ImGui::Checkbox("Debug Face", &scene.opt.dbg_f);
+	scene.cam.moving |= ImGui::Checkbox("Debug Edge", &scene.opt.dbg_e);	ImGui::SameLine();
+	scene.cam.moving |= ImGui::Checkbox("Debug t", &scene.opt.dbg_t);
+	scene.cam.moving |= ImGui::Checkbox("Debug lighting", &scene.opt.dbg_light); ImGui::SameLine();
+	if (scene.opt.dbg_light)
 	{
 		ImGui::SameLine();
-		Scene.cam.moving |= ImGui::Checkbox("Direct", &Scene.opt.dbg_direct);
+		scene.cam.moving |= ImGui::Checkbox("Direct", &scene.opt.dbg_direct);
 	}
-	Scene.cam.moving |= ImGui::Checkbox("Normal maps", &use_normal_maps);
-	Scene.cam.moving |= ImGui::Checkbox("Reproject", &reproject); ImGui::SameLine();
+	scene.cam.moving |= ImGui::Checkbox("Normal maps", &use_normal_maps);
+	scene.cam.moving |= ImGui::Checkbox("Reproject", &reproject); ImGui::SameLine();
 	//WIP
-	if (ImGui::Checkbox("Framegen", &Scene.opt.framegen)) {
+	if (ImGui::Checkbox("Framegen", &scene.opt.framegen)) {
 		reproject = 0;
 	}
 #endif
 	int maxfps = max_fps;
 	ImGui::DragInt("Max FPS", &maxfps, 1, 10, 240);
 	max_fps = maxfps;
-	ImGui::DragInt("Max SPP", &Scene.opt.max_spp, 1000, 1, infp, "%d", ImGuiSliderFlags_Logarithmic);
-	ImGui::Text("%.2f ms %.1f FPS,SPP %.3d", 1000.0f / fps, fps, (int)Scene.cam.CCD.spp); ImGui::SameLine();
-	ImGui::Checkbox("Pause", &Scene.opt.paused);
+	ImGui::DragInt("Max SPP", &scene.opt.max_spp, 1000, 1, infp, "%d", ImGuiSliderFlags_Logarithmic);
+	ImGui::Text("%.2f ms %.1f FPS,SPP %.3d", 1000.0f / fps, fps, (int)scene.cam.CCD.spp); ImGui::SameLine();
+	ImGui::Checkbox("Pause", &scene.opt.paused);
 	ImGui::End();
 }
 
-void engine::object_menu() {
+void Engine::Object_menu() {
 	ImGui::SetNextWindowPos(ImVec2(menu.x, menu.h / 2));
 	ImGui::SetNextWindowSize(ImVec2(menu.w, menu.h / 2));
 	ImGui::Begin("World properties");
 	static char filename[40];
-	Scene.cam.moving |= ImGui::Checkbox("Sky", &Scene.opt.sky); ImGui::SameLine();
-	Scene.cam.moving |= ImGui::Checkbox("Skybox", &Scene.opt.skybox); ImGui::SameLine();
-	Scene.cam.moving |= ImGui::Checkbox("Fog", &Scene.opt.en_fog);
-	if (Scene.opt.en_fog) {
+	scene.cam.moving |= ImGui::Checkbox("Sky", &scene.opt.sky); ImGui::SameLine();
+	scene.cam.moving |= ImGui::Checkbox("Skybox", &scene.opt.skybox); ImGui::SameLine();
+	scene.cam.moving |= ImGui::Checkbox("Fog", &scene.opt.en_fog);
+	if (scene.opt.en_fog) {
 		if (ImGui::DragFloat("Fog density", &fogdens, -0.01, -3, 12, "1e-%.2f")) {
-			Scene.opt.ninv_fog = -1.f * pow(10, fogdens); Scene.cam.moving = true;
+			scene.opt.ninv_fog = -1.f * pow(10, fogdens); scene.cam.moving = true;
 		}
-		Scene.cam.moving |= ImGui::ColorEdit3("Fog color", Scene.opt.fog_col._xyz, ImGuiColorEditFlags_Float);
+		scene.cam.moving |= ImGui::ColorEdit3("Fog color", scene.opt.fog_col._xyz, ImGuiColorEditFlags_Float);
 	}
-	if (Scene.opt.sky) {
-		if (Scene.opt.skybox) {
+	if (scene.opt.sky) {
+		if (scene.opt.skybox) {
 			if (ImGui::InputText("Load skybox", filename, 40, ImGuiInputTextFlags_EnterReturnsTrue)) {
-				Scene.set_skybox(albedo(filename, Scene.skybox.mer()));
-				Scene.cam.moving = true;
+				scene.set_skybox(albedo(filename, scene.skybox.mer()));
+				scene.cam.moving = true;
 			}
 		}
 		else
 		{
-			Scene.cam.moving |= ImGui::ColorEdit3("Sun noon", Scene.opt.sun_noon._xyz, ImGuiColorEditFlags_Float);
-			Scene.cam.moving |= ImGui::ColorEdit3("Sun dawn", Scene.opt.sun_dawn._xyz, ImGuiColorEditFlags_Float);
-			Scene.cam.moving |= ImGui::ColorEdit3("Sky noon", Scene.opt.sky_noon._xyz, ImGuiColorEditFlags_Float);
-			Scene.cam.moving |= ImGui::ColorEdit3("Sky dawn", Scene.opt.sky_dawn._xyz, ImGuiColorEditFlags_Float);
+			scene.cam.moving |= ImGui::ColorEdit3("Sun noon", scene.opt.sun_noon._xyz, ImGuiColorEditFlags_Float);
+			scene.cam.moving |= ImGui::ColorEdit3("Sun dawn", scene.opt.sun_dawn._xyz, ImGuiColorEditFlags_Float);
+			scene.cam.moving |= ImGui::ColorEdit3("Sky noon", scene.opt.sky_noon._xyz, ImGuiColorEditFlags_Float);
+			scene.cam.moving |= ImGui::ColorEdit3("Sky dawn", scene.opt.sky_dawn._xyz, ImGuiColorEditFlags_Float);
 		}
 	}
-	ImGui::Checkbox("BVH", &Scene.opt.en_bvh);  ImGui::SameLine();
-	if (ImGui::Checkbox("Linear", &Scene.world.bvh_lin)) {
-		Scene.world.rebuild_bvh(1, Scene.opt.node_size);
+	ImGui::Checkbox("BVH", &scene.opt.en_bvh);  ImGui::SameLine();
+	if (ImGui::Checkbox("Linear", &scene.world.bvh_lin)) {
+		scene.world.rebuild_bvh(1, scene.opt.node_size);
 	}
 	ImGui::SameLine();
 	if (ImGui::Button("Rebuild BVH")) {
-		Scene.world.rebuild_bvh(1, Scene.opt.node_size);
-		Scene.cam.moving = true;
+		scene.world.rebuild_bvh(1, scene.opt.node_size);
+		scene.cam.moving = true;
 	}
-	if (ImGui::DragInt("Leaf nodes", &Scene.opt.node_size, 1, 1, 32, 0, CLAMP)) {
-		Scene.world.rebuild_bvh(1, Scene.opt.node_size);
+	if (ImGui::DragInt("Leaf nodes", &scene.opt.node_size, 1, 1, 32, 0, CLAMP)) {
+		scene.world.rebuild_bvh(1, scene.opt.node_size);
 	}
 	ImGui::Text("Object menu");
 	if (ImGui::Button("Add object")) {
@@ -373,165 +367,168 @@ void engine::object_menu() {
 	if (ImGui::Button("Add material")) {
 		add_mat = true;
 	}
-	ImGui::SliderInt("Object ID", &(int&)Scene.opt.selected, -1, Scene.world.objects.size() - 1);
-	ImGui::Text("Type: %s", obj_enum_str(Scene.get_flag().type()));
-	if (Scene.opt.selected < Scene.world.objects.size()) {
-		uint id = Scene.opt.selected;
-		mesh_var& obj = Scene.object_at(id);
+	ImGui::SliderInt("Object ID", &(int&)scene.opt.selected, -1, scene.world.objects.size() - 1);
+	ImGui::Text("Type: %s", obj_enum_str(scene.get_flag().type()));
+	if (scene.opt.selected < scene.world.objects.size()) {
+		uint id = scene.opt.selected;
+		mesh_var& obj = scene.object_at(id);
 		bool is_light = obj.light();
 		bool is_inbvh = obj.bvh();
 		bool is_foggy = obj.fog();
 		vec3 DT = TA;
 		ImGui::SameLine();
 		if (ImGui::Button("Erase")) {
-			Scene.cam.moving = true;
-			Scene.world.remove_mesh(id);
+			scene.cam.moving = true;
+			scene.world.remove_mesh(id);
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Duplicate")) {
-			Scene.cam.moving = true;
-			Scene.world.duplicate_mesh(id);
+			scene.cam.moving = true;
+			scene.world.duplicate_mesh(id);
 		}
 		if (ImGui::Checkbox("IN BVH", &is_inbvh)) {
 			obj.flag.set_bvh(is_inbvh);
-			Scene.world.update_all(Scene.opt.node_size); Scene.cam.moving = true;
+			scene.world.update_all(scene.opt.node_size); scene.cam.moving = true;
 		}
 		ImGui::SameLine();
 		if (ImGui::Checkbox("Importance", &is_light)) {
 			obj.flag.set_lig(is_light);
-			Scene.world.update_lights(); Scene.cam.moving = true;
+			scene.world.update_lights(); scene.cam.moving = true;
 		}
 		ImGui::SameLine();
 		if (ImGui::Checkbox("Foggy", &is_foggy)) {
 			obj.flag.set_fog(is_foggy);
-			Scene.cam.moving = true;
+			scene.cam.moving = true;
 		}
 		if (ImGui::DragFloat4("Pos", TP._xyz, 0.01))
 		{
-			Scene.set_trans(mat4(TP, TA));
-			Scene.cam.moving = true;
+			scene.set_trans(mat4(TP, TA));
+			scene.cam.moving = true;
 		}
 		DT = TA;
 		if (ImGui::DragFloat3("Rot", TA._xyz, 0.01) && not0(DT - mod(TA, pi2)))
 		{
-			Scene.set_trans(mat4(TP, TA));
-			Scene.cam.moving = true;
+			scene.set_trans(mat4(TP, TA));
+			scene.cam.moving = true;
 		}
 		DT = TD;
 		if (ImGui::DragFloat3("Rot (deg)", TD._xyz, 1, infn, infp, "%.2f") && not0(DT - mod(TD, 360)))
 		{
-			Scene.set_trans(mat4(TP, torad(TD)));
-			Scene.cam.moving = true;
+			scene.set_trans(mat4(TP, torad(TD)));
+			scene.cam.moving = true;
 		}
 		uint mat = obj.get_mat();
-		int max_mat = Scene.world.materials.size();
+		int max_mat = scene.world.materials.size();
 		if (ImGui::SliderInt("Mat", &(int&)mat, -1, max_mat - 1)) {
-			Scene.cam.moving = true;
+			scene.cam.moving = true;
 			obj.set_mat(mat);
 		}
-		if (mat < Scene.world.materials.size()) {
-			albedo& alb = Scene.world.materials[mat].tex;
-			int type = (int)Scene.world.materials[mat].type;
+		if (mat < scene.world.materials.size()) {
+			albedo& alb = scene.world.materials[mat].tex;
+			int type = (int)scene.world.materials[mat].type;
 			vec3 col = alb._rgb.get_col(), mer = alb._mer.get_col(), nor = alb._nor.get_col();
 			bool s1 = alb._rgb.get_solid(), s2 = alb._mer.get_solid(), s3 = alb._nor.get_solid();
 			if (ImGui::SliderInt("Mat type", &type, 0, mat_cnt - 1, mat_enum_str(type))) {
-				Scene.cam.moving = true;
-				Scene.world.materials[mat].type = (mat_enum)type;
+				scene.cam.moving = true;
+				scene.world.materials[mat].type = (mat_enum)type;
 			}
 			ImGui::Text("Material: "); ImGui::SameLine();
 			if (ImGui::Button("Erase##mat")) {
-				Scene.cam.moving = true;
-				Scene.world.remove_mat(mat);
+				scene.cam.moving = true;
+				scene.world.remove_mat(mat);
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Duplicate##mat")) {
-				Scene.cam.moving = true;
-				Scene.world.duplicate_mat(mat);
+				scene.cam.moving = true;
+				scene.world.duplicate_mat(mat);
 			}
 			static char srgb[40], smer[40], snor[40];
 			if (ImGui::Checkbox("RGB##2", &s1)) {
 				alb._rgb.set_solid(s1);
-				Scene.cam.moving = true;
+				scene.cam.moving = true;
 			}
 			ImGui::SameLine();
 			if (!s1) {
 				if (ImGui::InputText("##t1", srgb, 40, ImGuiInputTextFlags_EnterReturnsTrue)) {
-					Scene.cam.moving = true;
+					scene.cam.moving = true;
 					alb._rgb.set_tex(srgb);
 				}
 			}
 			else {
 				if (ImGui::ColorEdit4("##s1", col._xyz, ImGuiColorEditFlags_Float)) {
-					Scene.cam.moving = true;
+					scene.cam.moving = true;
 					alb._rgb.set_col(col);
 				}
 			}
 			if (ImGui::Checkbox("MER##2", &s2)) {
 				alb._mer.set_solid(s2);
-				Scene.cam.moving = true;
+				scene.cam.moving = true;
 			}
 			ImGui::SameLine();
 			if (!s2) {
 				if (ImGui::InputText("##t2", smer, 40, ImGuiInputTextFlags_EnterReturnsTrue)) {
-					Scene.cam.moving = true;
+					scene.cam.moving = true;
 					alb._mer.set_tex(smer);
 				}
 			}
 			else {
 				if (ImGui::ColorEdit3("##s2", mer._xyz, ImGuiColorEditFlags_Float)) {
-					Scene.cam.moving = true;
+					scene.cam.moving = true;
 					alb._mer.set_col(mer);
 				}
 			}
 			if (ImGui::Checkbox("NOR##2", &s3)) {
 				alb._nor.set_solid(s3);
-				Scene.cam.moving = true;
+				scene.cam.moving = true;
 			}
 			ImGui::SameLine();
 			if (!s3) {
 				if (ImGui::InputText("##t3", snor, 40, ImGuiInputTextFlags_EnterReturnsTrue)) {
-					Scene.cam.moving = true;
+					scene.cam.moving = true;
 					alb._nor.set_tex(snor);
 				}
 			}
 			else {
 				if (ImGui::ColorEdit3("##s3", nor._xyz, ImGuiColorEditFlags_Float)) {
-					Scene.cam.moving = true;
+					scene.cam.moving = true;
 					alb._nor.set_col(nor);
 				}
 			}
-			Scene.cam.moving |= ImGui::ColorEdit4("Tint", alb.spec._xyz, ImGuiColorEditFlags_Float);
-			Scene.cam.moving |= ImGui::DragFloat("Scale", &alb.rep, 1, 0);
-			Scene.cam.moving |= ImGui::DragFloat("IOR", &alb.ir, 0.01f, 1.f, 4.f);
+			scene.cam.moving |= ImGui::ColorEdit4("Tint", alb.spec._xyz, ImGuiColorEditFlags_Float);
+			scene.cam.moving |= ImGui::DragFloat("Translucent", &alb.trans, 0.01f, 0.f, 1.f);
+			scene.cam.moving |= ImGui::DragFloat("Scale", &alb.rep, 0.1f, -1000.f, 1000.f);
+			scene.cam.moving |= ImGui::DragFloat("IOR", &alb.ir, 0.01f, 1.f, 4.f);
 		}
 	}
-	else if (!Scene.opt.skybox && Scene.opt.sky) {
+	else if (!scene.opt.skybox && scene.opt.sky) {
 		if (ImGui::DragFloat3("Rot", TA._xyz, 0.01))
 		{
-			Scene.set_trans(mat4(TP, TA));
-			Scene.cam.moving = true;
+			scene.set_trans(mat4(TP, TA));
+			scene.cam.moving = true;
 		}
 		vec3 dTD = TD;
 		if (ImGui::DragFloat3("Rot (deg)", TD._xyz, 1, 0, 359.999f, "%.2f", CLAMP) && not0(dTD - TD))
 		{
-			Scene.set_trans(mat4(TP, torad(TD)));
-			Scene.cam.moving = true;
+			scene.set_trans(mat4(TP, torad(TD)));
+			scene.cam.moving = true;
 		}
 	}
 	ImGui::End();
 }
 
-void engine::render_loop() {
+void Engine::Render_loop() {
 	while (running) {
-		Scene.cam.moving |= !den_view;
+		scene.cam.moving |= !den_view;
 		ft = timer();
-		process_input();
-		process_overlay();
-		draw_scene();
+		Process_input();
+		Process_overlay();
+		Draw_scene();
 		ft = timer(ft);
-		double secs = fmax(0,(Scene.opt.framegen ? 0.5 / max_fps : 1.0 / max_fps) - ft);
+		double secs = fmax(0,(scene.opt.framegen ? 0.5 / max_fps : 1.0 / max_fps) - ft);
 		delay(secs);
 		dt = ft + secs;
 		fps = ImGui::GetIO().Framerate;
 	}
 }
+
+}//END PTCR

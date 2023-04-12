@@ -1,6 +1,4 @@
 #pragma once
-#include <cstdlib>
-#include <iostream>
 #include "vec3.h"
 
 class texture {

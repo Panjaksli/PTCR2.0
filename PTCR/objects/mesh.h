@@ -243,6 +243,7 @@ struct mesh_var {
 	};
 	obj_flags flag;
 };
+
 struct mesh_raw {
 	mesh_raw(aabb bbox, uint obje_id, uint prim_id) : obje_id(obje_id), prim_id(prim_id) {}
 	__forceinline bool hit(const mesh_var* obj, const ray& r, hitrec& rec) const

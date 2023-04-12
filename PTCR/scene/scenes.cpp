@@ -1,6 +1,6 @@
 #include "scenes.h"
 //Simple text format
-bool scn_load(scene& scn, const char* filename, bool update_only) {
+bool scn_load(Scene& scn, const char* filename, bool update_only) {
 	std::string name(filename);
 	if (name.empty())return false;
 	if (name.find(".scn") == std::string::npos)
@@ -95,7 +95,7 @@ bool scn_load(scene& scn, const char* filename, bool update_only) {
 	scn.world.update_lists();
 	return true;
 }
-void scn_load(scene& scn, int n) {
+void scn_load(Scene& scn, int n) {
 	scn.world.clear();
 	scn.opt = scene_opt();
 	scn.cam.reset_opt();
@@ -120,7 +120,7 @@ void scn_load(scene& scn, int n) {
 	scn.world.update_lists();
 	scn.world.build_bvh(1, scn.opt.node_size);
 }
-void scn1(scene& scn) {
+void scn1(Scene& scn) {
 	albedo gre(vec3(0.7, 0.9, 0.7, 0), vec3(0, 0, 0), vec3(0.5, 0.5, 1), 1, 1.2);
 	albedo carpet(vec3(0.8, 0.2, 0.2, 1), vec3(0, 0, 1), "snow_normal", 10);
 	albedo sky("hotel", vec3(0, 1, 0));
@@ -150,7 +150,7 @@ void scn1(scene& scn) {
 	scn.world.en_bvh = 1;
 }
 
-void scn2(scene& scn) {
+void scn2(Scene& scn) {
 	scn.opt.li_sa = 1;
 	albedo iron(vec3(0.7, 0.7, 0.9), vec3(1, 0, 0));
 	albedo white(vec3(0.8, 0.8, 0.8), vec3(0, 2.2, 0));
@@ -172,7 +172,7 @@ void scn2(scene& scn) {
 	scn.cam.setup(mat4(vec3(2, 1, 0), vec3(0, hpi, 0)), 90, 10);
 	scn.world.en_bvh = 0;
 }
-void scn3(scene& scn) {
+void scn3(Scene& scn) {
 	for (int i = 0; i <= 10; i++) {
 		for (int j = 0; j <= 10; j++) {
 			albedo pbrcol(vec3(0.8f, 0.1f, 0.1f), vec3(0.1 * i, 0, 0.1 * j), vec3(0.5, 0.5, 1), 10);
@@ -185,7 +185,7 @@ void scn3(scene& scn) {
 	scn.cam.setup(mat4(vec3(1, 1, 10), vec3(0, 0, 0)), 47, 10);
 	scn.world.en_bvh = 1;
 }
-void scn4(scene& scn) {
+void scn4(Scene& scn) {
 	albedo gre(vec3(0.7, 0.9, 0.7, 0), vec3(0, 0, 0), vec3(0.5, 0.5, 1), 1, 1.2);
 	albedo yel(vec3(0.5, 0.3, 0.0, 1), vec3(0, 0, 1), "snow_normal", 10);
 	albedo wat("water", vec3(0, 0, 0), "water_normal", 20, 1.333);
@@ -212,7 +212,7 @@ void scn4(scene& scn) {
 	scn.world.en_bvh = 1;
 	scn.opt.en_fog = 1;
 }
-void scn5(scene& scn) {
+void scn5(Scene& scn) {
 
 	albedo white(vec3(0.73, 0.73, 0.73, 1), vec3(0, 0, 1));
 	albedo green(vec3(0.12, 0.45, 0.12, 1), vec3(0, 0, 1));
@@ -247,7 +247,7 @@ void scn5(scene& scn) {
 	scn.world.en_bvh = 0;
 }
 
-void scn6(scene& scn) {
+void scn6(Scene& scn) {
 	albedo gnd(vec3(0.8, 0.4, 0.3, 1), vec3(0, 0, 0));
 	albedo trans(vec3(0.7, 0.7, 0.99, 0), vec3(0, 0, 0.2), vec3(0.5, 0.5, 1), 1, 1.2);
 	albedo trans2(vec3(0.99, 0.7, 0.7, 0), vec3(0, 0, 0.2), vec3(0.5, 0.5, 1), 1, 1.2);
@@ -273,7 +273,7 @@ void scn6(scene& scn) {
 	scn.world.en_bvh = 0;
 }
 
-void scn7(scene& scn) {
+void scn7(Scene& scn) {
 	albedo red(vec3(0.63, 0.28, 0, 1), vec3(0.5, 5, 0.1));
 	scn.world.add_mat(red, mat_las);
 	vector<poly> dragon = load_mesh("xyzrgb_dragon", 0, 1);
@@ -290,7 +290,7 @@ void scn7(scene& scn) {
 	scn.world.en_bvh = 1;
 }
 
-void scn8(scene& scn) {
+void scn8(Scene& scn) {
 	albedo r(vec3(0.8, 0.1, 0.1, 1), vec3(0, 33, 0));
 	albedo g(vec3(0.1, 0.8, 0.1, 1), vec3(0, 33, 0));
 	albedo b(vec3(0.1, 0.1, 0.8, 1), vec3(0, 33, 0));

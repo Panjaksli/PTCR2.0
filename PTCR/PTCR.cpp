@@ -1,7 +1,7 @@
-#include "engine.h"
+#include "Engine.h"
 
 int main()
 {
-	engine Engine(90);
-	Engine.render_loop();
+	PTCR::Engine engine(90);
+	engine.Render_loop();
 }

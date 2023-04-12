@@ -1,11 +1,8 @@
 #pragma once
-#include <cmath>
-#include <memory>
+#include <math.h>
 #include <cstdio>
 #include <vector>
-#include <algorithm>
 #include <string>
-#include <chrono>
 #include <ctime>
 #include <iostream>
 #include <fstream>

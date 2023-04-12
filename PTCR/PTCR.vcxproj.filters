@@ -45,7 +45,7 @@
     <ClCompile Include="scene\camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="scene\scene.cpp">
+    <ClCompile Include="scene\Scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="scene\sensor.cpp">
@@ -60,7 +60,7 @@
     <ClCompile Include="misc\util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="engine\engine.cpp">
+    <ClCompile Include="engine\Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -119,7 +119,7 @@
     <ClInclude Include="scene\camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="scene\scene.h">
+    <ClInclude Include="scene\Scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="scene\sensor.h">
@@ -185,7 +185,7 @@
     <ClInclude Include="objects\physics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="engine\engine.h">
+    <ClInclude Include="engine\Engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

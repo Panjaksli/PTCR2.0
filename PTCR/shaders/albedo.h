@@ -33,6 +33,7 @@ public:
 public:
 	texture _rgb, _mer, _nor;
 	vec3 spec = 0;
+	float trans = 0.f;
 	float rep = 1.f;
 	float ir = 1.f;
 };
