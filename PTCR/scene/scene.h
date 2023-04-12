@@ -433,7 +433,7 @@ private:
 	}
 	inline vec3 dbg_t(const ray& r)const {
 		float t = closest_t(r);
-		return min(vec3(t * 0.1f, t * 0.01f, t * 0.001f), t);
+		return vec3(t * 0.1f, t * 0.01f, t * 0.001f, t);
 	}
 #endif
 	inline float closest_t(const ray& r) const {

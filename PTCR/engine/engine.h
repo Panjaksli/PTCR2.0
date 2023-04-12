@@ -21,22 +21,22 @@ public:
 	void camera_menu();
 	void add_object();
 	void add_material();
-	void delay(double sec) {
+	static void delay(double sec) {
 		//mid precision, good efficiency
 		SDL_Delay(1000 * fmax(0, sec));
 		//double t1 = timer();
 		//while (timer(t1) < sec);
 		//std::this_thread::sleep_for(std::chrono::duration<double>(sec));
 	}
-	double timer() {
+	static double timer() {
 		auto t = std::chrono::high_resolution_clock::now();
 		return std::chrono::duration<double>(t.time_since_epoch()).count();
 	}
-	double timer(double t1) {
+	static double timer(double t1) {
 		auto t = std::chrono::high_resolution_clock::now();
 		return std::chrono::duration<double>(t.time_since_epoch()).count() - t1;
 	}
-	double timer_ms(double t1) {
+	static double timer_ms(double t1) {
 		return 1000.0 * (SDL_GetPerformanceCounter() - t1) / SDL_GetPerformanceFrequency();
 	}
 private:

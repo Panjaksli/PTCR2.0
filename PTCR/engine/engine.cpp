@@ -98,10 +98,10 @@ void engine::process_overlay() {
 }
 
 void engine::draw_scene() {
+	uint* disp = nullptr;
+	int pitch = viewport.w * 4;
+	SDL_LockTexture(frame, 0, (void**)&disp, &pitch);
 	if (!Scene.opt.framegen) {
-		uint* disp = nullptr;
-		int pitch = viewport.w * 4;
-		SDL_LockTexture(frame, 0, (void**)&disp, &pitch);
 		if (reproject) {
 			Scene.Reproject(proj, disp, pitch / 4);
 		}
@@ -116,11 +116,8 @@ void engine::draw_scene() {
 	}
 	else
 	{
-		//static double tmr = timer();
-		uint* disp = nullptr;
-		int pitch = viewport.w * 4;
+		//static double tmr = 0;
 		if (frame_id) {
-			SDL_LockTexture(frame, 0, (void**)&disp, &pitch);
 			gen_t = timer();
 			Scene.Reproject(proj, disp, pitch / 4);
 			gen_t = timer(gen_t);
@@ -129,12 +126,11 @@ void engine::draw_scene() {
 			ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
 			double secs = fmax(0, nor_t - gen_t);
 			delay(secs);
-			SDL_RenderPresent(renderer);
-			//printf("G %f\n", timer(tmr));
+			//printf("G %f ", timer(tmr));
 			//tmr = timer();
+			SDL_RenderPresent(renderer);
 		}
 		else {
-			SDL_LockTexture(frame, 0, (void**)&disp, &pitch);
 			proj = projection(Scene.cam.T, Scene.cam.CCD.w, Scene.cam.CCD.h, Scene.cam.tfov);
 			nor_t = timer();
 			Scene.Render(disp, pitch / 4);
@@ -142,12 +138,11 @@ void engine::draw_scene() {
 			SDL_UnlockTexture(frame);
 			SDL_RenderCopy(renderer, frame, 0, &viewport);
 			ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
-			SDL_RenderPresent(renderer);
 			//printf("N %f\n", timer(tmr));
 			//tmr = timer();
+			SDL_RenderPresent(renderer);
 		}
 		frame_id = !frame_id;
-
 	}
 }
 
@@ -534,7 +529,7 @@ void engine::render_loop() {
 		process_overlay();
 		draw_scene();
 		ft = timer(ft);
-		double secs = fmax(0,1.0 / max_fps - ft);
+		double secs = fmax(0,(Scene.opt.framegen ? 0.5 / max_fps : 1.0 / max_fps) - ft);
 		delay(secs);
 		dt = ft + secs;
 		fps = ImGui::GetIO().Framerate;
