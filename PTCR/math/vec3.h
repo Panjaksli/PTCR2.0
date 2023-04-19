@@ -11,6 +11,13 @@
 inline vec3 todeg(vec3 a) { return a * (180.0f / pi); }
 inline vec3 torad(vec3 a) { return a * (pi / 180.0f); }
 
+inline bool operator==(vec3 u, vec3 v) {
+	return near0(u - v);
+}
+inline bool operator!=(vec3 u, vec3 v) {
+	return !(u == v);
+}
+
 inline vec3 fma(vec3 a, vec3 b, vec3 c) {
 	return a * b + c;
 }

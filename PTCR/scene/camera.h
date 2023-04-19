@@ -12,6 +12,13 @@ struct projection {
 	float iw, ih;
 	float asp;
 	float tfov;
+	bool operator==(const projection& proj)const {
+		return T.x == proj.T.x&& T.y == proj.T.y && T.z == proj.T.z && T.w == proj.T.w
+			&& w == proj.w && h == proj.h && asp == proj.asp && asp == proj.asp;
+	}
+	bool operator!=(const projection& proj)const {
+		return !(*this == proj);
+	}
 };
 
 class camera

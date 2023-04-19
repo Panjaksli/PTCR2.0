@@ -153,7 +153,7 @@ void Scene::Render(uint* disp, uint pitch) {
 	opt.selected = clamp_int(opt.selected, -1, world.objects.size() - 1);
 	if (cam.moving)cam.CCD.reset();
 	bool paused = !cam.moving && opt.paused;
-	if (cam.CCD.spp < opt.max_spp && !paused) {
+	if (cam.CCD.spp < opt.max_spp && !paused && opt.samples > 0) {
 		opt.inv_sa = 1.f / opt.samples;
 		cam.CCD.dt(opt.samples);
 		world.en_bvh = opt.en_bvh && world.bvh.size() > 0;
@@ -251,6 +251,7 @@ void Scene::Reproject(const projection& proj, uint* disp, uint pitch) {
 			cam.display(i, j, median2d3(buff, i, j, cam.h, cam.w, opt.med_thr));
 		}
 	}
+	cam.moving = false;
 }
 void Scene::Screenshot(bool reproject) const {
 	int spp = cam.CCD.spp;
