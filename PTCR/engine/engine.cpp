@@ -297,11 +297,6 @@ void Engine::Camera_menu() {
 	scene.cam.moving |= ImGui::Checkbox("Debug Edge", &scene.opt.dbg_e);	ImGui::SameLine();
 	scene.cam.moving |= ImGui::Checkbox("Debug t", &scene.opt.dbg_t);
 	scene.cam.moving |= ImGui::Checkbox("Debug lighting", &scene.opt.dbg_light); ImGui::SameLine();
-	if (scene.opt.dbg_light)
-	{
-		ImGui::SameLine();
-		scene.cam.moving |= ImGui::Checkbox("Direct", &scene.opt.dbg_direct);
-	}
 	scene.cam.moving |= ImGui::Checkbox("Normal maps", &use_normal_maps);
 	scene.cam.moving |= ImGui::Checkbox("Reproject", &reproject); ImGui::SameLine();
 	//WIP

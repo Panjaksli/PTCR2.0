@@ -20,7 +20,7 @@ struct aabb {
 		pmin = min(pmin, box.pmin), pmax = max(pmax, box.pmax);
 	}
 	inline void pad() {
-		vec3 delta = (0.5f * eps) * vec_lt(fabs(pmax - pmin), eps2);
+		vec3 delta = eps * vec_lt(fabs(pmax - pmin), eps2);
 		pmin -= delta;
 		pmax += delta;
 	}

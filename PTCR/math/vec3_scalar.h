@@ -1,7 +1,6 @@
 #pragma once
 #include "util.h"
-struct __declspec(align(16))
-vec3
+struct vec3
 {
 	vec3() : xyz{} {}
 	vec3(float t) : xyz{ t,t,t,t } {}
@@ -79,7 +78,7 @@ vec3
 	union {
 		float _xyz[4];
 		float xyz[4];
-	}__declspec(align(16));
+	};
 };
 
 inline vec3 norm(vec3 u) { return u.dir(); }

@@ -38,7 +38,6 @@ struct scene_opt {
 	bool dbg_uv = 0;
 	bool dbg_t = 0;
 	bool dbg_light = 0;
-	bool dbg_direct = 1;
 #endif
 	bool paused = 0;
 	bool recur = 0;
@@ -305,23 +304,24 @@ private:
 		return col;
 	}
 	//Separates lighting into direct and indirect
-	__forceinline void separate_pt(vec3& direct, vec3& indirect, const ray& sr, const hitrec& srec, int depth) const {
-		vec3 aten(1.f); ray r = sr;
-		for (int i = 0; i < depth + 1; i++)
+	__forceinline vec3 light_at_pt(const ray& sr, const hitrec& srec, int depth) const {
+		vec3 col(0), aten(1.f); ray r = sr; float ir = 1.f;
+		for (int i = 0; i <= depth; i++)
 		{
 			hitrec rec; matrec mat;
 			if (i == 0) rec = srec;
-			else if (!world.hit<1>(r, rec)) {
-				if (i < 2)direct += aten * sky(r.D);
-				else indirect += aten * sky(r.D);
+			else if (!world.hit<1>(r, rec))
+			{
+				if(i == depth)col += aten * sky(r.D);
 				break;
 			}
-			else if (rafl() >= opt.p_life) break;
-			else aten *= opt.i_life;
+			mat.ir = ir;
 			sample_material(r, rec, mat);
-			if (i < 2)direct += mat.emis * aten;
-			else indirect += mat.emis * aten;;
-			if (mat.refl)
+			if (i == depth) {
+				col += mat.emis * aten;
+				break;
+			}
+			else if (mat.refl)
 			{
 				float p1, p2;
 				if (mat.refl == refl_diff || mat.refl == refl_spec)
@@ -330,12 +330,15 @@ private:
 					if (p1 > 0)aten *= (p1 / p2);
 					else break;
 				}
-				else r = ray(mat.P, mat.L, true);
+				else {
+					ir = mat.ir;
+					r = ray(mat.P, mat.L, true);
+				}
 				aten *= mat.aten;
 			}
 			else break;
 		}
-		return;
+		return col;
 	}
 	vector<bool> generate_mask(const projection& proj);
 	//Compute basic sky color
@@ -372,10 +375,8 @@ private:
 #if DEBUG
 	inline vec3 dbg_ill(const ray& r) {
 		hitrec rec;
-		if (!world.hit(r, rec)) return opt.dbg_direct ? vec3(sky(r.D), rec.t) : vec3(0, 0, 0, rec.t);
-		vec3 direct, indirect;
-		separate_pt(direct, indirect, r, rec, opt.dbg_direct ? 1 : opt.bounces);
-		return vec3(opt.dbg_direct ? direct : indirect, rec.t);
+		if (!world.hit(r, rec)) return opt.bounces == 0 ?  vec3(sky(r.D), rec.t) : vec3(0, 0, 0, rec.t);
+		return vec3(light_at_pt(r, rec, opt.bounces), rec.t);
 	}
 	inline vec3 dbg_f(const ray& r)const {
 		hitrec rec;

@@ -7,6 +7,7 @@ public:
 	ggx_pdf() {}
 	ggx_pdf(vec3 _N, vec3 _V, vec3 _L, float _a) : N(_N), V(_V), L(_L), a(_a) {}
 	inline float value(vec3 _L) const {
+		//this breaks down under steep angles...
 		vec3 H = norm(V + _L);
 		float NoH = dot(N, H);
 		return  DGGX(NoH, a) * NoH / (4.f * absdot(H, V));
