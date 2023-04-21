@@ -98,6 +98,7 @@ namespace PTCR
 		if (!scene.opt.framegen || reproject) {
 			if (reproject) {
 				scene.Reproject(proj, disp, pitch / 4);
+				scene.cam.moving = false;
 			}
 			else {
 				proj = projection(scene.cam.T, scene.cam.CCD.w, scene.cam.CCD.h, scene.cam.tfov);
@@ -294,17 +295,12 @@ namespace PTCR
 		scene.cam.moving |= ImGui::Checkbox("Debug N", &scene.opt.dbg_n);
 		scene.cam.moving |= ImGui::Checkbox("Debug UV", &scene.opt.dbg_uv);	ImGui::SameLine();
 		scene.cam.moving |= ImGui::Checkbox("Debug Face", &scene.opt.dbg_f);
-		scene.cam.moving |= ImGui::Checkbox("Debug Edge", &scene.opt.dbg_e);	ImGui::SameLine();
-		scene.cam.moving |= ImGui::Checkbox("Debug t", &scene.opt.dbg_t);
-		scene.cam.moving |= ImGui::Checkbox("Debug lighting", &scene.opt.dbg_light); ImGui::SameLine();
+		scene.cam.moving |= ImGui::Checkbox("Debug BVH", &scene.opt.dbg_bvh); ImGui::SameLine();
+		scene.cam.moving |= ImGui::Checkbox("Debug Edge", &scene.opt.dbg_e);	
+		scene.cam.moving |= ImGui::Checkbox("Debug t", &scene.opt.dbg_t); ImGui::SameLine();
+		scene.cam.moving |= ImGui::Checkbox("Debug lighting", &scene.opt.dbg_light); 
 		scene.cam.moving |= ImGui::Checkbox("Normal maps", &use_normal_maps);
-		if (ImGui::Checkbox("Reproject", &reproject)) {
-			static vec3 rP, rA;
-
-			scene.cam.moving |= reproject || scene.cam.P != rP || scene.cam.T.A() != rA;
-			rP = scene.cam.P;
-			rA = scene.cam.T.A();
-		}
+		scene.cam.moving |= ImGui::Checkbox("Reproject", &reproject);
 		ImGui::SameLine();
 		//WIP
 		ImGui::Checkbox("Framegen", &scene.opt.framegen);

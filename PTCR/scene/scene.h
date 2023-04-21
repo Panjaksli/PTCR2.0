@@ -33,6 +33,7 @@ struct scene_opt {
 	bool re_sam = 1;
 #if DEBUG
 	bool dbg_f = 0;
+	bool dbg_bvh = 0;
 	bool dbg_e = 0;
 	bool dbg_n = 0;
 	bool dbg_uv = 0;
@@ -405,6 +406,13 @@ private:
 		vec3 col = vec3((mat.N + 1.f) * 0.5f, rec.t);
 		return GAMMA2 ? col * vec3(col, 1) : col;
 	}
+	inline vec3 dbg_bvh(const ray& r)const {
+		hitrec rec;
+		uchar edge = world.debug_aabb_edge(r, rec);
+		vec3 cols[] = { vec3(1,1,1),vec3(1,0,0),vec3(0,1,0),vec3(0,0,1),vec3(1,1,0),vec3(1,0,1),vec3(0,1,1) };
+		vec3 res = edge ? cols[(edge - 1) % 7] : 0;
+		return vec3(res, rec.t);
+	}
 	inline vec3 dbg_uv(const ray& r)const {
 		hitrec rec;
 		if (!world.hit(r, rec)) {
@@ -417,9 +425,9 @@ private:
 		ray r = sr;
 		hitrec rec;
 		uint i = 0;
-		float t = infp;
+		float t = 0;
 		while (world.hit(r, rec) && i++ < (opt.dbg_t ? 1 : 10)) {
-			if (i == 1) t = rec.t;
+			t += rec.t;
 			switch (object_at(rec.idx).type()) {
 			case o_pol: if (!(inside(rec.u, 0.01f, 0.99f) && inside(rec.v, 0.01f, 0.99f) && inside(1 - rec.u - rec.v, 0.01f, 0.99f))) return vec3(1, 1, 1, t); break;
 			case o_qua: if (!(inside(rec.u, 0.01f, 0.99f) && inside(rec.v, 0.01f, 0.99f))) return vec3(1, 1, 1, t); break;
@@ -431,7 +439,7 @@ private:
 			r.O = rec.P + r.D * eps;
 		}
 		float res = GAMMA2 ? 0.01 : 0.1;
-		return vec3(res, res, res, t);
+		return vec3(res, res, res, infp);
 	}
 	inline vec3 dbg_t(const ray& r)const {
 		float t = closest_t(r);

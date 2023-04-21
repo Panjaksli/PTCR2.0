@@ -170,6 +170,7 @@ void Scene::Render(uint* disp, uint pitch) {
 				else if (opt.dbg_n)   cam.add(i, j, dbg_n(r));
 				else if (opt.dbg_uv)  cam.add(i, j, dbg_uv(r));
 				else if (opt.dbg_f)  cam.add(i, j, dbg_f(r));
+				else if (opt.dbg_bvh)  cam.add(i, j, dbg_bvh(r));
 				else if (opt.dbg_e)  cam.add(i, j, dbg_e(r));
 				else if (opt.dbg_t)  cam.add(i, j, dbg_t(r));
 				else if (opt.dbg_light)  cam.add(i, j, dbg_ill(r));
@@ -251,7 +252,6 @@ void Scene::Reproject(const projection& proj, uint* disp, uint pitch) {
 			cam.display(i, j, median2d3(buff, i, j, cam.h, cam.w, opt.med_thr));
 		}
 	}
-	cam.moving = false;
 }
 void Scene::Screenshot(bool reproject) const {
 	int spp = cam.CCD.spp;

@@ -50,40 +50,44 @@ struct aabb {
 		pmin.print();
 		pmax.print();
 	}
-	/*:
-	Edited from: https://tavianator.com/2011/ray_box.html
-	*/
 	__forceinline bool hit(const ray& r) const {
-		vec3 t1 = (pmin - r.O) * r.iD;
-		vec3 t2 = (pmax - r.O) * r.iD;
-		vec3 tmin = min(t1, t2);
-		vec3 tmax = max(t1, t2);
-		float mint = max(tmin);
-		float maxt = min(tmax);
+		float mint, maxt;
+		bounds_check(r, mint, maxt);
 		return mint < maxt && maxt > 0;
 	}
 	__forceinline bool hit(const ray& r, float& t) const {
-		vec3 t1 = (pmin - r.O) * r.iD;
-		vec3 t2 = (pmax - r.O) * r.iD;
-		vec3 tmin = min(t1, t2);
-		vec3 tmax = max(t1, t2);
-		float mint = max(tmin);
-		float maxt = min(tmax);
+		float mint, maxt;
+		bounds_check(r, mint, maxt);
 		if (mint < maxt && maxt > 0 && mint < t) {
 			t = mint;
 			return true;
 		}
-		//t = infp;
 		return false;
 	}
-	__forceinline bool shift(ray& r, float &t) const {
+	__forceinline bool closer_hit(const ray& r, float t) const {
+		float mint, maxt;
+		bounds_check(r, mint, maxt);
+		return mint < maxt && maxt > 0 && mint < t;
+	}
+	__forceinline bool hit_edge(const ray& r) const {
+		float mint, maxt;
+		bounds_check(r, mint, maxt);
+		return mint < maxt && maxt > 0 && (maxt - mint) < eps;
+	}
+	__forceinline bool hit_edge(const ray& r, float& t, bool& edge) const {
+		float mint, maxt;
+		bounds_check(r, mint, maxt);
+		if (mint < maxt && maxt > 0 && mint < t) {
+			edge = lt(20*fabsf(maxt - mint),(pmax-pmin));
+			t = mint;
+			return true;
+		}
+		return false;
+	}
+	__forceinline bool shift(ray& r, float& t) const {
 		if (inside(r.O)) return true;
-		vec3 t1 = (pmin - r.O) * r.iD;
-		vec3 t2 = (pmax - r.O) * r.iD;
-		vec3 tmin = min(t1, t2);
-		vec3 tmax = max(t1, t2);
-		float mint = max(tmin);
-		float maxt = min(tmax);
+		float mint, maxt;
+		bounds_check(r, mint, maxt);
 		if (mint < maxt && maxt > 0) {
 			t = 0.999f * mint;
 			r.O = r.at(t);
@@ -91,10 +95,23 @@ struct aabb {
 		}
 		return false;
 	}
+	//not scaled by 2
 	inline float area()const {
 		vec3 S = pmax - pmin;
-		return dot(S,rotl3(S));
+		return dot(S, rotl3(S));
 	}
 	vec3 pmin = infp, pmax = infn;
+private:
+	/*:
+	Edited from: https://tavianator.com/2011/ray_box.html
+	*/
+	__forceinline void bounds_check(const ray& r, float& mint, float& maxt) const {
+		vec3 t1 = (pmin - r.O) * r.iD;
+		vec3 t2 = (pmax - r.O) * r.iD;
+		vec3 tmin = min(t1, t2);
+		vec3 tmax = max(t1, t2);
+		mint = max(tmin);
+		maxt = min(tmax);
+	}
 };
 
