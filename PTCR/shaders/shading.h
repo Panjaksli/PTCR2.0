@@ -1,5 +1,5 @@
 #pragma once
-#include "vec3.h"
+#include "vec4.h"
 
 /*
 From:
@@ -34,11 +34,11 @@ inline float fres_spec(float NoV, float F0)
 {
 	return F0 + (1.0f - F0) * pow5(1.0f - NoV);
 }
-inline vec3 fres_blend(vec3 n1, vec3 n2)
+inline vec4 fres_blend(vec4 n1, vec4 n2)
 {
 	return n2 + (1.0f - n2) * pow5(1.0f - n1);
 }
-inline vec3 fres_spec(float NoV, vec3 F0)
+inline vec4 fres_spec(float NoV, vec4 F0)
 {
 	return F0 + (1.0f - F0) * pow5(1.0f - NoV);
 }

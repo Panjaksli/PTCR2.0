@@ -3,9 +3,9 @@
 void sensor::clear() {
 //#pragma omp parallel for schedule(static,100)
 	for (auto& buff : data)
-		buff = vec3();
+		buff = 0;
 	for (auto& el : buff)
-		el = vec3(vec3(), infp);
+		el = 0;
 	spp = 0.f;
 	time = 0;
 }
@@ -13,10 +13,6 @@ void sensor::resize(uint _w, uint _h) {
 	w = _w;
 	h = _h;
 	n = w * h;
-	data.resize(n, vec3());
-	buff.resize(n, vec3(vec3(), infp));
-}
-
-void sensor::outrgb() {
-
+	data.resize(n, 0);
+	buff.resize(n, 0);
 }

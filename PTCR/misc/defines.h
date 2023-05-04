@@ -6,9 +6,13 @@
 #include <ctime>
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include <sstream>
-using uchar = unsigned char;
-using uint = unsigned int;
+#include "c_str.h"
+template <typename T>
+using uptr = std::unique_ptr<T>;
+#define uchar unsigned char
+#define uint unsigned int
 #define TEST 0
 #define GAMMA2 1
 #define DEBUG 1

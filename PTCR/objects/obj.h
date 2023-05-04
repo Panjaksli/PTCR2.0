@@ -20,6 +20,7 @@ inline const char* obj_enum_str(int val, bool mesh = 0) {
 }
 
 struct obj_flags {
+	obj_flags(){}
 	obj_flags(obj_enum type, bool bvh, bool lig, bool fog = 0) : flag((type & 0x0F) | (bvh << 7) | (lig << 6) | (fog << 5)) {}
 	operator obj_enum() const { return obj_enum(flag & 0x0F); }
 	void set_bvh(bool x) {
@@ -50,7 +51,7 @@ struct obj_flags {
 	obj_enum type() const {
 		return obj_enum(flag & 0x0F);
 	}
-	uchar flag;
+	uchar flag = 0;
 };
 
 struct bvh_node {
@@ -63,7 +64,7 @@ struct bvh_node {
 
 struct hitrec
 {
-	vec3 N, P;
+	vec4 N, P;
 	float t = infp;
 	float u, v;
 	uint idx = -1;

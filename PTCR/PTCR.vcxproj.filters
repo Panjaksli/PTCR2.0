@@ -21,9 +21,6 @@
     <ClCompile Include="shaders\texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui_impl_sdl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="imgui\imgui_impl_sdlrenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -51,16 +48,25 @@
     <ClCompile Include="scene\sensor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="misc\event_handler.cpp">
+    <ClCompile Include="misc\Event_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="scene\scenes.cpp">
+    <ClCompile Include="scene\Scenes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="misc\util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="engine\Engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_impl_sdl2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_demo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="objects\mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -77,13 +83,13 @@
     <ClInclude Include="math\SSE.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="math\vec3.h">
+    <ClInclude Include="math\vec4.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="misc\defines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="misc\event_handler.h">
+    <ClInclude Include="misc\Event_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="shaders\texture.h">
@@ -143,9 +149,6 @@
     <ClInclude Include="stb\stb_image_write.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imgui_impl_sdl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="imgui\imgui_impl_sdlrenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -176,7 +179,7 @@
     <ClInclude Include="shaders\albedo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="scene\scenes.h">
+    <ClInclude Include="scene\Scenes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="misc\unused_drafts.h">
@@ -186,6 +189,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="engine\Engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="math\vec4_scalar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="math\vec4_SSE.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imgui_impl_sdl2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="misc\darray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="misc\c_str.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

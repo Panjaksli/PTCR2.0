@@ -3,7 +3,7 @@
 #include <initializer_list>
 #include "util.h"
 
-class event_handler {
+class Event_handler {
 public:
 	void scan(SDL_Event& event);
 	bool operator[](uint code)const;

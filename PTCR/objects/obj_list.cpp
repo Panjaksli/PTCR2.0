@@ -23,7 +23,7 @@ void obj_list::get_trans(uint id, mat4& T)const
 	T = objects[id].get_trans();
 }
 void obj_list::set_trans(uint id, const mat4& T, uint node_size) {
-	objects[id].set_trans(T);
+	objects[id].transform(T);
 	if (objects[id].bvh())
 		update_bvh(0, node_size);
 	fit();
@@ -32,6 +32,8 @@ void obj_list::fit() {
 	bbox = aabb();
 	for (const auto& obj : objects)
 		bbox.join(obj.get_box());
+	bbox.pmin -= eps;
+	bbox.pmax += eps;
 }
 void obj_list::obj_create() {
 	if (objects.size() == 0) {
@@ -77,7 +79,7 @@ void obj_list::update_lists() {
 }
 void obj_list::update_all(uint node_size) {
 	update_lists();
-	build_bvh(1,node_size);
+	build_bvh(1, node_size);
 }
 void obj_list::obj_update() {
 	//#pragma omp parallel for schedule(static,64)
@@ -94,6 +96,7 @@ void obj_list::build_bvh(bool print, uint node_size) {
 	bvh_builder(print, node_size);
 }
 void obj_list::bvh_builder(bool print, uint node_size) {
+	final_cost = 0;
 	bvh.clear();
 	if (obj_bvh.size() == 0 || objects.size() == 0) {
 		en_bvh = false;
@@ -115,14 +118,19 @@ void obj_list::bvh_builder(bool print, uint node_size) {
 void obj_list::update_bvh(bool print, uint node_size) {
 	time_t t1 = clock();
 	obj_update();
+	float cost = 0;
 	for (int i = bvh.size() - 1; i >= 0; i--) {
 		auto& node = bvh[i];
 		if (!node.parent) {
 			node.bbox = box_from(node.n1, node.n2);
+			cost += node.bbox.area() * (node.n2 - node.n1);
 		}
 		else {
 			node.bbox = bvh[node.n1].bbox + bvh[node.n2].bbox;
 		}
+	}
+	if (cost > 1.1 * final_cost) {
+		rebuild_bvh(print, node_size);
 	}
 	float t2 = clock() - t1;
 	if (print)
@@ -156,9 +164,9 @@ void obj_list::split_bvh(uint parent, uint node_size) {
 	uint be = bvh[parent].n1;
 	uint en = bvh[parent].n2;
 	uint size = en - be;
+	float pcost = bbox.area() * size;
 	if (size > node_size)
 	{
-		float pcost = bbox.area() * size;
 		uint mi = be + size / 2;
 		float cost = split_cost(be, en, mi, bbox);
 		if (mi > be && mi < en && cost < pcost)
@@ -173,15 +181,17 @@ void obj_list::split_bvh(uint parent, uint node_size) {
 			split_bvh(bvh[parent].n1, node_size);
 			split_bvh(bvh[parent].n2, node_size);
 		}
+		else final_cost += pcost;
 	}
+	else final_cost += pcost;
 }
 
 void obj_list::split_bvh(uint be, uint en, uint node_size) {
 	aabb bbox = box_from(be, en);
 	uint size = en - be;
+	float pcost = bbox.area() * size;
 	if (size > node_size)
 	{
-		float pcost = bbox.area() * size;
 		uint mi = be + size / 2;
 		float cost = split_cost(be, en, mi, bbox);
 		if (mi != be && mi != en && cost < pcost)
@@ -192,9 +202,9 @@ void obj_list::split_bvh(uint be, uint en, uint node_size) {
 			bvh[n].n2 = bvh.size();
 			split_bvh(mi, en, node_size);
 		}
-		else bvh.emplace_back(bvh_node(bbox, be, en, 0));
+		else bvh.emplace_back(bvh_node(bbox, be, en, 0)), final_cost += pcost;
 	}
-	else bvh.emplace_back(bvh_node(bbox, be, en, 0));
+	else bvh.emplace_back(bvh_node(bbox, be, en, 0)), final_cost += pcost;
 }
 
 /*

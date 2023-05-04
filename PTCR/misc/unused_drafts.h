@@ -51,12 +51,12 @@ public:
 		}
 		return y;
 	}
-	__forceinline vec3 rand_to(vec3 O) const {
+	__forceinline vec4 rand_to(vec4 O) const {
 		if (size == 1) return prim[0].trans(P).rand_to(O);
 		uint id = raint(size - 1);
 		return prim[id].trans(P).rand_to(O);
 	}
-	__forceinline vec3 rand_from() const {
+	__forceinline vec4 rand_from() const {
 		if (size == 1) return prim[0].trans(P).rand_from();
 		uint id = raint(size - 1);
 		return prim[id].trans(P).rand_from();
@@ -116,7 +116,7 @@ private:
 	}
 
 	aabb bbox;
-	vec3 P, A;
+	vec4 P, A;
 	primitive* prim;
 	uint mat;
 	uint size;
@@ -147,12 +147,12 @@ struct mesh_raw {
 //obj_bvh.emplace_back(mesh_raw(&obj, j));
 
 
-void median_filter(const vector<vec3>& in, vector<vec3>& out, int h, int w)
+void median_filter(const vector<vec4>& in, vector<vec4>& out, int h, int w)
 {
 #pragma omp parallel for collapse(2) schedule(dynamic,100)
 	for (int i = 0; i < h; i++) {
 		for (int j = 0; j < w; j++) {
-			vec3 window[9];
+			vec4 window[9];
 			for (int k = 0; k < 3; k++)
 				for (int l = 0; l < 3; l++)
 				{
@@ -170,7 +170,7 @@ void median_filter(const vector<vec3>& in, vector<vec3>& out, int h, int w)
 
 if (march) {
 	ray r = sr;
-	vec3 P = r.O;
+	vec4 P = r.O;
 	float t = 0;
 	for (uint i = 0; i < 32; i++)
 	{
@@ -189,10 +189,10 @@ if (march) {
 		if (fabsf(tmin) < 1e-3f) {
 			rec.face = tmin > 0;
 			rec.mat = objects[id].get_mat();
-			float x = objects[id].SDF(P + vec3(eps, 0, 0)) - objects[id].SDF(P + vec3(-eps, 0, 0));
-			float y = objects[id].SDF(P + vec3(0, eps, 0)) - objects[id].SDF(P + vec3(0, -eps, 0));
-			float z = objects[id].SDF(P + vec3(0, 0, eps)) - objects[id].SDF(P + vec3(0, 0, -eps));
-			rec.N = norm(vec3(x, y, z));
+			float x = objects[id].SDF(P + vec4(eps, 0, 0)) - objects[id].SDF(P + vec4(-eps, 0, 0));
+			float y = objects[id].SDF(P + vec4(0, eps, 0)) - objects[id].SDF(P + vec4(0, -eps, 0));
+			float z = objects[id].SDF(P + vec4(0, 0, eps)) - objects[id].SDF(P + vec4(0, 0, -eps));
+			rec.N = norm(vec4(x, y, z));
 			rec.P = P;
 			rec.t = fabsf(t);
 			rec.u = rec.v = 0;
@@ -203,12 +203,12 @@ if (march) {
 	return false;
 }
 
-albedo pbrcol(vec3(0.8f, 0.1f, 0.1f), vec3(0.1, 100, 0.1), vec3(0.5, 0.5, 1), 10);
+albedo pbrcol(vec4(0.8f, 0.1f, 0.1f), vec4(0.1, 100, 0.1), vec4(0.5, 0.5, 1), 10);
 scn.world.add_mat(pbrcol, mat_lig);
-scn.world.add(vec3(0, 0, -3), sphere(vec3(0, 0, 0, 1)), 0);
+scn.world.add(vec4(0, 0, -3), sphere(vec4(0, 0, 0, 1)), 0);
 scn.opt.en_fog = 0;
-scn.sun_pos.set_A(vec3(1, 0, 1));
-scn.cam.setup(matrix(vec3(1, 1, 1), vec3(0, 0, 0)), 47, 10);
+scn.sun_pos.set_A(vec4(1, 0, 1));
+scn.cam.setup(matrix(vec4(1, 1, 1), vec4(0, 0, 0)), 47, 10);
 scn.world.en_bvh = 0;
 
 
@@ -270,8 +270,8 @@ else if (state == 1) {
 
 
 
-vec3 x[9];
-vec3 y;
+vec4 x[9];
+vec4 y;
 for (int m = 1; m <= 4; m = m << 1) {
 	for (int k = -1; k <= 1; k++) {
 		for (int l = -1; l <= 1; l++) {
@@ -290,17 +290,17 @@ return y;
 ////////////////////////////////////
 void scene::Reproject(const mat4& T, float tfov, uint* disp, uint pitch) {
 	cam.CCD.set_disp(disp, pitch);
-	for (int i = 0; i < cam.CCD.n; i++)cam.CCD.buff[i] = vec3(0, 0, 0, infp);
+	for (int i = 0; i < cam.CCD.n; i++)cam.CCD.buff[i] = vec4(0, 0, 0, infp);
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
 	for (int i = 0; i < cam.h; i++) {
 		for (int j = 0; j < cam.w; j++) {
 			uint off = i * cam.w + j;
-			vec3 xy = cam.SS(vec3(j, i));
+			vec4 xy = cam.SS(vec4(j, i));
 			float dist = cam.CCD.data[off].w() / cam.CCD.time;
-			vec3 pt = T.P() + norm(T.vec(xy)) * dist;
-			vec3 spt = cam.T.inverse().pnt(pt);
-			vec3 dir = spt / dist;
-			vec3 uv = dir / fabsf(dir.z());
+			vec4 pt = T.P() + norm(T.vec(xy)) * dist;
+			vec4 spt = cam.T.inverse().pnt(pt);
+			vec4 dir = spt / dist;
+			vec4 uv = dir / fabsf(dir.z());
 			if (fabsf(uv[2] + 1.f) > 0.01f)continue;
 			uv *= tfov / cam.tfov;
 			uv = cam.inv_SS(uv);
@@ -308,7 +308,7 @@ void scene::Reproject(const mat4& T, float tfov, uint* disp, uint pitch) {
 			uint x = uv[0];
 			uint y = uv[1];
 			if (y < cam.h && x < cam.w) {
-				if (dist <= cam.CCD.buff[y * cam.w + x].w()) cam.CCD.buff[y * cam.w + x] = vec3(cam.CCD.data[off], dist);
+				if (dist <= cam.CCD.buff[y * cam.w + x].w()) cam.CCD.buff[y * cam.w + x] = vec4(cam.CCD.data[off], dist);
 			}
 
 		}
@@ -319,13 +319,13 @@ void scene::Reproject(const mat4& T, float tfov, uint* disp, uint pitch) {
 			uint off = i * cam.w + j;
 			uint off2 = i * pitch + j;
 			float fact = cam.CCD.time / cam.exposure;
-			vec3 col[9];
+			vec4 col[9];
 			kernel(cam.CCD.buff.data(), col, i, j, cam.h, cam.w);
-			vec3 out = max(col[4], med9(col));
-			vec3 base = cam.CCD.data[off];
-			if ((base - out).len2() < 0.001f) bgr(vec3(out, fact), cam.CCD.disp[off]);
-			else bgr(vec3(base, fact), cam.CCD.disp[off]);
-			bgr(vec3(out, fact), cam.CCD.disp[off2]);
+			vec4 out = max(col[4], med9(col));
+			vec4 base = cam.CCD.data[off];
+			if ((base - out).len2() < 0.001f) bgr(vec4(out, fact), cam.CCD.disp[off]);
+			else bgr(vec4(base, fact), cam.CCD.disp[off]);
+			bgr(vec4(out, fact), cam.CCD.disp[off2]);
 		}
 	}
 }
@@ -341,17 +341,17 @@ void scene::Reproject(const mat4& T, float tfov, uint* disp, uint pitch) {
 		for (int j = 0; j < cam.w; j++) {
 			uint off = i * cam.w + j;
 			float dist = cam.CCD.data[off].w();
-			vec3 xy = cam.SS(vec3(j, i), proj);
-			vec3 pt = iTp.P() + iTp.vec(xy) * dist;
-			vec3 spt = cam.T.pnt(pt);
+			vec4 xy = cam.SS(vec4(j, i), proj);
+			vec4 pt = iTp.P() + iTp.vec(xy) * dist;
+			vec4 spt = cam.T.pnt(pt);
 			if (spt.z() < 0) [[likely]] {
-				vec3 dir = spt / dist;
-				vec3 uv = dir / fabsf(dir.z());
+				vec4 dir = spt / dist;
+				vec4 uv = dir / fabsf(dir.z());
 				uv = cam.inv_SS(uv);
 				uint x = uv[0];
 				uint y = uv[1];
 				if (x < cam.w && y < cam.h && near0(cam.CCD.buff[y * cam.w + x]))
-					cam.CCD.buff[y * cam.w + x] = vec3(cam.CCD.data[off], dist);
+					cam.CCD.buff[y * cam.w + x] = vec4(cam.CCD.data[off], dist);
 			}
 		}
 	}*/
@@ -362,7 +362,7 @@ int mid = cam.w / 2;
 for (int i = 0; i < cam.h; i++) {
 	for (int j = mid; j >= 0; j--) {
 		if (near0(buff[j + i * cam.w])) {
-			vec3 col = buff[j + 1 + i * cam.w];
+			vec4 col = buff[j + 1 + i * cam.w];
 			buff[i * cam.w + j] = col;
 			int k;
 			for (k = j - 1; k >= 0; k--) {
@@ -376,7 +376,7 @@ for (int i = 0; i < cam.h; i++) {
 	}
 	for (int j = mid; j < cam.w; j++) {
 		if (near0(buff[j + i * cam.w])) {
-			vec3 col = buff[j + -1 + i * cam.w];
+			vec4 col = buff[j + -1 + i * cam.w];
 			buff[i * cam.w + j] = col;
 			int k;
 			for (k = j + 1; k < cam.w; k++) {
@@ -394,11 +394,11 @@ for (int i = 0; i < cam.h; i++) {
 				for (int j = 0; j < cam.w; j++) {
 					uint off = i * cam.w + j;
 					uint off2 = i * pitch + j;
-					vec3 base = cam.CCD.data[off];
-					vec3 changed = cam.CCD.buff[off];
+					vec4 base = cam.CCD.data[off];
+					vec4 changed = cam.CCD.buff[off];
 					float fact = cam.CCD.time / cam.exposure;
-					if((base-changed).len2() < 0.001f) bgr(vec3(changed, fact), cam.CCD.disp[off]);
-					else bgr(vec3(base, fact), cam.CCD.disp[off2]);
+					if((base-changed).len2() < 0.001f) bgr(vec4(changed, fact), cam.CCD.disp[off]);
+					else bgr(vec4(base, fact), cam.CCD.disp[off2]);
 
 				}
 			}*/
@@ -406,9 +406,9 @@ for (int i = 0; i < cam.h; i++) {
 
 __forceinline void mixed(const ray& r, const hitrec& rec, const albedo& tex, matrec& mat) {
 	//simple mix of lambertian and mirror reflection/transmission + emission
-	vec3 rgb = tex.rgb(rec.u, rec.v);
-	vec3 mer = tex.mer(rec.u, rec.v);
-	vec3 nor = tex.nor(rec.u, rec.v);
+	vec4 rgb = tex.rgb(rec.u, rec.v);
+	vec4 mer = tex.mer(rec.u, rec.v);
+	vec4 nor = tex.nor(rec.u, rec.v);
 	float mu = mer.x();
 	float em = mer.y();
 	float ro = mer.z();
@@ -420,22 +420,22 @@ __forceinline void mixed(const ray& r, const hitrec& rec, const albedo& tex, mat
 		if (wave < 0.333f) {
 			float um = 0.65;
 			ior += 0.01f * ior / (um * um);
-			rgb *= vec3(3, 0, 0);
+			rgb *= vec4(3, 0, 0);
 		}
 		else if (wave < 0.666f) {
 			float um = 0.54;
 			ior += 0.01f * ior / (um * um);
-			rgb *= vec3(0, 3, 0);
+			rgb *= vec4(0, 3, 0);
 		}
 		else {
 			float um = 0.43;
 			ior += 0.01f * ior / (um * um);
-			rgb *= vec3(0, 0, 3);
+			rgb *= vec4(0, 0, 3);
 		}
 	}
 	float n1 = rec.face ? mat.ir : mat.ir == 1.f ? ior : mat.ir;
 	float n2 = rec.face ? ior : ior == n1 ? 1.f : ior;
-	vec3 N = normal_map(rec.N, nor);
+	vec4 N = normal_map(rec.N, nor);
 	onb n(N);
 	//perfect diffuse && solid
 	if (mu < eps && ro > 1 - eps && opaque) {
@@ -448,7 +448,7 @@ __forceinline void mixed(const ray& r, const hitrec& rec, const albedo& tex, mat
 		return;
 	}
 	else if (opaque)return ggx(r, rec, tex, mat);
-	vec3 H = n.world(sa_ggx(a));
+	vec4 H = n.world(sa_ggx(a));
 	float HoV = absdot(H, r.D);
 	float Fr = fresnel(HoV, n1, n2, mu);
 	bool refl = Fr > rafl();
@@ -458,9 +458,9 @@ __forceinline void mixed(const ray& r, const hitrec& rec, const albedo& tex, mat
 		float NoL = dot(N, mat.L);
 		float NoH = dot(N, H);
 		if (NoL <= 0)return;
-		vec3 F0 = mix(0.04f, vec3(rgb, 1), mu);
-		vec3 F = fres_spec(HoV, F0).fact();
-		vec3 Fs = fres_spec(HoV, tex.specular());
+		vec4 F0 = mix(0.04f, vec4(rgb, 1), mu);
+		vec4 F = fres_spec(HoV, F0).fact();
+		vec4 Fs = fres_spec(HoV, tex.specular());
 		mat.aten = rec.face ? mix(F, Fs, tex.spec.w()) * GGX(NoL, NoV, a) * HoV / (NoV * NoH) : rgb;
 		mat.P = rec.P + rec.N * eps;
 		mat.refl = rec.face ? refl_spec : refl_tran;
@@ -477,4 +477,29 @@ __forceinline void mixed(const ray& r, const hitrec& rec, const albedo& tex, mat
 	mat.N = N;
 	mat.emis = em * rgb;
 	mat.refl *= not0(mat.aten);
+}
+
+
+//Quaternions ?
+void rot(vec4 A) {
+	w = A;//mod(A, pi2);
+	if (not0(w)) {
+		A = w * 0.5f;
+		vec4 csy = cossin(A.x());
+		vec4 csp = cossin(A.y());
+		vec4 csr = cossin(A.z());
+		float qx = csr[1] * csp[0] * csy[0] - csr[0] * csp[1] * csy[1];
+		float qy = csr[0] * csp[1] * csy[0] + csr[1] * csp[0] * csy[1];
+		float qz = csr[0] * csp[0] * csy[1] - csr[1] * csp[1] * csy[0];
+		float qw = csr[0] * csp[0] * csy[0] + csr[1] * csp[1] * csy[1];
+		x.xyz[0] = 1 - 2 * qy * qy - 2 * qz * qz;
+		x.xyz[1] = 2 * qx * qy - 2 * qw * qz;
+		x.xyz[2] = 2 * qx * qz + 2 * qw * qy;
+		y.xyz[0] = 2 * qx * qy + 2 * qw * qz;
+		y.xyz[1] = 1 - 2 * qx * qx - 2 * qz * qz;
+		y.xyz[2] = 2 * qy * qz - 2 * qw * qx;
+		z.xyz[0] = 2 * qx * qz - 2 * qw * qy;
+		z.xyz[1] = 2 * qy * qz + 2 * qw * qx;
+		z.xyz[2] = 1 - 2 * qx * qx - 2 * qy * qy;
+	}
 }

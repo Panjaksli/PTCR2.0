@@ -78,7 +78,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <AllProjectIncludesArePublic>false</AllProjectIncludesArePublic>
-    <LinkIncremental />
+    <LinkIncremental>
+    </LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -120,7 +121,7 @@
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalOptions>-Ofast -march=haswell -openmp -fms-extensions  %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Ofast -march=haswell -openmp -fms-extensions  </AdditionalOptions>
       <FloatingPointModel>Fast</FloatingPointModel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -151,7 +152,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalOptions>-Ofast -march=haswell -openmp -fms-extensions  %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Ofast -march=haswell -openmp -fms-extensions  </AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir)\engine;$(ProjectDir)\imgui;$(ProjectDir)\scene;$(ProjectDir)\math;$(ProjectDir);$(ProjectDir)\objects;$(ProjectDir)\misc;$(ProjectDir)\sdl2\include;$(ProjectDir)\shaders;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Fast</FloatingPointModel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -174,14 +175,16 @@
   <ItemGroup>
     <ClCompile Include="engine\Engine.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
+    <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
-    <ClCompile Include="imgui\imgui_impl_sdl.cpp" />
+    <ClCompile Include="imgui\imgui_impl_sdl2.cpp" />
     <ClCompile Include="imgui\imgui_impl_sdlrenderer.cpp" />
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
-    <ClCompile Include="misc\event_handler.cpp" />
+    <ClCompile Include="misc\Event_handler.cpp" />
     <ClCompile Include="misc\util.cpp" />
-    <ClCompile Include="scene\scenes.cpp" />
+    <ClCompile Include="objects\mesh.cpp" />
+    <ClCompile Include="scene\Scenes.cpp" />
     <ClCompile Include="shaders\texture.cpp" />
     <ClCompile Include="objects\obj_list.cpp" />
     <ClCompile Include="PTCR.cpp" />
@@ -193,7 +196,7 @@
     <ClInclude Include="engine\Engine.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
-    <ClInclude Include="imgui\imgui_impl_sdl.h" />
+    <ClInclude Include="imgui\imgui_impl_sdl2.h" />
     <ClInclude Include="imgui\imgui_impl_sdlrenderer.h" />
     <ClInclude Include="imgui\imgui_internal.h" />
     <ClInclude Include="imgui\imstb_rectpack.h" />
@@ -203,14 +206,18 @@
     <ClInclude Include="math\onb.h" />
     <ClInclude Include="math\ray.h" />
     <ClInclude Include="math\SSE.h" />
-    <ClInclude Include="math\vec3.h" />
+    <ClInclude Include="math\vec4.h" />
     <ClInclude Include="math\vec3_scalar.h" />
     <ClInclude Include="math\vec3_SSE.h" />
+    <ClInclude Include="math\vec4_scalar.h" />
+    <ClInclude Include="math\vec4_SSE.h" />
+    <ClInclude Include="misc\c_str.h" />
+    <ClInclude Include="misc\darray.h" />
     <ClInclude Include="misc\defines.h" />
-    <ClInclude Include="misc\event_handler.h" />
+    <ClInclude Include="misc\Event_handler.h" />
     <ClInclude Include="misc\unused_drafts.h" />
     <ClInclude Include="objects\physics.h" />
-    <ClInclude Include="scene\scenes.h" />
+    <ClInclude Include="scene\Scenes.h" />
     <ClInclude Include="shaders\albedo.h" />
     <ClInclude Include="shaders\texture.h" />
     <ClInclude Include="misc\util.h" />

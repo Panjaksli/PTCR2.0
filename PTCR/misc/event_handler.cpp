@@ -1,5 +1,5 @@
-#include "event_handler.h"
-void event_handler::scan(SDL_Event& event)
+#include "Event_handler.h"
+void Event_handler::scan(SDL_Event& event)
 {
 	motion = 0;
 	if (event.type == SDL_KEYDOWN)
@@ -36,17 +36,17 @@ void event_handler::scan(SDL_Event& event)
 
 	}
 }
-bool event_handler::operator[](uint code)const {
+bool Event_handler::operator[](uint code)const {
 	return keys[code];
 }
-bool& event_handler::operator[](uint code) {
+bool& Event_handler::operator[](uint code) {
 	return keys[code];
 }
 
-bool event_handler::any_mb() {
+bool Event_handler::any_mb() {
 	return lmb || mmb || rmb;
 }
-bool event_handler::any_kb() {
+bool Event_handler::any_kb() {
 	bool res = false;
 	for (int i = 0; i < 512; i++)
 		res = res || keys[i];
@@ -54,19 +54,19 @@ bool event_handler::any_kb() {
 }
 
 
-void event_handler::reset_mouse() {
+void Event_handler::reset_mouse() {
 	lmb = 0, mmb = 0, rmb = 0;
 }
-void event_handler::reset_all() {
+void Event_handler::reset_all() {
 	for (uint i = 0; i < 512; i++)
 		keys[i] = false;
 	lmb = 0, mmb = 0, rmb = 0;
 }
-void event_handler::reset_keys(std::initializer_list<int> key) {
+void Event_handler::reset_keys(std::initializer_list<int> key) {
 	for (auto i : key)
 		keys[i] = false;
 }
-void event_handler::reset_keys() {
+void Event_handler::reset_keys() {
 	for (int i = 0; i < 512; i++)
 		keys[i] = false;
 }

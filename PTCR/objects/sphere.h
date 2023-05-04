@@ -5,13 +5,13 @@
 class sphere {
 public:
 	sphere() {}
-	sphere(vec3 Q, float r) :Qr(Q, r) {}
-	sphere(vec4 _Qr) :Qr(_Qr) {}
+	sphere(vec4 Q, float r) :Qr(Q, r) {}
+	sphere(vec4 Qr) :Qr(Qr) {}
 
 	inline bool hit(const ray& r, hitrec& rec) const
 	{
 		//Quadratic equation, own solution
-		vec3 OQ = Qr - r.O;
+		vec4 OQ = Qr - r.O;
 		float b = dot(r.D, OQ);
 		float c = dot(OQ, OQ) - Qr.w() * Qr.w();
 		float d2 = b * b - c;
@@ -21,8 +21,8 @@ public:
 		bool face = c > 0;
 		float t = face ? t1 : t2;
 		if (inside(t, eps2, rec.t)) {
-			vec3 P = r.at(t);
-			vec3 N = (P - Qr) / Qr.w();
+			vec4 P = r.at(t);
+			vec4 N = (P - Qr) / Qr.w();
 			rec.N = face ? N : -N;
 			rec.P = P;
 			rec.t = t;
@@ -40,8 +40,8 @@ public:
 	inline sphere trans(const mat4& T) const {
 		return sphere(T.pnt(Qr));
 	}
-	inline sphere move(vec3 P) const {
-		return sphere(vec3(Qr + P, Qr.w() * P.w()));
+	inline sphere move(vec4 P) const {
+		return sphere(vec4(Qr + P, Qr.w() * P.w()));
 	}
 	inline float pdf(const ray& r)const {
 		hitrec rec;
@@ -61,16 +61,16 @@ public:
 		return 0;
 	}
 
-	inline vec3 rand_to(vec3 O) const {
-		vec3 OQ = Qr - O;
+	inline vec4 rand_to(vec4 O) const {
+		vec4 OQ = Qr - O;
 		float d2 = OQ.len2();
 		float R2 = Qr.w() * Qr.w();
 		//if inside, pick uniform coordinate
 		if (d2 <= R2)
 		{
-			vec3 N = sa_sph();
-			vec3 P = Qr + N * Qr.w();
-			vec3 L = P - O;
+			vec4 N = sa_sph();
+			vec4 P = Qr + N * Qr.w();
+			vec4 L = P - O;
 			return norm(L);
 		}
 		//sample cone in direction of sphere, from:
@@ -78,19 +78,19 @@ public:
 		float r[2]; rafl_tuple(r);
 		float z = 1.f + r[1] * (sqrtf(1.f - R2 / d2) - 1.f);
 		float phi = pi2 * r[0];
-		vec3 xy = sqrtf(1.f - z * z) * cossin(phi);
-		return onb(norm(OQ)).world(xy + vec3(0, 0, z));
+		vec4 xy = sqrtf(1.f - z * z) * cossin(phi);
+		return onb(norm(OQ)).world(xy + vec4(0, 0, z));
 	}
 	inline ray rand_from() const {
-		vec3 N = sa_sph();
-		vec3 O = Qr + N * Qr.w();
-		vec3 L = onb(rafl() < 0.5f ? N : -N).world(sa_cos());
+		vec4 N = sa_sph();
+		vec4 O = Qr + N * Qr.w();
+		vec4 L = onb(rafl() < 0.5f ? N : -N).world(sa_cos());
 		return ray(O, L);
 	}
 	inline float area()const {
 		return pi4 * Qr.w() * Qr.w();
 	}
-private:
+	inline vec4 Q() { return Qr; }
 	vec4 Qr;
 };
 

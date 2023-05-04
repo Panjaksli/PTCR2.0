@@ -3,9 +3,11 @@
 #include "poly.h"
 #include "quad.h"
 #include "voxel.h"
-
-
-#pragma pack(push, 4)
+void OBJ_to_MSH(const char* filename);
+std::vector<poly> load_mesh(const char* filename, vec4 off = 0, float scale = 1.f, bool flip_face = 0);
+std::vector<poly> load_OBJ(const char* filename, vec4 off = 0, float scale = 1.f, bool flip_face = 0);
+std::vector<poly> load_MSH(const char* filename, vec4 off = 0, float scale = 1.f, bool flip_face = 0);
+std::vector<poly> generate_mesh(uint seed, vec4 off, float scale, bool flip = 0);
 template <class primitive>
 class mesh {
 public:
@@ -17,13 +19,16 @@ public:
 		memcpy(prim, _prim.data(), size * sizeof(primitive));
 		fit();
 	}
-	mesh(const mesh& cpy){
+	mesh(const mesh& cpy) {
 		bbox = cpy.bbox, P = cpy.P, A = cpy.A, prim = new primitive[cpy.size], mat = cpy.mat, size = cpy.size;
 		memcpy(prim, cpy.prim, size * sizeof(primitive));
 	}
 	const mesh& operator=(const mesh& cpy) {
-		bbox = cpy.bbox, P = cpy.P, A = cpy.A, prim = new primitive[cpy.size], mat = cpy.mat, size = cpy.size;
-		memcpy(prim, cpy.prim, size * sizeof(primitive));
+		if (this != &cpy) {
+			delete[] prim;
+			bbox = cpy.bbox, P = cpy.P, A = cpy.A, prim = new primitive[cpy.size], mat = cpy.mat, size = cpy.size;
+			memcpy(prim, cpy.prim, size * sizeof(primitive));
+		}
 		return *this;
 	}
 	~mesh() {
@@ -52,7 +57,7 @@ public:
 			y += lw * prim[i].move(P).pdf(r);
 		return y;
 	}
-	__forceinline vec3 rand_to(vec3 O) const {
+	__forceinline vec4 rand_to(vec4 O) const {
 		uint id = raint(size - 1);
 		return prim[id].move(P).rand_to(O);
 	}
@@ -82,6 +87,12 @@ public:
 		return mat4(P, A);
 	}
 	inline mesh& set_trans(const mat4& T) {
+		P = T.P();
+		A = T.A();
+		fit();
+		return *this;
+	}
+	inline mesh& transform(const mat4& T) {
 		mat4 dT(0, T.A() - A);
 		P = T.P();
 		A = T.A();
@@ -102,18 +113,15 @@ private:
 		}
 	}
 	inline void clean() {
-		delete[]prim;
+		if (prim != nullptr)delete[]prim; prim = nullptr;
 	}
 public:
 	aabb bbox;
-	vec3 P, A;
-	primitive* prim;
-	uint mat;
-	uint size;
+	vec4 P, A;
+	primitive* prim = nullptr;
+	uint mat = -1;
+	uint size = 0;
 };
-
-
-
 
 using pmesh = mesh<poly>;
 using qmesh = mesh<quad>;
@@ -121,7 +129,7 @@ using smesh = mesh<sphere>;
 using vmesh = mesh<voxel>;
 /*
 SSS -> SAVING SOURCE SPACE
-Brought to you by laziness 101™
+Brought to you by laziness 101
 */
 #define SELECT_RE(t,f,def)\
 switch (t) {\
@@ -157,16 +165,27 @@ default: break;\
 }
 
 struct mesh_var {
-	mesh_var(const mesh<poly>& m, bool bvh = 0, bool lig = 0, bool fog = 0) :p(m), flag(o_pol, bvh, lig, fog) {}
-	mesh_var(const mesh<quad>& m, bool bvh = 0, bool lig = 0, bool fog = 0) :q(m), flag(o_qua, bvh, lig, fog) {}
-	mesh_var(const mesh<sphere>& m, bool bvh = 0, bool lig = 0, bool fog = 0) :s(m), flag(o_sph, bvh, lig, fog) {}
-	mesh_var(const mesh<voxel>& m, bool bvh = 0, bool lig = 0, bool fog = 0) :v(m), flag(o_vox, bvh, lig, fog) {}
-	mesh_var(const mesh_var& cpy) : flag(cpy.flag) {
-		SELECT_EQ(type(), cpy);
+	mesh_var(): flag(o_bla,0,0,0) {}
+	mesh_var(const char* name, mat4 T, uint mat, bool bvh = 1, bool lig = 0, bool fog = 0) : p(load_mesh(name, 0, 1, false), mat), name(name), flag(o_pol, bvh, lig, fog) { p.transform(T); }
+	mesh_var(const mesh<poly>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :p(m), name(name), flag(o_pol, bvh, lig, fog) {}
+	mesh_var(const mesh<quad>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :q(m), name(name), flag(o_qua, bvh, lig, fog) {}
+	mesh_var(const mesh<sphere>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :s(m), name(name), flag(o_sph, bvh, lig, fog) {}
+	mesh_var(const mesh<voxel>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :v(m), name(name), flag(o_vox, bvh, lig, fog) {}
+	mesh_var(const mesh_var& cpy) {
+		name = cpy.name;
+		flag = cpy.flag;
+		switch (type()) { //Placement new for explicit copy constructor
+		case o_pol: new(&p) auto(cpy.p); break;
+		case o_qua: new(&q) auto(cpy.q); break;
+		case o_sph:  new(&s) auto(cpy.s); break;
+		case o_vox:  new(&v) auto(cpy.v); break;
+		default: break;
+		}
 	}
 	const mesh_var& operator=(const mesh_var& cpy) {
+		name = cpy.name;
 		flag = cpy.flag;
-		SELECT_EQ(type(), cpy);
+		SELECT_EQ(cpy.type(), cpy);
 		return *this;
 	}
 	~mesh_var() {
@@ -194,8 +213,9 @@ struct mesh_var {
 	mat4 get_trans()const {
 		SELECT_RE(type(), get_trans(), mat4());
 	}
-	void set_trans(const mat4& T) {
-		SELECT_BR(type(), set_trans(T));
+	const mesh_var& transform(const mat4& T) {
+		SELECT_BR(type(), transform(T));
+		return *this;
 	}
 	inline void set_mat(uint mat) {
 		return s.set_mat(mat);
@@ -216,13 +236,16 @@ struct mesh_var {
 		if (!s.get_box().hit(r))return 0;
 		SELECT_RE(type(), pdf(r), 0);
 	}
-	__forceinline vec3 rand_to(vec3 O) const {
+	__forceinline vec4 rand_to(vec4 O) const {
 		SELECT_RE(type(), rand_to(O), 0);
 	}
 	__forceinline ray rand_from() const {
 		SELECT_RE(type(), rand_from(), ray());
 	}
-
+	const char* get_name() const {
+		if (!name.empty())return name;
+		else return obj_enum_str(type());
+	}
 	bool light() const {
 		return flag.lig();
 	}
@@ -241,6 +264,7 @@ struct mesh_var {
 		mesh<sphere> s;
 		mesh<voxel> v;
 	};
+	c_str name;
 	obj_flags flag;
 };
 
@@ -272,8 +296,5 @@ struct mesh_raw {
 //	uint mat;
 //	uint idx;
 //};
-
-
-#pragma pack(pop)
 
 

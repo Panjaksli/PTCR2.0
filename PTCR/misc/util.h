@@ -3,10 +3,17 @@
 #if USE_SSE
 #include "SSE.h"
 #endif
-
+#include <chrono>
 extern float GAUSS_3x3[9];
 extern float GAUSS_5x5[25];
-
+inline double timer() {
+	auto t = std::chrono::high_resolution_clock::now();
+	return std::chrono::duration<double>(t.time_since_epoch()).count();
+}
+inline double timer(double t1) {
+	auto t = std::chrono::high_resolution_clock::now();
+	return std::chrono::duration<double>(t.time_since_epoch()).count() - t1;
+}
 inline static constexpr float todeg(float a) { return a * (180.0f / pi); }
 inline static constexpr float torad(float a) { return a * (pi / 180.0f); }
 

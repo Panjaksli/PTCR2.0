@@ -14,6 +14,7 @@ public:
 	vector<uint> lights;
 	vector<uint> nonbvh;
 	float lw_tot = 0;
+	float final_cost = 0;
 	bool en_bvh = 1;
 	bool bvh_lin = 1;
 	bool march = 0;
@@ -30,9 +31,8 @@ public:
 				if (bvh[0].bbox.closer_hit(r, rec.t)) traverse_bvh(r, rec, 0);
 			}
 			else {
-				for (uint obj = 0; obj < objects.size(); obj++) {
+				for (uint obj = 0; obj < objects.size(); obj++)
 					rec.idx = objects[obj].hit(r, rec) ? obj : rec.idx;
-				}
 			}
 		}
 		if (!secondary) rec.t += dt;
@@ -58,17 +58,17 @@ public:
 		hitrec rec;
 		return hit(r, rec) && rec.idx == idx;
 	}
-	__forceinline vec3 rand_to(vec3 O) const {
+	__forceinline vec4 rand_to(vec4 O) const {
 		uint id = raint(lights.size() - 1);
 		const uint light = lights[id];
 		return rand_idx(O, light);
 	}
-	__forceinline vec3 rand_to(vec3 O, uint& idx) const {
+	__forceinline vec4 rand_to(vec4 O, uint& idx) const {
 		uint id = raint(lights.size() - 1);
 		idx = lights[id];
 		return rand_idx(O, idx);
 	}
-	__forceinline vec3 rand_idx(vec3 O, uint idx) const {
+	__forceinline vec4 rand_idx(vec4 O, uint idx) const {
 		return objects[idx].rand_to(O);
 	}
 	__forceinline ray rand_from(uint& light) const {
@@ -99,14 +99,27 @@ public:
 		materials.emplace_back(mat);
 	}
 	template <typename T>
-	void add_mesh(const T& object, vec3 pos = 0, float scl = 1, uint mat = 0, bool skip_bvh = 0, bool is_light = 0, bool has_fog = 0)
+	void add_mesh(const T& object, mat4 tran = mat4(vec4(0, 0, 0, 1)), uint mat = 0, bool is_bvh = 1, bool is_light = 0, bool has_fog = 0, bool deform = 1)
 	{
-		add_obj(mesh<T>(object, mat), vec3(pos, scl), skip_bvh, is_light, has_fog);
+		create_mesh(vector<T>(1, object), tran, mat, is_bvh, is_light, has_fog, deform);
 	}
 	template <typename T>
-	void add_mesh(const vector<T>& object, vec3 pos = 0, float scl = 1, uint mat = 0, bool skip_bvh = 0, bool is_light = 0, bool has_fog = 0)
+	void add_mesh(const vector<T>& object, mat4 tran = mat4(vec4(0, 0, 0, 1)), uint mat = 0, bool is_bvh = 1, bool is_light = 0, bool has_fog = 0, bool deform = 1)
 	{
-		add_obj(mesh<T>(object, mat), vec3(pos, scl), skip_bvh, is_light, has_fog);
+		create_mesh(object, tran, mat, is_bvh, is_light, has_fog, deform);
+	}
+	bool load_mesh(const char* name, mat4 tran, uint mat, bool is_bvh = 1, bool is_light = 0, bool has_fog = 0)
+	{
+		objects.emplace_back(name, tran, mat, is_bvh, is_light, has_fog);
+		if (objects.back().get_size() == 0) {
+			remove_mesh(objects.size() - 1);
+			return false;
+		}
+		if (!is_bvh)nonbvh.emplace_back(objects.size());
+		if (is_light)lights.emplace_back(objects.size());
+		bbox.join(objects.back().get_box());
+		lw_tot = 1.f / lights.size();
+		return true;
 	}
 	void remove_mat(uint id) {
 		if (id < materials.size()) {
@@ -133,6 +146,17 @@ public:
 		}
 	}
 private:
+	template <typename T>
+	void create_mesh(const vector<T>& object, mat4 tran, uint mat, bool is_bvh, bool is_light, bool has_fog, bool deform = 1)
+	{
+		if (object.size() == 0)return;
+		if (!is_bvh)nonbvh.emplace_back(objects.size());
+		if (is_light)lights.emplace_back(objects.size());
+		if (deform)objects.emplace_back(mesh<T>(object, mat).transform(tran), is_bvh, is_light, has_fog);
+		else objects.emplace_back(mesh<T>(object, mat).set_trans(tran), is_bvh, is_light, has_fog);
+		bbox.join(objects.back().get_box());
+		lw_tot = 1.f / lights.size();
+	}
 	void obj_create();
 	void obj_update();
 	uint sort(uint be, uint en, uchar axis, float plane);
@@ -140,22 +164,6 @@ private:
 	void split_bvh(uint parent, uint node_size);
 	void split_bvh(uint be, uint en, uint node_size);
 	aabb box_from(uint begin, uint end);
-
-	template <typename T>
-	void add_obj(mesh<T> object, vec3 offset, bool skip_bvh = 0, bool is_light = 0, bool has_fog = 0)
-	{
-		if (object.size > 0)
-			add_obj(object.set_trans(offset), skip_bvh, is_light, has_fog);
-	}
-	template <typename T>
-	void add_obj(const mesh<T>& object, bool skip_bvh = 0, bool is_light = 0, bool has_fog = 0)
-	{
-		if (skip_bvh)nonbvh.emplace_back(objects.size());
-		if (is_light)lights.emplace_back(objects.size());
-		objects.emplace_back(object, !skip_bvh, is_light, has_fog);
-		bbox.join(object.get_box());
-		lw_tot = 1.f / lights.size();
-	}
 
 	__forceinline float pdf(const ray& r, uint light)const {
 		return objects[light].pdf(r);

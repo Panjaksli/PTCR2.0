@@ -1,7 +1,5 @@
 #include "Engine.h"
-
-int main()
-{
+int main() {
 	PTCR::Engine engine(90);
 	engine.Render_loop();
 }
