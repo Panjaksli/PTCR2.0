@@ -5,10 +5,10 @@
 struct vec4
 {
 	vec4() : xyz{} {}
-	vec4(__m128 t) :xyz(t) {}
-	vec4(float3 t) : xyz{ t.x,t.y,t.z,0 } {}
+	vec4(const __m128 &t) :xyz(t) {}
+	vec4(const float3 &t) : xyz{ t.x,t.y,t.z,0 } {}
 	vec4(float t) : xyz{ t,t,t,t } {}
-	vec4(vec4 v, float w) :xyz{ v.xyz[0],v.xyz[1],v.xyz[2],w } {}
+	vec4(const vec4 &v, float w) :xyz{ v.xyz[0],v.xyz[1],v.xyz[2],w } {}
 	vec4(float x, float y, float z = 0, float w = 0) : xyz{ x,y,z,w } {}
 	inline float x() const { return xyz[0]; }
 	inline float y() const { return xyz[1]; }
@@ -38,18 +38,17 @@ struct vec4
 		return *this;
 	}
 	inline float len2_v4() const {
-		return _mm_cvtss_f32(_mm_dp_ps(xyz, xyz, 0xF1));
+		return _mm_dot_ps<0xFF>(xyz, xyz)[0];
 	}
-	inline float len_v4() const { return sqrtf(len2_v4()); }
+	inline float len_v4() const { return _mm_sqrt_ps(_mm_dot_ps<0xFF>(xyz, xyz))[0]; }
 	inline float len2() const {
-		return _mm_cvtss_f32(_mm_dp_ps(xyz, xyz, 0x71));
+		return _mm_dot_ps<0x7F>(xyz, xyz)[0];
 	}
-	inline float len() const { return sqrtf(len2()); }
+	inline float len() const { return _mm_sqrt_ps(_mm_dot_ps<0x7F>(xyz, xyz))[0]; }
 	inline vec4 dir() const
 	{
-		return _mm_div_ps(xyz, _mm_sqrt_ps(_mm_dp_ps(xyz, xyz, 0x7F)));
+		return _mm_div_ps(xyz, _mm_sqrt_ps(_mm_dot_ps<0x7F>(xyz, xyz)));
 	}
-
 	inline vec4 fact() const
 	{
 		vec4 t = *this;
@@ -61,10 +60,10 @@ struct vec4
 		printf("%.8f %.8f %.8f\n", x(), y(), z());
 	}
 	void print4()const {
-		printf("%f %f %f %f\n", x(), y(), z(), w());
+		printf("%g %g %g %g\n", x(), y(), z(), w());
 	}
 	void printM()const {
-		printf("%f %f %f %f\n", x(), y(), z(), len());
+		printf("%g %g %g %g\n", x(), y(), z(), len());
 	}
 	union {
 		__m128 xyz;
@@ -113,11 +112,12 @@ inline vec4 floor(vec4 u) {
 inline vec4 ceil(vec4 u) {
 	return _mm_ceil_ps(u.xyz);
 }
-inline vec4 cross(vec4 u, vec4 v) { return _mm_cross_ps(u.xyz, v.xyz); }
-inline float dot(vec4 u, vec4 v) { return _mm_cvtss_f32(_mm_dp_ps(u.xyz, v.xyz, 0x71)); }
-template <int imm8>
+inline vec4 cross(vec4 u, vec4 v) { return _mm_cross_ps(u.xyz, v.xyz);}
+inline float dot(vec4 u, vec4 v) { return _mm_dot_ps<0x7F>(u.xyz, v.xyz)[0]; }
+template <int imm8=0x7F>
 inline __m128 dot(const vec4 &u,const vec4 &v) { return _mm_dot_ps<imm8>(u.xyz,v.xyz); }
-inline float dot4(vec4 u, vec4 v) { return _mm_cvtss_f32(_mm_dp_ps(u.xyz, v.xyz, 0xF1)); }
+inline float dot4(vec4 u, vec4 v) { return _mm_dot_ps<0xFF>(u.xyz, v.xyz)[0]; }
+inline __m128 dot4(const vec4& u, const vec4& v) { return _mm_dot_ps<0xFF>(u.xyz, v.xyz); }
 inline float operator&(vec4 u, vec4 v) { return dot(u, v); }
 inline vec4 operator%(vec4 u, vec4 v) { return cross(u, v); }
 inline float posdot(vec4 u, vec4 v) { return fmaxf(0.f, u & v); }

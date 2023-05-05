@@ -222,16 +222,12 @@ private:
 		bool hit = world.hit<1>(r, rec);
 		if (opt.en_fog) {
 			for (int i = 0; i < opt.samples; i++)
-				col += volumetric_pt<true>(r, opt.bounces, rec, hit);
-			col *= opt.inv_sa;
+				col += opt.inv_sa * volumetric_pt<true>(r, opt.bounces, rec, hit);
 		}
 		else {
 			if (!hit) col = sky(r.D);
-			else {
-				for (int i = 0; i < opt.samples; i++)
-					col += iterative_pt(r, rec, opt.bounces);
-				col *= opt.inv_sa;
-			}
+			else for (int i = 0; i < opt.samples; i++)
+				col += opt.inv_sa * iterative_pt(r, rec, opt.bounces);
 		}
 		return vec4(col, rec.t);
 	}
@@ -289,28 +285,25 @@ private:
 	}
 	//NO Volumetrics, iterative PT algorithm
 	__forceinline  vec4 iterative_pt(const ray& sr, const hitrec& srec, int depth) const {
-		vec4 col(0), aten(1.f); ray r = sr; float ir = 1.f;
-		for (int i = 0; i < depth + 1; i++)
-		{
-			hitrec rec; matrec mat;
+		vec4 col(0), aten(1.f); 
+		ray r = sr; matrec mat;
+		for (int i = 0; i < depth + 1; i++) {
+			hitrec rec; mat.refl = refl_none;
 			if (i == 0) rec = srec;
 			else if (!world.hit<1>(r, rec)) return col += aten * sky(r.D);
 			else if (rafl() >= opt.p_life) break;
 			else aten *= opt.i_life;
-			mat.ir = ir;
 			sample_material(r, rec, mat);
 			col += mat.emis * aten;
 			if (mat.refl)
 			{
-				float p1, p2;
-				if (mat.refl == refl_diff || mat.refl == refl_spec)
-				{
+				if (mat.refl == refl_diff || mat.refl == refl_spec) {
+					float p1, p2;
 					r = mat.refl == refl_diff ? sa_diff(mat, p1, p2) : sa_spec(mat, -r.D, p1, p2);
 					if (p1 > 0)aten *= (p1 / p2);
 					else break;
 				}
 				else {
-					ir = mat.ir;
 					r = ray(mat.P, mat.L, true);
 				}
 				aten *= mat.aten;

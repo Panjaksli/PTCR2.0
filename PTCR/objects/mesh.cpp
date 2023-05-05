@@ -43,11 +43,9 @@ void OBJ_to_MSH(const char* filename) {
 	std::vector<float3> vert; vert.reserve(0xfffff);
 	std::vector<uint3> face; face.reserve(0xfffff);
 	std::string line = "";
-	std::string pref = "";
 	while (std::getline(file_buff, line))
 	{
-		float3 ftmp;
-		uint3 utmp;
+		float3 ftmp; uint3 utmp;
 		if (sscanf_s(line.c_str(), "v %f %f %f", &ftmp.x, &ftmp.y, &ftmp.z) > 1) {
 			vert.emplace_back(ftmp);
 		}
@@ -61,7 +59,6 @@ void OBJ_to_MSH(const char* filename) {
 		}
 	}
 	file.close();
-
 	std::ofstream out;
 	name.erase(name.length() - 4);
 	out.open(name + ".msh", std::ios_base::binary | std::ios_base::out);

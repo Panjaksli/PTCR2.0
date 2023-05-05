@@ -92,6 +92,19 @@ __forceinline __m128 _mm_cross_ps(const __m128& u, const __m128& v) {
 }
 template <int imm8>
 __forceinline __m128 _mm_dot_ps(const __m128& u, const __m128& v) {
-
-	return _mm_dp_ps(u, v, imm8);
+	//return _mm_dp_ps(u, v, imm8); //appears to be a tiny bit slower
+	constexpr __m128 zero{ 0,0,0,0 };
+	constexpr int inp = 0xf & (imm8 >> 4);
+	constexpr int outp = (15 & imm8);
+	__m128 uv = u * v;
+	if constexpr (inp == 7) {
+		__m128 v1 = _mm_shuffle_ps(uv, uv, _MM_SHUFFLE(2, 2, 0, 0));
+		__m128 v2 = _mm_shuffle_ps(uv, uv, _MM_SHUFFLE(0, 0, 2, 2));
+		__m128 v3 = _mm_shuffle_ps(uv, uv, _MM_SHUFFLE(1, 1, 1, 1));
+		return _mm_blend_ps(zero, v1 + v2 + v3, outp);
+	}
+	uv = _mm_blend_ps(zero, uv, inp);
+	__m128 shuf = uv + _mm_shuffle_ps(uv, uv, _MM_SHUFFLE(2, 3, 0, 1)); //32 23 10 01
+	uv = shuf + _mm_shuffle_ps(shuf, shuf, _MM_SHUFFLE(0, 1, 2, 3));
+	return _mm_blend_ps(zero, uv, outp);
 }
