@@ -17,13 +17,14 @@ using uptr = std::unique_ptr<T>;
 #define GAMMA2 1
 #define DEBUG 1
 #define USE_SSE (1 && __SSE2__)
+#define SMOOTH_SHADING 1
 #define WIDTH 960
 #define HEIGHT 720
 #define SCALE 1.f
 #define CLAMP ImGuiSliderFlags_AlwaysClamp
 #define LOGFAST(x) if(rafl() > 0.9f) std::cout << x << "\n"
 #define LOGSLOW(x) if(rafl() > 0.99999f) std::cout << x << "\n"
-#define SMOOTH_SHADING 1
+
 constexpr double pi_dbl = 3.14159265358979323846;
 constexpr float sqrtpi = 1.77245385091;
 constexpr float sqrtpi2 = 2.50662827463;

@@ -53,13 +53,14 @@ namespace PTCR
 			}
 			if (event.type == SDL_DROPFILE) {
 				string name = event.drop.file;
-				if (name.find(".scn") != std::string::npos) scn_load(scene, name.c_str());
-				else if (name.find(".msh") != std::string::npos || name.find(".obj") != std::string::npos) {
+				if (name.find(".scn") != -1) scn_load(scene, name.c_str());
+				else if (name.find(".msh") != -1 || name.find(".obj") != -1) {
 					int x, y;
 					SDL_GetMouseState(&x, &y);
 					vec4 P = scene.get_point(scale * y, scale * x, 1);
-					if (scene.world.load_mesh(name.c_str(), vec4(P, 1), -1))
+					if (scene.world.load_mesh(name.c_str(), vec4(P, 1), scene.world.materials.size()))
 					{
+						scene.world.add_mat(albedo(), mat_ggx);
 						scene.opt.selected = scene.world.objects.size() - 1;
 						scene.world.build_bvh();
 						scene.cam.moving = true;
@@ -410,7 +411,6 @@ namespace PTCR
 			add_mat = true;
 		}
 		ImGui::SliderInt("Object ID", &(int&)scene.opt.selected, -1, scene.world.objects.size() - 1);
-		ImGui::Text("%s", scene.get_name());
 		if (scene.opt.selected < scene.world.objects.size()) {
 			uint id = scene.opt.selected;
 			mesh_var& obj = scene.object_at(id);
@@ -418,7 +418,6 @@ namespace PTCR
 			bool is_inbvh = obj.bvh();
 			bool is_foggy = obj.fog();
 			vec4 DT = TA;
-			ImGui::SameLine();
 			if (ImGui::Button("Erase")) {
 				scene.cam.moving = true;
 				scene.world.remove_mesh(id);
@@ -429,6 +428,7 @@ namespace PTCR
 				scene.world.duplicate_mesh(id);
 				scene.opt.selected = scene.world.objects.size() - 1;
 			}
+			ImGui::Text("%s", scene.get_name());
 			if (ImGui::Checkbox("IN BVH", &is_inbvh)) {
 				obj.flag.set_bvh(is_inbvh || obj.get_size() > 1000);
 				scene.world.update_all(scene.opt.node_size); scene.cam.moving = true;

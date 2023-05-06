@@ -3,18 +3,27 @@ std::vector<poly> load_mesh(const char* filename, vec4 off, float scale, bool fl
 {
 	std::string name(filename);
 	if (name.find(".msh") != -1) {
-		return load_MSH((name).c_str(), off, scale, flip);
+		return load_MSH(name.c_str(), off, scale, flip);
 	}
 	else if (name.find(".obj") != -1) {
+		OBJ_to_MSH(name.c_str());
+		printf("Generated .msh file!\n");
+		name.erase(name.length() - 4);
+		return load_MSH((name + ".msh").c_str(), off, scale, flip);
+	}
+	else if (std::ifstream(name + ".msh").good())
+		return load_MSH((name + ".msh").c_str(), off, scale, flip);
+	else if (std::ifstream("objects/" + name + ".msh").good())
+		return load_MSH(("objects/" + name + ".msh").c_str(), off, scale, flip);
+	else if (std::ifstream(name + ".obj").good())
+	{
 		OBJ_to_MSH((name + ".obj").c_str());
 		printf("Generated .msh file!\n");
 		return load_MSH((name + ".msh").c_str(), off, scale, flip);
 	}
-	else if (std::ifstream(name + ".msh").good() || std::ifstream("objects/" + name + ".msh").good())
-		return load_MSH((name + ".msh").c_str(), off, scale, flip);
-	else if (std::ifstream(name + ".obj").good() || std::ifstream("objects/" + name + ".obj").good())
+	else if (std::ifstream("objects/" + name + ".obj").good())
 	{
-		OBJ_to_MSH((name + ".obj").c_str());
+		OBJ_to_MSH(("objects/" + name + ".obj").c_str());
 		printf("Generated .msh file!\n");
 		return load_MSH((name + ".msh").c_str(), off, scale, flip);
 	}
@@ -30,13 +39,8 @@ void OBJ_to_MSH(const char* filename) {
 	std::ifstream file(name);
 	if (!file.is_open())
 	{
-		name = "objects/" + name;
-		file = std::ifstream(name);
-		if (!file.is_open())
-		{
-			printf("File not found !\n");
-			return;
-		}
+		printf("File not found !\n");
+		return;
 	}
 	std::stringstream file_buff;
 	file_buff << file.rdbuf();
@@ -45,17 +49,19 @@ void OBJ_to_MSH(const char* filename) {
 	std::string line = "";
 	while (std::getline(file_buff, line))
 	{
-		float3 ftmp; uint3 utmp;
+		float3 ftmp; uint3 utmp; uint tmp4 = 0;
 		if (sscanf_s(line.c_str(), "v %f %f %f", &ftmp.x, &ftmp.y, &ftmp.z) > 1) {
 			vert.emplace_back(ftmp);
 		}
-		else if (sscanf_s(line.c_str(), "f %u%*[^ ]%u%*[^ ]%u", &utmp.x, &utmp.y, &utmp.z) > 1) {
-			utmp.x -= 1; utmp.y -= 1; utmp.z -= 1;
+		else if (sscanf_s(line.c_str(), "f %u%*[^ ]%u%*[^ ]%u%*[^ ]%u", &utmp.x, &utmp.y, &utmp.z, &tmp4) >= 3) {
+			utmp.x -= 1; utmp.y -= 1; utmp.z -= 1; tmp4 -= 1;
 			face.emplace_back(utmp);
+			if (tmp4 != -1) face.emplace_back(uint3(utmp.x, utmp.z, tmp4));
 		}
-		else if (sscanf_s(line.c_str(), "f %u %u %u", &utmp.x, &utmp.y, &utmp.z) > 1) {
-			utmp.x -= 1; utmp.y -= 1; utmp.z -= 1;
+		else if (sscanf_s(line.c_str(), "f %u %u %u %u", &utmp.x, &utmp.y, &utmp.z, &tmp4) >= 3) {
+			utmp.x -= 1; utmp.y -= 1; utmp.z -= 1; tmp4 -= 1;
 			face.emplace_back(utmp);
+			if(tmp4 != -1) face.emplace_back(uint3(utmp.x,utmp.z,tmp4));
 		}
 	}
 	file.close();
@@ -77,12 +83,8 @@ std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool fli
 	std::ifstream file(name);
 	if (!file.is_open())
 	{
-		file = std::ifstream("objects/" + name);
-		if (!file.is_open())
-		{
-			printf("File not found !\n");
-			return std::vector<poly>();
-		}
+		printf("File not found !\n");
+		return vector<poly>();
 	}
 	std::stringstream file_buff;
 	file_buff << file.rdbuf();
@@ -95,18 +97,19 @@ std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool fli
 	{
 		//C version is 2x faster
 #if 1
-		float3 ftmp;
-		uint3 utmp;
+		float3 ftmp; uint3 utmp; uint tmp4 = 0;
 		if (sscanf_s(line.c_str(), "v %f %f %f", &ftmp.x, &ftmp.y, &ftmp.z) > 1) {
 			vert.emplace_back(ftmp);
 		}
-		else if (sscanf_s(line.c_str(), "f %u%*[^ ]%u%*[^ ]%u", &utmp.x, &utmp.y, &utmp.z) > 1) {
-			utmp.x -= 1; utmp.y -= 1; utmp.z -= 1;
+		else if (sscanf_s(line.c_str(), "f %u%*[^ ]%u%*[^ ]%u%*[^ ]%u", &utmp.x, &utmp.y, &utmp.z, &tmp4) >= 3) {
+			utmp.x -= 1; utmp.y -= 1; utmp.z -= 1; tmp4 -= 1;
 			face.emplace_back(utmp);
+			if (tmp4 != -1) face.emplace_back(uint3(utmp.x, utmp.z, tmp4));
 		}
-		else if (sscanf_s(line.c_str(), "f %u %u %u", &utmp.x, &utmp.y, &utmp.z) > 1) {
-			utmp.x -= 1; utmp.y -= 1; utmp.z -= 1;
+		else if (sscanf_s(line.c_str(), "f %u %u %u %u", &utmp.x, &utmp.y, &utmp.z, &tmp4) >= 3) {
+			utmp.x -= 1; utmp.y -= 1; utmp.z -= 1; tmp4 -= 1;
 			face.emplace_back(utmp);
+			if (tmp4 != -1) face.emplace_back(uint3(utmp.x, utmp.z, tmp4));
 		}
 #else
 		std::stringstream ss;
@@ -171,9 +174,8 @@ std::vector<poly> load_MSH(const char* filename, vec4 off, float scale, bool fli
 	std::ifstream file(name, std::ios_base::in | std::ios_base::binary);
 	if (!file.is_open())
 	{
-		file = std::ifstream("objects/" + name, std::ios_base::in | std::ios_base::binary);
-		if (!file.is_open())
-			throw "File not found !";
+		printf("File not found !\n");
+		return vector<poly>();
 	}
 	float t1 = clock();
 	uint vf[2] = {};

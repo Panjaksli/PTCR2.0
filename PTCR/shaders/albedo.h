@@ -3,7 +3,7 @@
 #pragma pack(push,4)
 class albedo {
 public:
-	albedo(const texture& _rgb = texture(vec4(0.5, 0, 0.5, 1)), const texture& _mer = texture(vec4(0, 0, 1)),
+	albedo(const texture& _rgb = texture(vec4(0.5, 0.5, 0.5, 1)), const texture& _mer = texture(vec4(0, 0, 1)),
 		const texture& _nor = texture(vec4(0.5, 0.5, 1)), float _rep = 1.f, float _ir = 1.f, vec4 _tint = 0) :
 		_rgb(_rgb), _mer(_mer), _nor(_nor), tint(_tint), rep(_rep), ir(_ir) {}
 	__forceinline vec4 rgb(float u = 0, float v = 0)const {

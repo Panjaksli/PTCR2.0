@@ -99,8 +99,8 @@ private:
 class poly {
 public:
 	poly() {}
-	poly(vec4 A, vec4 B, vec4 C) :Q(A), U(B - A), V(C - A), N(poly_nis(U, V)) {}
-	poly(vec4 _Q, vec4 _U, vec4 _V, bool param) :Q(_Q), U(_U), V(_V), N(poly_nis(U, V)) {}
+	poly(vec4 A, vec4 B, vec4 C) :Q(A), U(B - A), V(C - A), N(poly_ns(U, V)) {}
+	poly(vec4 _Q, vec4 _U, vec4 _V, bool param) :Q(_Q), U(_U), V(_V), N(poly_ns(U, V)) {}
 	poly(vec4 _Q, vec4 _U, vec4 _V, vec4 _N) :Q(_Q), U(_U), V(_V), N(_N) {}
 	inline bool hit(const ray& r, hitrec& rec) const
 	{
@@ -179,6 +179,9 @@ public:
 	inline float area()const {
 		return 0.5f * cross(U, V).len();
 	}
+	inline vec4 A() { return Q; }
+	inline vec4 B() { return Q + U; }
+	inline vec4 C() { return Q + V; }
 	vec4 Q, U, V, N;
 };
 
