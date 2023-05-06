@@ -18,7 +18,7 @@ public:
 				|| load("textures/" + filename) || load("textures/" + filename + ".jpg") || load("textures/" + filename + ".png") ||
 				load("textures/" + filename + ".gif") || load("textures/" + filename + ".tga");
 			if (found) {
-				name = _filename;
+				name.copy(_filename);
 				flags.set(0, 0);
 				return;
 			}

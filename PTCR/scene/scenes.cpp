@@ -21,10 +21,9 @@ bool scn_save(Scene& scn, const char* filename) {
 	lines.reserve(100);
 	lines.push_back("*Objects");
 	for (const auto& obj : scn.world.objects) {
-		ln line;
+		ln line; char data[256];
 		mat4 T = obj.get_trans();
 		vec4 P = T.P(), A = T.A();
-		char data[256];
 		if (obj.name.empty()) {
 			if (obj.type() == o_sph) {
 				if (obj.get_size() > 1) {
@@ -326,6 +325,8 @@ void scn_load(Scene& scn, int n) {
 	scn.opt.en_bvh = scn.world.en_bvh;
 	scn.cam.moving = 1;
 #if TEST
+	scn.opt.med_thr = 0;
+	scn.opt.p_mode = 0;
 	scn.opt.en_fog = 0;
 	scn.cam.bokeh = 0;
 #endif
