@@ -274,12 +274,10 @@ void Scene::Reproject(const projection& proj, uint* disp, uint pitch) {
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
 	for (int i = 0; i < cam.h; i++) {
 		for (int j = 0; j < cam.w; j++) {
-			if (opt.framegen) {
-				cam.display(i, j, median2d3(buff, i, j, cam.h, cam.w, opt.med_thr));
-			}
-			else cam.display(i, j, buff[i * cam.w + j]);
+			cam.display(i, j, median2d3(buff, i, j, cam.h, cam.w, opt.med_thr));
 		}
 	}
+	if(!opt.framegen)cam.moving = false;
 }
 void Scene::Screenshot(bool reproject) const {
 	int spp = cam.CCD.spp;

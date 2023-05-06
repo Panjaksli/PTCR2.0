@@ -179,7 +179,7 @@ namespace PTCR
 			ImGui::DragFloat4("Offscale", offset._xyz, 0.001f);
 			ImGui::DragFloat4("Rotation", angle._xyz, 0.01f);
 			ImGui::SliderInt("Mat##1", &mat, -1, scene.world.materials.size() - 1, "%d", CLAMP);
-			ImGui::Checkbox("No bvh##2", &is_bvh);
+			ImGui::Checkbox("Bvh##2", &is_bvh);
 			ImGui::SameLine();
 			ImGui::Checkbox("Light##2", &is_light);
 			ImGui::SameLine();
@@ -402,7 +402,6 @@ namespace PTCR
 		if (ImGui::DragInt("Leaf nodes", &scene.opt.node_size, 1, 1, 32, 0, CLAMP)) {
 			scene.world.rebuild_bvh(1, scene.opt.node_size);
 		}
-		ImGui::Text("Object menu");
 		if (ImGui::Button("Add object")) {
 			add_obj = true;
 		}
@@ -410,7 +409,8 @@ namespace PTCR
 		if (ImGui::Button("Add material")) {
 			add_mat = true;
 		}
-		ImGui::SliderInt("Object ID", &(int&)scene.opt.selected, -1, scene.world.objects.size() - 1);
+		ImGui::Text("Object menu:");
+		ImGui::SliderInt("ID##obj", &(int&)scene.opt.selected, -1, scene.world.objects.size() - 1);
 		if (scene.opt.selected < scene.world.objects.size()) {
 			uint id = scene.opt.selected;
 			mesh_var& obj = scene.object_at(id);
@@ -428,6 +428,7 @@ namespace PTCR
 				scene.world.duplicate_mesh(id);
 				scene.opt.selected = scene.world.objects.size() - 1;
 			}
+			ImGui::SameLine();
 			ImGui::Text("%s", scene.get_name());
 			if (ImGui::Checkbox("IN BVH", &is_inbvh)) {
 				obj.flag.set_bvh(is_inbvh || obj.get_size() > 1000);
@@ -462,20 +463,20 @@ namespace PTCR
 			}
 			uint mat = obj.get_mat();
 			int max_mat = scene.world.materials.size();
-			if (ImGui::SliderInt("Mat", &(int&)mat, -1, max_mat - 1)) {
+			if (ImGui::SliderInt("Mat ID", &(int&)mat, -1, max_mat - 1)) {
 				scene.cam.moving = true;
 				obj.set_mat(mat);
 			}
 			if (mat < scene.world.materials.size()) {
+				ImGui::Text("Material menu:");
 				albedo& alb = scene.world.materials[mat].tex;
 				int type = (int)scene.world.materials[mat].type;
 				vec4 col = alb._rgb.get_col(), mer = alb._mer.get_col(), nor = alb._nor.get_col();
 				bool s1 = alb._rgb.get_solid(), s2 = alb._mer.get_solid(), s3 = alb._nor.get_solid();
-				if (ImGui::SliderInt("Mat type", &type, 0, mat_cnt - 1, mat_enum_str(type))) {
+				if (ImGui::SliderInt("Type", &type, 0, mat_cnt - 1, mat_enum_str(type))) {
 					scene.cam.moving = true;
 					scene.world.materials[mat].type = (mat_enum)type;
 				}
-				ImGui::Text("Material: "); ImGui::SameLine();
 				if (ImGui::Button("Erase##mat")) {
 					scene.cam.moving = true;
 					scene.world.remove_mat(mat);
