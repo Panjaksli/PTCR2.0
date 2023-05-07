@@ -20,11 +20,11 @@ public:
 		_data = new T[_size];
 		copy(_data, cpy._data, _size);
 	}
-	const darray& operator=(const darray& cpy) {
-		_capacity = cpy._capacity;
-		_size = cpy._size;
-		_data = new T[_size];
-		copy(_data, cpy._data, _size);
+	darray(darray&& cpy)noexcept:darray() {
+		swap(*this, cpy);
+	}
+	darray& operator=(darray cpy) {
+		swap(*this, cpy);
 		return *this;
 	}
 	inline void erase(uint32_t idx) {
@@ -123,6 +123,11 @@ public:
 		for (uint32_t i = 0; i < size(); i++)
 			std::cout << _data[i] << " ";
 		printf("\n");
+	}
+	friend void swap(darray& d1, darray& d2) {
+		std::swap(d1._data, d2._data);
+		std::swap(d1._size, d2._size);
+		std::swap(d1._capacity, d2._capacity);
 	}
 private:
 	static void copy(T* dst, const T* src, uint32_t size) {

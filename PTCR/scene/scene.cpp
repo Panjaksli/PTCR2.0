@@ -144,30 +144,6 @@ void Scene::set_skybox(const char* name)
 	opt.skybox = true;
 }
 
-vector<bool> Scene::generate_mask(const projection& proj) {
-	vector<bool> mask(cam.w * cam.h, 0);
-	mat4 iT = cam.T.inverse();
-#pragma omp parallel for collapse(2) schedule(dynamic, 100)
-	for (int i = 0; i < cam.h; i++) {
-		for (int j = 0; j < cam.w; j++) {
-			uint off = i * cam.w + j;
-			float dist = cam.CCD.data[off].w();
-			vec4 xy = cam.SS(vec4(j, i), proj);
-			vec4 pt = proj.T.P() + proj.T.vec(xy) * dist;
-			vec4 spt = iT.pnt(pt);
-			if (spt.z() < 0) [[likely]] {
-				vec4 dir = spt / dist;
-				vec4 uv = dir / fabsf(dir.z());
-				uv = cam.inv_SS(uv);
-				uint x = uv[0];
-				uint y = uv[1];
-				if (x < cam.w && y < cam.h) mask[y * cam.w + x] = true;
-			}
-		}
-	}
-	return mask;
-}
-
 void Scene::Render(uint* disp, uint pitch) {
 	cam.CCD.set_disp(disp, pitch);
 	cam_autofocus();
@@ -247,7 +223,8 @@ void Scene::Gen_projection(const projection& proj) {
 	vec4* buff = cam.CCD.buff.data();
 	vec4* data = cam.CCD.data.data();
 	mat4 iT = cam.T.inverse();
-	for (int i = 0; i < cam.CCD.n; i++)buff[i] = vec4(0, 0, 0, 1.f / 0.f);
+	for (int i = 0; i < cam.CCD.n; i++)
+		buff[i] = vec4(0, 0, 0, 1.f / 0.f);
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
 	for (int i = 0; i < cam.h; i++) {
 		for (int j = 0; j < cam.w; j++) {
@@ -258,7 +235,7 @@ void Scene::Gen_projection(const projection& proj) {
 			vec4 spt = iT.pnt(pt);
 			if (spt.z() < 0) [[likely]] {
 				vec4 dir = spt / dist;
-				vec4 uv = dir / fabsf(dir.z());
+				vec4 uv = -dir / dir.z();
 				uv = cam.inv_SS(uv);
 				int x = uv[0], y = uv[1];
 				if (x < cam.w && y < cam.h && dist <= buff[y * cam.w + x].w())
@@ -269,7 +246,8 @@ void Scene::Gen_projection(const projection& proj) {
 }
 void Scene::Reproject(const projection& proj, uint* disp, uint pitch) {
 	cam.CCD.set_disp(disp, pitch);
-	if (cam.moving || opt.framegen)Gen_projection(proj);
+	//if (cam.moving || opt.framegen)
+	Gen_projection(proj);
 	vec4* buff = cam.CCD.buff.data();
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
 	for (int i = 0; i < cam.h; i++) {

@@ -10,9 +10,10 @@ public:
 	c_str(char* buff) { copy(buff); }
 	c_str(const char* buff) { copy(buff); }
 	c_str(const c_str& cpy) { copy(cpy.data()); }
+	c_str(c_str&& cpy) noexcept : c_str() { swap(*this, cpy); }
 	~c_str() { delete[] _data; }
-	const c_str& operator=(const c_str& cpy) {
-		copy(cpy.data());
+	c_str& operator=(c_str cpy) {
+		swap(*this, cpy);
 		return *this;
 	}
 	operator const char* ()const { return _data; }
@@ -33,15 +34,10 @@ public:
 		for (uint i = 0; i < max_size; i++)
 			_data[i] = var;
 	}
-	const c_str& append(const char* buff) {
-		uint off = size() - 1;
-		for (uint i = 0; i < size_of(buff); i++)
-			if (i + off < max_size) _data[i + off] = buff[i];	
-		return *this;
-	}
+	
 	const c_str& copy(const char* buff) {
 		for (uint i = 0; i < size_of(buff); i++)
-			if (i < max_size) _data[i] = buff[i];	
+			if (i < max_size) _data[i] = buff[i];
 		return *this;
 	}
 	uint paste(char* buff, uint buff_size)const {
@@ -50,8 +46,11 @@ public:
 			buff[i] = _data[i];
 		return msize;
 	}
-	void clear() {
-		set(0);
+	const c_str& append(const char* buff) {
+		uint off = size() - 1;
+		for (uint i = 0; i < size_of(buff); i++)
+			if (i + off < max_size) _data[i + off] = buff[i];
+		return *this;
 	}
 	void replace(char what, char with) {
 		replace(_data, what, with, max_size);
@@ -68,16 +67,22 @@ public:
 		while (buff[i++] != '\0');
 		return i;
 	}
-	void print()const { printf("%s", text()); }
+	void clear() {
+		set(0);
+	}
+	void print()const { printf("%s\n", text()); }
+	friend void swap(c_str &s1, c_str &s2) {
+		std::swap(s1._data, s2._data);
+	}
+	friend c_str operator+(c_str s1, c_str s2) {
+		s1.append(s2);
+		return s1;
+	}
 	static constexpr uint max_size = 128;
 private:
 	char* _data = new char[max_size] {};
 };
 
-inline c_str operator+(c_str s1, c_str s2) {
-	s1.append(s2);
-	return s1;
-}
 /*
 class c_str {
 public:

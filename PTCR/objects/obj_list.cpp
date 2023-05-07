@@ -82,12 +82,9 @@ void obj_list::update_all(uint node_size) {
 	build_bvh(1, node_size);
 }
 void obj_list::obj_update() {
-	//#pragma omp parallel for schedule(static,64)
-		//for (auto& obj : obj_bvh)
-		//	obj.update_box(objects[obj.obje_id].get_box(obj.prim_id));
+
 }
 void obj_list::rebuild_bvh(bool print, uint node_size) {
-	//obj_update();
 	bvh_builder(print, node_size);
 }
 void obj_list::build_bvh(bool print, uint node_size) {
@@ -102,7 +99,7 @@ void obj_list::bvh_builder(bool print, uint node_size) {
 		en_bvh = false;
 		return;
 	}
-	time_t t1 = clock();
+	double t1 = timer();
 	bvh.reserve(obj_bvh.size());
 	if (bvh_lin) {
 		bvh.emplace_back(bvh_node(box_from(0, obj_bvh.size()), 0, obj_bvh.size(), 0));
@@ -110,13 +107,12 @@ void obj_list::bvh_builder(bool print, uint node_size) {
 	}
 	else split_bvh(0, obj_bvh.size(), node_size);
 	bvh.shrink_to_fit();
-	float t2 = clock() - t1;
 	if (print)
-		printf("%d %f\n", (int)bvh.size(), t2 / CLOCKS_PER_SEC);
+		printf("Built BVH, nodes: %d, took: %g\n", (int)bvh.size(), timer(t1));
 }
 
 void obj_list::update_bvh(bool print, uint node_size) {
-	time_t t1 = clock();
+	double t1 = timer();
 	obj_update();
 	float cost = 0;
 	for (int i = bvh.size() - 1; i >= 0; i--) {
@@ -132,9 +128,8 @@ void obj_list::update_bvh(bool print, uint node_size) {
 	if (cost > 1.1 * final_cost) {
 		rebuild_bvh(print, node_size);
 	}
-	float t2 = clock() - t1;
 	if (print)
-		printf("%d %f\n", (int)bvh.size(), t2 / CLOCKS_PER_SEC);
+		printf("Updated BVH, nodes: %d, took: %g\n", (int)bvh.size(), timer(t1));
 }
 
 aabb obj_list::box_from(uint beg, uint end) {

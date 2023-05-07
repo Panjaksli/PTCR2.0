@@ -23,12 +23,11 @@ public:
 		bbox = cpy.bbox, P = cpy.P, A = cpy.A, prim = new primitive[cpy.size], mat = cpy.mat, size = cpy.size;
 		memcpy(prim, cpy.prim, size * sizeof(primitive));
 	}
-	const mesh& operator=(const mesh& cpy) {
-		if (this != &cpy) {
-			delete[] prim;
-			bbox = cpy.bbox, P = cpy.P, A = cpy.A, prim = new primitive[cpy.size], mat = cpy.mat, size = cpy.size;
-			memcpy(prim, cpy.prim, size * sizeof(primitive));
-		}
+	mesh(mesh&& cpy)noexcept :mesh() {
+		swap(*this, cpy);
+	}
+	mesh& operator=(mesh cpy) {
+		swap(*this, cpy);
 		return *this;
 	}
 	~mesh() {
@@ -104,6 +103,14 @@ public:
 	inline void set_mat(uint _mat) {
 		mat = _mat;
 	}
+	friend void swap(mesh& m1, mesh& m2) {
+		std::swap(m1.bbox, m2.bbox);
+		std::swap(m1.P, m2.P);
+		std::swap(m1.A, m2.A);
+		std::swap(m1.prim, m2.prim);
+		std::swap(m1.mat, m2.mat);
+		std::swap(m1.size, m2.size);
+	}
 private:
 	inline void fit() {
 		bbox = aabb();
@@ -165,7 +172,7 @@ default: break;\
 }
 
 struct mesh_var {
-	mesh_var(): flag(o_bla,0,0,0) {}
+	mesh_var() : flag(o_bla, 0, 0, 0) {}
 	mesh_var(const char* name, mat4 T, uint mat, bool bvh = 1, bool lig = 0, bool fog = 0) : p(load_mesh(name, 0, 1, false), mat), name(name), flag(o_pol, bvh, lig, fog) { p.transform(T); }
 	mesh_var(const mesh<poly>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :p(m), name(name), flag(o_pol, bvh, lig, fog) {}
 	mesh_var(const mesh<quad>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :q(m), name(name), flag(o_qua, bvh, lig, fog) {}
@@ -182,11 +189,12 @@ struct mesh_var {
 		default: break;
 		}
 	}
-	const mesh_var& operator=(const mesh_var& cpy) {
-		name = cpy.name;
-		flag = cpy.flag;
-		SELECT_EQ(cpy.type(), cpy);
+	mesh_var& operator=(mesh_var cpy) {
+		swap(*this, cpy);
 		return *this;
+	}
+	mesh_var(mesh_var&& cpy)noexcept:mesh_var() {
+		swap(*this, cpy);
 	}
 	~mesh_var() {
 		//Destructor DOES matter here (each type holds a different pointer, thus correct delete[] method shall be called !) maybe, possibly, not sure ?
@@ -257,6 +265,17 @@ struct mesh_var {
 	}
 	obj_enum type() const {
 		return flag.type();
+	}
+	friend void swap(mesh_var& m1, mesh_var& m2) {
+		switch(m2.type()) {
+		case o_pol: swap(m1.p, m2.p); break;
+		case o_qua: swap(m1.q, m2.q); break;
+		case o_sph: swap(m1.s, m2.s); break;
+		case o_vox: swap(m1.v, m2.v); break;
+		default: break;
+		}
+		std::swap(m1.name, m2.name);
+		std::swap(m1.flag, m2.flag);
 	}
 	union {
 		mesh<poly> p;

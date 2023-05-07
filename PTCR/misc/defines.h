@@ -9,8 +9,7 @@
 #include <memory>
 #include <sstream>
 #include "c_str.h"
-template <typename T>
-using uptr = std::unique_ptr<T>;
+
 #define uchar unsigned char
 #define uint unsigned int
 #define TEST 0
@@ -51,7 +50,6 @@ using std::fabs;
 using std::fmax;
 using std::fmin;
 using std::sqrt;
-using std::sqrtf;
 using std::tan;
 using std::atan2;
 using std::acos;

@@ -67,13 +67,13 @@ struct vec4
 		return t;
 	}
 	void print()const {
-		printf("%g %g %g\n", x(), y(), z());
+		printf("%.6f %.6f %.6f\n", x(), y(), z());
 	}
 	void print4()const {
-		printf("%g %g %g %g\n", x(), y(), z(), w());
+		printf("%.6f %.6f %.6f %.6f\n", x(), y(), z(), w());
 	}
 	void printM()const {
-		printf("%g %g %g %g\n", x(), y(), z(), len());
+		printf("%.6f %.6f %.6f %.6f\n", x(), y(), z(), len());
 	}
 	union {
 		float _xyz[4];

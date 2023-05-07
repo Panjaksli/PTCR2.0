@@ -77,7 +77,6 @@ public:
 	void Screenshot(bool reproject = 0)const;
 	void Reproject(const projection& proj, uint* disp, uint pitch);
 	void Gen_projection(const projection& proj);
-	vector<bool> generate_mask(const projection& proj);
 	__forceinline mat_var& material_at(uint idx) {
 		return world.materials[idx];
 	}

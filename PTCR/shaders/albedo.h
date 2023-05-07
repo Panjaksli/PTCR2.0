@@ -3,9 +3,13 @@
 #pragma pack(push,4)
 class albedo {
 public:
-	albedo(const texture& _rgb = texture(vec4(0.5, 0.5, 0.5, 1)), const texture& _mer = texture(vec4(0, 0, 1)),
-		const texture& _nor = texture(vec4(0.5, 0.5, 1)), float _rep = 1.f, float _ir = 1.f, vec4 _tint = 0) :
-		_rgb(_rgb), _mer(_mer), _nor(_nor), tint(_tint), rep(_rep), ir(_ir) {}
+	albedo(const texture& rgb = texture(vec4(0.5, 0.5, 0.5, 1)), const texture& mer = texture(vec4(0, 0, 1)),
+		const texture& nor = texture(vec4(0.5, 0.5, 1)), float rep = 1.f, float ir = 1.f, vec4 tint = 0) :
+		_rgb(rgb), _mer(mer), _nor(nor), tint(tint), rep(rep), ir(ir) {
+		if (!_rgb.get_solid())_rgb.rgb = vec4(0.5, 0.5, 0.5, 1);
+		if (!_mer.get_solid())_mer.rgb = vec4(0, 0, 1);
+		if(!_nor.get_solid())_nor.rgb = vec4(0.5, 0.5, 1);
+	}
 	__forceinline vec4 rgb(float u = 0, float v = 0)const {
 		vec4 rgb = _rgb.sample(rep * u, rep * v);
 		return GAMMA2 ? rgb * vec4(rgb, 1) : rgb;

@@ -18,8 +18,9 @@ public:
 	}
 #if USE_SSE
 	__forceinline vec4 local(const vec4& a)const {
-		__m128 d0 = _mm_or_ps(dot<0x71>(u, a), dot<0x72>(v, a));
-		return _mm_or_ps(d0, dot<0x74>(w, a));
+		__m128 x = u.xyz, y = v.xyz, z = w.xyz, w{};
+		_MM_TRANSPOSE4_PS(x,y,z,w);
+		return a[0] * x + a[1] * y + a[2] * z;
 	}
 #else
 	__forceinline vec4 local(const vec4& a)const {

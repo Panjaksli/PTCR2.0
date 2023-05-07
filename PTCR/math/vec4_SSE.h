@@ -57,13 +57,13 @@ struct vec4
 	}
 
 	void print()const {
-		printf("%.8f %.8f %.8f\n", x(), y(), z());
+		printf("%.6f %.6f %.6f\n", x(), y(), z());
 	}
 	void print4()const {
-		printf("%g %g %g %g\n", x(), y(), z(), w());
+		printf("%.6f %.6f %.6f %.6f\n", x(), y(), z(), w());
 	}
 	void printM()const {
-		printf("%g %g %g %g\n", x(), y(), z(), len());
+		printf("%.6f %.6f %.6f %.6f\n", x(), y(), z(), len());
 	}
 	union {
 		__m128 xyz;
@@ -117,7 +117,6 @@ inline float dot(vec4 u, vec4 v) { return _mm_dot_ps<0x7F>(u.xyz, v.xyz)[0]; }
 template <int imm8=0x7F>
 inline __m128 dot(const vec4 &u,const vec4 &v) { return _mm_dot_ps<imm8>(u.xyz,v.xyz); }
 inline float dot4(vec4 u, vec4 v) { return _mm_dot_ps<0xFF>(u.xyz, v.xyz)[0]; }
-inline __m128 dot4(const vec4& u, const vec4& v) { return _mm_dot_ps<0xFF>(u.xyz, v.xyz); }
 inline float operator&(vec4 u, vec4 v) { return dot(u, v); }
 inline vec4 operator%(vec4 u, vec4 v) { return cross(u, v); }
 inline float posdot(vec4 u, vec4 v) { return fmaxf(0.f, u & v); }

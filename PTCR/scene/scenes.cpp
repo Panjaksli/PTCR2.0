@@ -1,32 +1,37 @@
 #include "Scenes.h"
 //Simple text format
 bool scn_save(Scene& scn, const char* filename) {
-	double time = timer();
-	std::string name(filename);
-	if (name.empty())return false;
-	if (name.find(".scn") == std::string::npos)name = name + ".scn";
-	std::ofstream file("scenes/" + name);
-	if (!file.is_open())
-	{
-		printf("File not open!\n");
-		return false;
-	}
 	struct ln {
 		ln() {}
 		ln(const char* text) { strcpy_s(x, 256, text); }
 		operator char* () { return x; }
 		char x[256] = {};
 	};
-	vector<ln> lines;
-	lines.reserve(100);
+	double time = timer();
+	std::string name(filename);
+	if (name.empty())return false;
+	if (name.find(".scn") == -1)name = name + ".scn";
+	std::ofstream file("scenes/" + name);
+	if (!file.is_open())
+	{
+		printf("File not open!\n");
+		return false;
+	}
+	ln line; vector<ln> lines;
+	lines.reserve(256);
 	lines.push_back("*Objects");
 	for (const auto& obj : scn.world.objects) {
-		ln line; char data[256];
 		mat4 T = obj.get_trans();
 		vec4 P = T.P(), A = T.A();
 		if (obj.name.empty()) {
 			if (obj.type() == o_sph) {
-				if (obj.get_size() > 1) {
+				if (obj.get_size() == 1) {
+					vec4 q = obj.s.prim[0].Qr;
+					sprintf(line, "sphere P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%g,%g,%g,%g}",
+						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), q[0], q[1], q[2], q[3]);
+					lines.push_back(line);
+				}
+				else if (obj.get_size() > 1) {
 					sprintf(line, "sphere P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {",
 						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
 					lines.push_back(line);
@@ -36,15 +41,15 @@ bool scn_save(Scene& scn, const char* filename) {
 					}
 					lines.push_back("}");
 				}
-				else if (obj.get_size() == 1) {
-					vec4 q = obj.s.prim[0].Qr;
-					sprintf(line, "sphere P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%g,%g,%g,%g}",
-						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), q[0],q[1],q[2],q[3]);
-					lines.push_back(line);
-				}
 			}
 			else if (obj.type() == o_vox) {
-				if (obj.get_size() > 1) {
+				if (obj.get_size() == 1) {
+					vec4 q = obj.v.prim[0].Qa;
+					sprintf(line, "voxel P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%g,%g,%g,%g}",
+						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), q[0], q[1], q[2], q[3]);
+					lines.push_back(line);
+				}
+				else if (obj.get_size() > 1) {
 					sprintf(line, "voxel P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {",
 						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
 					lines.push_back(line);
@@ -54,15 +59,19 @@ bool scn_save(Scene& scn, const char* filename) {
 					}
 					lines.push_back("}");
 				}
-				else if (obj.get_size() == 1) {
-					vec4 q = obj.v.prim[0].Qa;
-					sprintf(line, "voxel P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%g,%g,%g,%g}",
-						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), q[0], q[1], q[2], q[3]);
-					lines.push_back(line);
-				}
 			}
 			else if (obj.type() == o_qua) {
-				if (obj.get_size() > 1) {
+				if (obj.get_size() == 1) {
+					char data[256] = {};
+					vec4 a = obj.p.prim[0].A();
+					vec4 b = obj.p.prim[0].B();
+					vec4 c = obj.p.prim[0].C();
+					sprintf(data, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+					sprintf(line, "quad P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s}",
+						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), data);
+					lines.push_back(line);
+				}
+				else if (obj.get_size() > 1) {
 					sprintf(line, "quad P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {",
 						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
 					lines.push_back(line);
@@ -74,18 +83,19 @@ bool scn_save(Scene& scn, const char* filename) {
 					}
 					lines.push_back("}");
 				}
-				else if (obj.get_size() == 1) {
+			}
+			else if (obj.type() == o_pol) {
+				if (obj.get_size() == 1) {
+					char data[256] = {};
 					vec4 a = obj.p.prim[0].A();
 					vec4 b = obj.p.prim[0].B();
 					vec4 c = obj.p.prim[0].C();
 					sprintf(data, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
-					sprintf(line, "quad P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s}",
+					sprintf(line, "poly P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s}",
 						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), data);
 					lines.push_back(line);
 				}
-			}
-			else if (obj.type() == o_pol) {
-				if (obj.get_size() > 1) {
+				else if (obj.get_size() > 1) {
 					sprintf(line, "poly P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {",
 						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
 					lines.push_back(line);
@@ -97,15 +107,6 @@ bool scn_save(Scene& scn, const char* filename) {
 					}
 					lines.push_back("}");
 				}
-				else if (obj.get_size() == 1) {
-					vec4 a = obj.p.prim[0].A();
-					vec4 b = obj.p.prim[0].B();
-					vec4 c = obj.p.prim[0].C();
-					sprintf(data, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
-					sprintf(line, "poly P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s}",
-						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), data);
-					lines.push_back(line);
-				}
 			}
 		}
 		else {
@@ -113,14 +114,12 @@ bool scn_save(Scene& scn, const char* filename) {
 				P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), obj.name.text());
 			lines.push_back(line);
 		}
-
 	}
 	lines.push_back("*Materials");
 	for (const auto& mat : scn.world.materials) {
-		ln line;
-		vec4 srgb = mat.tex._rgb.get_col();
-		vec4 smer = mat.tex._mer.get_col();
-		vec4 snor = mat.tex._nor.get_col();
+		vec4 srgb = mat.tex._rgb.rgb;
+		vec4 smer = mat.tex._mer.rgb;
+		vec4 snor = mat.tex._nor.rgb;
 		vec4 tint = mat.tex.tint;
 		char rgb[128], mer[128], nor[128];
 		sprintf(rgb, "%s,%g,%g,%g,%g", mat.tex._rgb.name.text(), srgb[0], srgb[1], srgb[2], srgb[3]);
@@ -130,7 +129,6 @@ bool scn_save(Scene& scn, const char* filename) {
 			mat.type, rgb, mer, nor, mat.tex.rep, mat.tex.ir, tint[0], tint[1], tint[2], tint[3]);
 		lines.push_back(line);
 	}
-	ln line;
 	lines.push_back("*Params");
 	sprintf(line, "skybox=%s", scn.skybox.name.text()); lines.push_back(line);
 	sprintf(line, "ambient=%g,%g,%g", scn.opt.ambient[0], scn.opt.ambient[1], scn.opt.ambient[2]); lines.push_back(line);
@@ -163,6 +161,7 @@ bool scn_save(Scene& scn, const char* filename) {
 	cout << "Saved scene: " << filename << " took: " << timer(time) << "\n";
 	return true;
 }
+
 bool scn_load(Scene& scn, const char* filename, bool update_only) {
 	double time = timer();
 	std::string name(filename);
@@ -335,6 +334,27 @@ void scn_load(Scene& scn, int n) {
 	scn.world.build_bvh(1, scn.opt.node_size);
 }
 void scn1(Scene& scn) {
+	/*vector<quad> msh;
+	int size = sqrt(16384/4/4) / 2;
+	for (int i = -size; i < size; i++)
+		for (int j = -size; j < size; j++)
+			msh.push_back(quad(vec4(i, j,-size), vec4(1, 0, 0), vec4(0, 1, 0), true));
+	scn.opt.dbg_t = true;
+	scn.world.add_mesh(msh, vec4(0, 0, 0, 1));
+	scn.opt.med_thr = 0;
+	scn.opt.p_mode = 0;
+	scn.cam.bokeh = 0;
+	scn.cam.autofocus = 0;
+	scn.cam.foc_t = 1.556;
+	scn.cam.exposure = 1.f;
+	scn.sun_pos = rotat_mat4(vec4(1, 0, 0.32));
+	scn.opt.bounces = 10;
+	scn.opt.ninv_fog = -5;
+	scn.opt.p_life = 0.9f;
+	scn.opt.i_life = 1.f / 0.9f;
+	scn.cam.setup(mat4(0, 0), 90, 1.f);
+	scn.opt.en_fog = false;
+	scn.world.en_bvh = 1;*/
 	albedo gre(vec4(0.7, 0.9, 0.7, 0), 0, vec4(0.5, 0.5, 1), 1, 1.2);
 	albedo carpet(vec4(0.8, 0.2, 0.2, 1), vec4(0, 0, 1), "snow_normal", 10);
 	albedo blu(vec4(0.1, 0.28, 0.8, 1), vec4(0.5, 0, 0.1));
@@ -342,12 +362,9 @@ void scn1(Scene& scn) {
 	scn.world.add_mat(carpet, mat_mix);
 	scn.world.add_mat(gre, mat_mix);
 	scn.world.add_mat(blu, mat_ggx);
-	//scn.world.add_mat(sky, mat_lig);
-	//scn.world.add_mesh(generate_mesh(1, 0, 1), 0, 1.f, 0, 0);
 	scn.world.add_mesh(quad(vec4(-10, 0, -10), vec4(-10, 0, 10), vec4(10, eps, -10)), vec4(0, 1, 0, 1), 0, 0);
 	scn.world.load_mesh("bunny", vec4(-0.44, 0.8, -1, 6), 1);
 	scn.world.load_mesh("teapot", vec4(0.7, 1, -1, 0.25), 2);
-	//scn.world.add_mesh(sphere(0,1), 0, 100, 3,1,1,1);
 	scn.cam.autofocus = 0;
 	scn.cam.foc_t = 1.556;
 	scn.cam.exposure = 1.f;

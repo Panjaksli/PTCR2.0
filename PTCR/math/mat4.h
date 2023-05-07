@@ -49,6 +49,7 @@ struct mat4 {
 	}
 
 #if USE_SSE
+
 	inline mat4 transpose() const {
 		mat4 T = *this;
 		_MM_TRANSPOSE4_PS(T.x.xyz, T.y.xyz, T.z.xyz, T.w.xyz);
@@ -56,28 +57,31 @@ struct mat4 {
 	}
 	inline vec4 vec(vec4 u) const
 	{
-		__m128 d0 = _mm_or_ps(dot<0x71>(u, x), dot<0x72>(u, y));
-		__m128 d1 = dot<0x74>(u, z);
-		return vec4(_mm_or_ps(d0, d1), u.w());
+		return vec4(*this * vec4(u, 0), u.w());
 	}
 	inline vec4 pnt(vec4 u) const
 	{
-		vec4 v = vec4(u, 1);
-		__m128 d0 = _mm_or_ps(dot<0xF1>(v, x), dot<0xF2>(v, y));
-		__m128 d1 = dot<0xF4>(v, z);
-		return vec4(_mm_or_ps(d0, d1), u.w());
+		return vec4(*this * vec4(u, 1), u.w());
 	}
 	inline vec4 operator*(vec4 u) const {
-		__m128 d0 = _mm_or_ps(dot<0xF1>(u, x), dot<0xF2>(u, y));
-		__m128 d1 = _mm_or_ps(dot<0xF4>(u, z), dot<0xF8>(u, w));
-		return _mm_or_ps(d0, d1);
+		return col_mul(u.xyz);
 	}
 	inline mat4 operator*(mat4 T) const {
-		vec4 a = T.w;
-		T = T.algebraic().transpose();
-		return mat4(T * R[0], T * R[1], T * R[2], vec4(w + a, w.w() * a.w()));
+		vec4 r1 = row_mul(T[0].xyz);
+		vec4 r2 = row_mul(T[1].xyz);
+		vec4 r3 = row_mul(T[2].xyz);
+		vec4 r4 = vec4(R[3] + T.R[3], R[3].w() * T.R[3].w());
+		return mat4(r1, r2, r3, r4);
 	}
-
+private:
+	inline __m128 row_mul(const __m128& v) const {
+		return v[0] * R[0].xyz + v[1] * R[1].xyz + v[2] * R[2].xyz + _mm_setr_ps(0, 0, 0, v[3]);
+	}
+	inline __m128 col_mul(const __m128& v) const {
+		mat4 T = transpose();
+		return v[0] * T.R[0].xyz + v[1] * T.R[1].xyz + v[2] * T.R[2].xyz + v[3] * T.R[3].xyz;
+	}
+public:
 #else
 	inline vec4 vec(vec4 u) const
 	{
@@ -123,7 +127,7 @@ struct mat4 {
 		T.x /= x.len2();
 		T.y /= y.len2();
 		T.z /= z.len2();
-		T.w = vec4(-w, 1 / w.w());
+		T.w = vec4(-w, 1.f / w.w());
 		return T;
 	}
 	inline mat4 operator-(mat4 T) const {

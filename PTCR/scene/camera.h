@@ -6,34 +6,30 @@
 
 struct projection {
 	projection() {}
-	projection(mat4 T, float w, float h, float tfov) :T(T), w(w), h(h), iw(1 / w), ih(1 / h), asp(w / h), tfov(tfov) {}
+	projection(mat4 T, float w, float h, float tfov) :T(T), wh(w, h), iwh(1 / wh), asp(w / h), tfov(tfov) { scl = tfov * vec4(asp, -1); iscl = 1 / scl; }
 	mat4 T;
-	float w, h;
-	float iw, ih;
+	vec4 wh,iwh;
+	vec4 scl, iscl;
 	float asp;
 	float tfov;
-	bool operator==(const projection& proj)const {
-		return T.x == proj.T.x&& T.y == proj.T.y && T.z == proj.T.z && T.w == proj.T.w
-			&& w == proj.w && h == proj.h && asp == proj.asp && asp == proj.asp;
-	}
-	bool operator!=(const projection& proj)const {
-		return !(*this == proj);
-	}
 };
 
 class camera
 {
 public:
 	camera() {}
-	camera(uint w, uint h, float fov, mat4 _T = mat4()) :T(_T), CCD(w, h), P(T.P()), iw(1.0 / w), ih(1.0 / h), asp((float)w / h), fov(fov), tfov(tan(0.5f * torad(fov))), speed(1) {}
+	camera(uint w, uint h, float fov, mat4 _T = mat4()) :T(_T), CCD(w, h), P(T.P()), iw(1.0 / w), ih(1.0 / h), asp((float)w / h), fov(fov), tfov(tan(0.5f * torad(fov))), speed(1){
+		update();
+	}
 	mat4 T = mat4();
 	sensor CCD;
 	vec4 P = 0;
 	vec4 V = 0;
+	vec4 wh, iwh, scl, iscl;
 	uint& w = CCD.w, & h = CCD.h;
 	float iw = 1.f / w, ih = 1.f / h, asp = float(w) / h;
 	float fov = 90, tfov = tan(0.5f * torad(fov)), hfov = 0;
-	float fstop = 16.f,exposure = 1.f;
+	float fstop = 16.f, exposure = 1.f;
 	float foc_t = 1.f, foc_l = 0.0216f;
 	const float frame = 0.035, diagonal = 0.0432;
 	float speed = 1.f;
@@ -92,23 +88,28 @@ public:
 	void setup(mat4 _T, float _fov, float _fstop = 16);
 	void set_fov(float _fov);
 	inline vec4 SS(vec4 xy) const {
-		xy = 2.f * (xy + 0.5f) * vec4(iw, ih) - 1.f;
-		xy *= tfov * vec4(asp, -1);
+		xy = 2.f * (xy + 0.5f) * iwh - 1.f;
+		xy *= scl;
 		return vec4(xy[0], xy[1], -1);
 	}
 	inline vec4 inv_SS(vec4 xy) const {
-		xy /= tfov * vec4(asp, -1);
-		xy = (xy + 1.f) * 0.5f * vec4(w, h);
+		xy *= iscl;
+		xy = (xy + 1.f) * 0.5f * wh;
+		return xy;
+	}
+	inline vec4 inv_SS(vec4 xy, vec4 iscl) const {
+		xy *= iscl;
+		xy = (xy + 1.f) * 0.5f * wh;
 		return xy;
 	}
 	inline vec4 SS(vec4 xy, const projection& proj) const {
-		xy = 2.f * (xy + 0.5f) * vec4(proj.iw, proj.ih) - 1.f;
-		xy *= proj.tfov * vec4(proj.asp, -1);
+		xy = 2.f * (xy + 0.5f) * proj.iwh - 1.f;
+		xy *= proj.scl;
 		return vec4(xy[0], xy[1], -1);
 	}
 	inline vec4 inv_SS(vec4 xy, const projection& proj) const {
-		xy /= proj.tfov * vec4(proj.asp, -1);
-		xy = (xy + 1.f) * 0.5f * vec4(proj.w, proj.h);
+		xy *= proj.iscl;
+		xy = (xy + 1.f) * 0.5f * proj.wh;
 		return xy;
 	}
 private:

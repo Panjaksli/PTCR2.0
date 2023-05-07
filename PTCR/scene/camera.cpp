@@ -6,6 +6,10 @@ void camera::update()
 	tfov = tan(0.5f * torad(fov));
 	hfov = todeg(2 * atan(tfov * asp));
 	foc_l = fov_to_m(fov);
+	wh = vec4(w, h);
+	iwh = 1 / wh;
+	scl = tfov * vec4(asp, -1);
+	iscl = 1 / scl;
 }
 void camera::move(vec4 dir) {
 	if (near0(dir))return;

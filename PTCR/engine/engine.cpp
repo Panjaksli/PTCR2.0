@@ -63,6 +63,7 @@ namespace PTCR
 						scene.world.add_mat(albedo(), mat_ggx);
 						scene.opt.selected = scene.world.objects.size() - 1;
 						scene.world.build_bvh();
+						scene.opt.en_bvh = true;
 						scene.cam.moving = true;
 					}
 				}
@@ -202,7 +203,7 @@ namespace PTCR
 			if (ImGui::Button("Load")) {
 				if (is_mesh) {
 					scene.world.load_mesh(filename, T, mat, is_bvh, is_light, is_foggy);
-					if (is_bvh)scene.opt.en_bvh = scene.world.en_bvh = true;
+					if (is_bvh)scene.opt.en_bvh =  true;
 				}
 				else if (obj_type == o_pol) scene.world.add_mesh(poly(a, b, c), T, mat, is_bvh, is_light, is_foggy);
 				else if (obj_type == o_qua) scene.world.add_mesh(quad(a, b, c), T, mat, is_bvh, is_light, is_foggy);
@@ -469,7 +470,6 @@ namespace PTCR
 				albedo& alb = scene.world.materials[mat].tex;
 				c_str srgb = alb._rgb.name, smer = alb._mer.name, snor = alb._nor.name;
 				int type = (int)scene.world.materials[mat].type;
-				vec4 col = alb._rgb.get_col(), mer = alb._mer.get_col(), nor = alb._nor.get_col();
 				bool s1 = alb._rgb.get_solid(), s2 = alb._mer.get_solid(), s3 = alb._nor.get_solid();
 				if (ImGui::Button("Erase##mat")) {
 					scene.cam.moving = true;
@@ -492,9 +492,8 @@ namespace PTCR
 					}
 				}
 				else {
-					if (ImGui::ColorEdit4("##s1", col._xyz, ImGuiColorEditFlags_Float)) {
+					if (ImGui::ColorEdit4("##s1", alb._rgb.rgb._xyz, ImGuiColorEditFlags_Float)) {
 						scene.cam.moving = true;
-						alb._rgb.set_col(col);
 					}
 				}
 				ImGui::SameLine();
@@ -510,9 +509,8 @@ namespace PTCR
 					}
 				}
 				else {
-					if (ImGui::ColorEdit3("##s2", mer._xyz, ImGuiColorEditFlags_Float)) {
+					if (ImGui::ColorEdit3("##s2", alb._mer.rgb._xyz, ImGuiColorEditFlags_Float)) {
 						scene.cam.moving = true;
-						alb._mer.set_col(mer);
 					}
 				}
 				ImGui::SameLine();
@@ -527,9 +525,8 @@ namespace PTCR
 					}
 				}
 				else {
-					if (ImGui::ColorEdit3("##s3", nor._xyz, ImGuiColorEditFlags_Float)) {
+					if (ImGui::ColorEdit3("##s3", alb._nor.rgb._xyz, ImGuiColorEditFlags_Float)) {
 						scene.cam.moving = true;
-						alb._nor.set_col(nor);
 					}
 				}
 				ImGui::SameLine();

@@ -4,7 +4,7 @@
 class texture {
 public:
 
-	texture() : rgb(0.5, 0.5, 1, 1) {}
+	texture() {}
 	texture(vec4 _rgb, const char* filename) {
 		*this = texture(filename);
 		rgb = _rgb;
@@ -18,7 +18,7 @@ public:
 				|| load("textures/" + filename) || load("textures/" + filename + ".jpg") || load("textures/" + filename + ".png") ||
 				load("textures/" + filename + ".gif") || load("textures/" + filename + ".tga");
 			if (found) {
-				name.copy(_filename);
+				name = _filename;
 				flags.set(0, 0);
 				return;
 			}
@@ -40,18 +40,11 @@ public:
 			memcpy(data, cpy.data, w * h * 4);
 		}
 	}
-	const texture& operator=(const texture& cpy) {
-		if (this != &cpy) {
-			flags = cpy.flags;
-			name = cpy.name;
-			rgb = cpy.rgb;
-			if (cpy.data != nullptr) {
-				if (data != nullptr)free(data);
-				w = cpy.w, h = cpy.h;
-				data = (uchar*)malloc(w * h * 4);
-				memcpy(data, cpy.data, w * h * 4);
-			}
-		}
+	texture(texture&& cpy) noexcept : texture() {
+		swap(*this, cpy);
+	}
+	texture& operator=(texture cpy) {
+		swap(*this, cpy);
 		return *this;
 	}
 
@@ -73,14 +66,16 @@ public:
 	bool get_solid()const { return flags[0]; }
 	bool get_checker()const { return flags[1]; }
 	void set_tex(const char* _filename) { *this = texture(rgb, _filename); }
-	void set_col(vec4 _rgb) { rgb = _rgb; }
-	vec4 get_col()const { return rgb; }
 	void clear() { if (data != nullptr)free(data); name.clear(); data = nullptr; }
-
-
-private:
-	vec4 rgb;
-public:
+	friend void swap(texture& t1, texture& t2){
+		std::swap(t1.rgb, t2.rgb);
+		std::swap(t1.name, t2.name);
+		std::swap(t1.data, t2.data);
+		std::swap(t1.w, t2.w);
+		std::swap(t1.h, t2.h);
+		std::swap(t1.flags, t2.flags);
+	}
+	vec4 rgb = vec4(0,0,0,1);
 	c_str name;
 private:
 	uchar* data = nullptr;
