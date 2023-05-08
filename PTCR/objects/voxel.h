@@ -24,7 +24,7 @@ public:
 		{
 			vec4 P = r.at(t);
 			vec4 W = (P - Qa) / Qa.w();
-			vec4 N = norm(toint(1.0001f * W));
+			vec4 N = toint(1.0001f * W); //Shouldn't normalize in case of NaNs
 			vec4 UV = 0.5f * (1.f + W - N);
 			rec.N = face ? N : -N;
 			rec.P = r.at(t);

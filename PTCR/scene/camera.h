@@ -97,11 +97,6 @@ public:
 		xy = (xy + 1.f) * 0.5f * wh;
 		return xy;
 	}
-	inline vec4 inv_SS(vec4 xy, vec4 iscl) const {
-		xy *= iscl;
-		xy = (xy + 1.f) * 0.5f * wh;
-		return xy;
-	}
 	inline vec4 SS(vec4 xy, const projection& proj) const {
 		xy = 2.f * (xy + 0.5f) * proj.iwh - 1.f;
 		xy *= proj.scl;

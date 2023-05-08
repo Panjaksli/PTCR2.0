@@ -188,11 +188,10 @@ std::vector<poly> load_MSH(const char* filename, vec4 off, float scale, bool fli
 	if (not0(off) || scale != 1.f)
 		for (auto& v : vert)
 		{
-			vec4 t = v * scale + off;
+			vec4 t = vec4(v) * scale + off;
 			v = float3(t.x(), t.y(), t.z());
 		}
 #if SMOOTH_SHADING
-
 	//per-vertex normals
 	std::vector<poly> polys(face.size());
 	std::vector<vec4> nrms(vert.size(), vec4());

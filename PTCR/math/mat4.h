@@ -49,7 +49,6 @@ struct mat4 {
 	}
 
 #if USE_SSE
-
 	inline mat4 transpose() const {
 		mat4 T = *this;
 		_MM_TRANSPOSE4_PS(T.x.xyz, T.y.xyz, T.z.xyz, T.w.xyz);

@@ -224,7 +224,7 @@ void Scene::Gen_projection(const projection& proj) {
 	vec4* data = cam.CCD.data.data();
 	mat4 iT = cam.T.inverse();
 	for (int i = 0; i < cam.CCD.n; i++)
-		buff[i] = vec4(0, 0, 0, 1.f / 0.f);
+		buff[i] = vec4(0, 0, 0, infp);
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
 	for (int i = 0; i < cam.h; i++) {
 		for (int j = 0; j < cam.w; j++) {
@@ -234,8 +234,7 @@ void Scene::Gen_projection(const projection& proj) {
 			vec4 pt = proj.T.P() + proj.T.vec(norm(xy)) * dist;
 			vec4 spt = iT.pnt(pt);
 			if (spt.z() < 0) [[likely]] {
-				vec4 dir = spt / dist;
-				vec4 uv = -dir / dir.z();
+				vec4 uv = spt / fabsf(spt.z());
 				uv = cam.inv_SS(uv);
 				int x = uv[0], y = uv[1];
 				if (x < cam.w && y < cam.h && dist <= buff[y * cam.w + x].w())
@@ -246,7 +245,7 @@ void Scene::Gen_projection(const projection& proj) {
 }
 void Scene::Reproject(const projection& proj, uint* disp, uint pitch) {
 	cam.CCD.set_disp(disp, pitch);
-	//if (cam.moving || opt.framegen)
+	if (cam.moving || opt.framegen)
 	Gen_projection(proj);
 	vec4* buff = cam.CCD.buff.data();
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
@@ -272,10 +271,9 @@ void Scene::Screenshot(bool reproject) const {
 	file = "screenshots\\" + name_spp + ".png";
 	if (reproject) {
 		for (uint i = 0; i < wh; i++)
-			buff[i] = vec2rgb(cam.CCD.buff[i]) | (255 << 24);
+			buff[i] = vec2rgb(median2d3(cam.CCD.buff.data(), i / w, i % w, h, w, opt.med_thr)) | (255 << 24);
 	}
-	else
-	{
+	else {
 		for (uint i = 0; i < wh; i++)
 			buff[i] = vec2rgb(median2d3(cam.CCD.data.data(), i / w, i % w, h, w, opt.med_thr)) | (255 << 24);
 	}

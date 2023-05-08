@@ -116,11 +116,11 @@ namespace material {
 		vec4 H = n.world(sa_ggx(a));
 		float HoV = absdot(H, r.D);
 		float Fr = fresnel(HoV, n1, n2, mu);
-		mat.L = reflect(r.D, H);
+		bool reflective = Fr > rafl();
+		mat.L = reflective ? reflect(r.D, H) : refract(r.D, H, n1 / n2);
 		float NoL = dot(N, mat.L);
-		bool backface = NoL > 0;
-		bool reflective = Fr > rafl() && backface;
-		if (reflective) {
+		bool spec = NoL > 0;
+		if (spec) {
 			if (rec.face) {
 				float NoV = absdot(-r.D, N);
 				float NoH = dot(N, H);
@@ -128,19 +128,20 @@ namespace material {
 				vec4 F = fres_spec(HoV, F0);
 				F = mix(mix(1, F, mu), tex.tinted(), (1 - HoV) * tex.tint.w());
 				mat.aten = F * GGX(NoL, NoV, a) * HoV / (NoV * NoH);
+				mat.refl = refl_spec;
 			}
-			else mat.aten = rgb;
+			else {
+				mat.aten = rgb;
+				mat.refl = refl_tran;
+			}
 			mat.P = rec.P + rec.N * eps;
-			mat.refl = refl_spec;
 		}
 		else {
-			mat.aten = rgb;
 			mat.P = rec.P - rec.N * eps;
-			mat.L = backface ? refract(r.D, H, n1 / n2) : mat.L;
+			mat.aten = rgb;
 			mat.refl = refl_tran;
 			mat.ir = n2;
 		}
-		//if (!rec.face)mat.aten *= saturate(expf(-20.f * rec.t * (1.f - rgb)));
 		mat.a = a;
 		mat.N = N;
 		mat.emis = em * rgb;

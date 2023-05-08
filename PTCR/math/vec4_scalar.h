@@ -80,23 +80,23 @@ struct vec4
 		float xyz[4];
 	};
 };
-
 inline vec4 norm(vec4 u) { return u.dir(); }
-inline vec4 operator+(vec4 u, vec4 v) { return u += v; }
-inline vec4 operator-(vec4 u, vec4 v) { return u -= v; }
-inline vec4 operator*(vec4 u, vec4 v) { return u *= v; }
-inline vec4 operator/(vec4 u, vec4 v) { return u /= v; }
-
-inline float operator&(vec4 u, vec4 v) {
-	return u.x() * v.x() + u.y() * v.y() + u.z() * v.z();
-}
-inline vec4 operator%(vec4 u, vec4 v)
-{
+inline float dot(vec4 u, vec4 v) { return u.x() * v.x() + u.y() * v.y() + u.z() * v.z(); }
+inline vec4 cross(vec4 u, vec4 v) {
 	float x = u.y() * v.z() - u.z() * v.y();
 	float y = u.z() * v.x() - u.x() * v.z();
 	float z = u.x() * v.y() - u.y() * v.x();
 	return vec4(x, y, z);
 }
+inline float dot4(vec4 u, vec4 v) { return u.x() * v.x() + u.y() * v.y() + u.z() * v.z() + u.w() * v.w(); }
+
+inline vec4 operator&(vec4 u, vec4 v) { return dot(u,v); }
+inline vec4 operator%(vec4 u, vec4 v) { return cross(u,v); }
+inline vec4 operator+(vec4 u, vec4 v) { return u += v; }
+inline vec4 operator-(vec4 u, vec4 v) { return u -= v; }
+inline vec4 operator*(vec4 u, vec4 v) { return u *= v; }
+inline vec4 operator/(vec4 u, vec4 v) { return u /= v; }
+
 inline vec4 expf(vec4 u)
 {
 	return vec4(expf(u.x()), expf(u.y()), expf(u.z()), expf(u.w()));
@@ -130,9 +130,6 @@ inline vec4 ceil(vec4 u) {
 	return vec4(ceilf(u.x()), ceilf(u.y()), ceilf(u.z()), ceilf(u.w()));
 }
 
-inline vec4 cross(vec4 u, vec4 v) { return u % v; }
-inline float dot(vec4 u, vec4 v) { return u & v; }
-inline float dot4(vec4 u, vec4 v) { return u.x() * v.x() + u.y() * v.y() + u.z() * v.z() + u.w() * v.w(); }
 inline float posdot(vec4 u, vec4 v) { return fmaxf(0.f, u & v); }
 inline float absdot(vec4 u, vec4 v) { return fabsf(u & v); }
 inline float dotabs(vec4 u, vec4 v) { return (abs(u) & abs(v)); }

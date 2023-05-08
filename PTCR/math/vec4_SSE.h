@@ -72,6 +72,13 @@ struct vec4
 };
 
 inline vec4 norm(vec4 u) { return u.dir(); }
+inline float dot(vec4 u, vec4 v) { return _mm_dot_ps<0x7F>(u.xyz, v.xyz)[0]; }
+inline vec4 cross(vec4 u, vec4 v) { return _mm_cross_ps(u.xyz, v.xyz); }
+template <int imm8 = 0x7F>
+inline __m128 dot(const vec4& u, const vec4& v) { return _mm_dot_ps<imm8>(u.xyz, v.xyz); }
+inline float dot4(vec4 u, vec4 v) { return _mm_dot_ps<0xFF>(u.xyz, v.xyz)[0]; }
+inline float operator&(vec4 u, vec4 v) { return dot(u, v); }
+inline vec4 operator%(vec4 u, vec4 v) { return cross(u, v); }
 inline vec4 operator+(vec4 u, vec4 v) { return u += v; }
 inline vec4 operator-(vec4 u, vec4 v) { return u -= v; }
 inline vec4 operator*(vec4 u, vec4 v) { return u *= v; }
@@ -112,13 +119,7 @@ inline vec4 floor(vec4 u) {
 inline vec4 ceil(vec4 u) {
 	return _mm_ceil_ps(u.xyz);
 }
-inline vec4 cross(vec4 u, vec4 v) { return _mm_cross_ps(u.xyz, v.xyz);}
-inline float dot(vec4 u, vec4 v) { return _mm_dot_ps<0x7F>(u.xyz, v.xyz)[0]; }
-template <int imm8=0x7F>
-inline __m128 dot(const vec4 &u,const vec4 &v) { return _mm_dot_ps<imm8>(u.xyz,v.xyz); }
-inline float dot4(vec4 u, vec4 v) { return _mm_dot_ps<0xFF>(u.xyz, v.xyz)[0]; }
-inline float operator&(vec4 u, vec4 v) { return dot(u, v); }
-inline vec4 operator%(vec4 u, vec4 v) { return cross(u, v); }
+
 inline float posdot(vec4 u, vec4 v) { return fmaxf(0.f, u & v); }
 inline float absdot(vec4 u, vec4 v) { return fabsf(u & v); }
 inline float dotabs(vec4 u, vec4 v) { return (abs(u) & abs(v)); }

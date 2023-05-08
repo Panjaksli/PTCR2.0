@@ -28,6 +28,7 @@ public:
 		rgb = fixnan(rgb);
 		//rolling average
 		data[off] = delta * data[off] + rgb * inv_time;
+		data[off][3] = fminf(data[off][3], rgb[3]);
 	}
 	inline void set(uint i, uint j, const vec4& rgb) {
 		uint off = i * w + j;

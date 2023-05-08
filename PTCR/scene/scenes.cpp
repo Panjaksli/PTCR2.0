@@ -326,7 +326,7 @@ void scn_load(Scene& scn, int n) {
 #if TEST
 	scn.opt.med_thr = 0;
 	scn.opt.p_mode = 0;
-	scn.opt.en_fog = 0;
+	//scn.opt.en_fog = 0;
 	scn.cam.bokeh = 0;
 #endif
 	scn.cam.V = 0;
