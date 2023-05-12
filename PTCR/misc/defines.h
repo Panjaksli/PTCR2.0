@@ -25,8 +25,8 @@
 #define LOGSCL ImGuiSliderFlags_Logarithmic
 #define FLOATCOL ImGuiColorEditFlags_Float
 #define INPTEXT ImGuiInputTextFlags_EnterReturnsTrue
-#define CONSOLE_SLOW(x) if(rafl() > 0.99999f) std::osyncstream(std::cout) << x << "\n"
-#define CONSOLE(x) std::osyncstream(std::cout) << x << "\n"
+#define CONSOLE_SLOW(x) do {if(rafl() > 0.99999f) std::cout << x << "\n"}while(0)
+#define CONSOLE(x) do {std::cout << x << "\n"}while(0)
 
 constexpr double pi_dbl = 3.14159265358979323846;
 constexpr float sqrtpi = 1.77245385091;
