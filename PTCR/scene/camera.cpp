@@ -2,7 +2,7 @@
 void camera::update()
 {
 	asp = (float)w / h;
-	fov = fminf(179, fmaxf(1, fov));
+	fov = fminf(179.9, fmaxf(0.1, fov));
 	tfov = tan(0.5f * torad(fov));
 	hfov = todeg(2 * atan(tfov * asp));
 	foc_l = fov_to_m(fov);

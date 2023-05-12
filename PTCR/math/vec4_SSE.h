@@ -57,13 +57,13 @@ struct vec4
 	}
 
 	void print()const {
-		printf("%.6f %.6f %.6f\n", x(), y(), z());
+		printf("%f %f %f\n", x(), y(), z());
 	}
 	void print4()const {
-		printf("%.6f %.6f %.6f %.6f\n", x(), y(), z(), w());
+		printf("%f %f %f %f\n", x(), y(), z(), w());
 	}
 	void printM()const {
-		printf("%.6f %.6f %.6f %.6f\n", x(), y(), z(), len());
+		printf("%f %f %f %f\n", x(), y(), z(), len());
 	}
 	union {
 		__m128 xyz;

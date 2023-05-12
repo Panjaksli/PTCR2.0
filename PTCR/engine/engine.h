@@ -45,19 +45,18 @@ namespace PTCR
 		Event_handler handle;
 		projection proj;
 		mat4 T;
-		vec4 TP = 0, TA = 0, TD = 0;
+		vec4 TP, TA, TD, DT;
+		c_str scn_name;
 		double max_fps = 90;
 		double fps = 0;
-		double nor_t = 0, gen_t = 0;
-		double ft = 0;
-		double dt = 1;
-		double avg_fps = 0;
-		float sensitivity = 1.f;
+		double nor_t = 0, gen_t = 0; //Normal frame time, generated frame time
+		double ft = 1, dt = 1, ct = 1; //Render time, physics step, complete time
+		double avg_fps = 1;
 		float scale = 1.f;
 		float fogdens = 0;
 		float move_mul = 1.f;
 		int scn_n = 1;
-		int fps_cnt = 0;
+		int fps_cnt = 1;
 		bool reproject = false;
 		bool frame_id = false;
 		bool den_view = true;

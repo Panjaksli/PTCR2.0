@@ -12,17 +12,17 @@ struct scene_opt {
 	vec4 fog_col = 1;
 	vec4 ambient = 0;
 	uint selected = -1;
-	int max_spp = infp;
+	int max_spp = 100000;
 	float res_scale = 1.f;
 	float res_rate = 1.f;
 	float p_life = 0.9f;
 	float i_life = 1.f / 0.9f;
 	float ninv_fog = -10.f;
 	float med_thr = 0.5f;
-	float inv_sa = 0.5f;
 	int bounces = 10;
 	int node_size = 2;
 	int samples = 2;
+	bool outline = 1;
 	bool framegen = 0;
 	bool en_fog = 1;
 	bool en_bvh = 1;
@@ -69,6 +69,7 @@ public:
 	void cam_manufocus(float py = 0, float px = 0);
 	vec4 cam_collision(vec4 d, float dt) const;
 	void cam_move(vec4 dir, float dt);
+	void cam_rotate(vec4 dir, float dt);
 	vec4 cam_free(vec4 d) const;
 	vec4 cam_fps(vec4 d) const;
 	void set_trans(const mat4& T);
@@ -112,8 +113,7 @@ private:
 	__forceinline ray sa_fog(const vec4& P, float ft, float& p1, float& p2) const
 	{
 		ray R;
-		bool lisa = opt.li_sa, sunsa = opt.sun_sa;
-		if (lisa && sunsa) {
+		if (li_sa && sun_sa) {
 			sph_pdf fog;
 			sun_pdf sun(sun_pos, P);
 			lig_pdf lights(world, P);
@@ -128,7 +128,7 @@ private:
 				p1 = p2 = 1;
 			}
 		}
-		else if (sunsa) {
+		else if (sun_sa) {
 			sph_pdf fog;
 			sun_pdf sun(sun_pos, P);
 			mix_pdf<sun_pdf, sph_pdf> mix(sun, fog);
@@ -136,7 +136,7 @@ private:
 			p1 = fog.value(R.D);
 			p2 = mix.value(R.D);
 		}
-		else if (lisa) {
+		else if (li_sa) {
 			//Base code, causes 'holograms' in the distance
 			//Holograms seem to be caused by biasing ray direction towards lights, whilst some object is blocking it (pdf doesn't check for that)
 			//That results in oversampling of certain objects with incorrect pdf, problem is more prominent with lower fog densities (larger distances to lights)
@@ -163,17 +163,17 @@ private:
 	//Diffuse importance sampling
 	__forceinline ray sa_diff(const matrec& mat, float& p1, float& p2) const
 	{
-		if (opt.li_sa && opt.sun_sa) return sa_li_sun(mat, p1, p2, cos_pdf(mat.N, mat.L));
-		else if (opt.sun_sa) return sa_sun(mat, p1, p2, cos_pdf(mat.N, mat.L));
-		else if (opt.li_sa) return sa_li(mat, p1, p2, cos_pdf(mat.N, mat.L));
+		if (li_sa && sun_sa) return sa_li_sun(mat, p1, p2, cos_pdf(mat.N, mat.L));
+		else if (sun_sa) return sa_sun(mat, p1, p2, cos_pdf(mat.N, mat.L));
+		else if (li_sa) return sa_li(mat, p1, p2, cos_pdf(mat.N, mat.L));
 		else return sa_none(mat, p1, p2);
 	}
 	__forceinline ray sa_spec(const matrec& mat, const vec4& rD, float& p1, float& p2) const
 	{
 		if (mat.a < 0.001f) return sa_none(mat, p1, p2);
-		else if (opt.li_sa && opt.sun_sa) return sa_li_sun(mat, p1, p2, ggx_pdf(mat.N, rD, mat.L, mat.a));
-		else if (opt.sun_sa) return sa_sun(mat, p1, p2, ggx_pdf(mat.N, rD, mat.L, mat.a));
-		else if (opt.li_sa) return sa_li(mat, p1, p2, ggx_pdf(mat.N, rD, mat.L, mat.a));
+		else if (li_sa && sun_sa) return sa_li_sun(mat, p1, p2, ggx_pdf(mat.N, rD, mat.L, mat.a));
+		else if (sun_sa) return sa_sun(mat, p1, p2, ggx_pdf(mat.N, rD, mat.L, mat.a));
+		else if (li_sa) return sa_li(mat, p1, p2, ggx_pdf(mat.N, rD, mat.L, mat.a));
 		else return sa_none(mat, p1, p2);
 	}
 	//Fog importance sampling
@@ -221,12 +221,12 @@ private:
 		bool hit = world.hit<1>(r, rec);
 		if (opt.en_fog) {
 			for (int i = 0; i < opt.samples; i++)
-				col += opt.inv_sa * volumetric_pt<true>(r, opt.bounces, rec, hit);
+				col += inv_sa * volumetric_pt<true>(r, opt.bounces, rec, hit);
 		}
 		else {
 			if (!hit) col = sky(r.D);
 			else for (int i = 0; i < opt.samples; i++)
-				col += opt.inv_sa * iterative_pt(r, rec, opt.bounces);
+				col += inv_sa * iterative_pt(r, rec, opt.bounces);
 		}
 		return vec4(col, rec.t);
 	}
@@ -284,7 +284,7 @@ private:
 	}
 	//NO Volumetrics, iterative PT algorithm
 	__forceinline  vec4 iterative_pt(const ray& sr, const hitrec& srec, int depth) const {
-		vec4 col(0), aten(1.f); 
+		vec4 col(0), aten(1.f);
 		ray r = sr; matrec mat;
 		for (int i = 0; i < depth + 1; i++) {
 			hitrec rec; mat.refl = refl_none;
@@ -454,6 +454,9 @@ private:
 		world.hit(r, rec);
 		return rec.t;
 	}
+
+	float inv_sa = 0;
+	bool li_sa = 0, sun_sa = 0;
 };
 
 

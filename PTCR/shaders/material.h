@@ -90,7 +90,6 @@ namespace material {
 		float n1 = rec.face ? mat.ir : mat.ir == 1.f ? tex.ir : mat.ir;
 		float n2 = rec.face ? tex.ir : tex.ir == n1 ? 1.f : tex.ir;
 		bool opaque = rafl() < rgb.w();
-		bool translucent = tex.trans > rafl();
 		vec4 N = normal_map(rec.N, nor);
 		onb n(N);
 		//perfect diffuse && solid
@@ -104,7 +103,7 @@ namespace material {
 			return;
 		}
 		else if (opaque)return ggx(r, rec, tex, mat);
-		else if (translucent) {
+		else if (tex.alpha) {
 			mat.aten = rgb;
 			mat.N = rec.N;
 			mat.P = rec.P - rec.N * eps;
@@ -131,14 +130,14 @@ namespace material {
 				mat.refl = refl_spec;
 			}
 			else {
-				mat.aten = rgb;
+				mat.aten = mix(rgb, tex.tinted(), (1 - HoV) * tex.tint.w());
 				mat.refl = refl_tran;
 			}
 			mat.P = rec.P + rec.N * eps;
 		}
 		else {
 			mat.P = rec.P - rec.N * eps;
-			mat.aten = rgb;
+			mat.aten = mix(rgb, tex.tinted(), (1 - HoV) * tex.tint.w());
 			mat.refl = refl_tran;
 			mat.ir = n2;
 		}

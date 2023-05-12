@@ -21,8 +21,12 @@
 #define HEIGHT 720
 #define SCALE 1.f
 #define CLAMP ImGuiSliderFlags_AlwaysClamp
-#define LOGFAST(x) if(rafl() > 0.9f) std::cout << x << "\n"
-#define LOGSLOW(x) if(rafl() > 0.99999f) std::cout << x << "\n"
+#define NOROUND ImGuiSliderFlags_NoRoundToFormat
+#define LOGSCL ImGuiSliderFlags_Logarithmic
+#define FLOATCOL ImGuiColorEditFlags_Float
+#define INPTEXT ImGuiInputTextFlags_EnterReturnsTrue
+#define CONSOLE_SLOW(x) if(rafl() > 0.99999f) std::osyncstream(std::cout) << x << "\n"
+#define CONSOLE(x) std::osyncstream(std::cout) << x << "\n"
 
 constexpr double pi_dbl = 3.14159265358979323846;
 constexpr float sqrtpi = 1.77245385091;
@@ -56,5 +60,3 @@ using std::acos;
 using std::asin;
 using std::cout;
 using std::string;
-#define loop(i,j) for(uint i = 0 ; i < j ; i++)
-#define println cout<<"\n"

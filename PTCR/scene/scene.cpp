@@ -51,6 +51,9 @@ void Scene::cam_move(vec4 dir, float dt) {
 	V -= fminf(10 * dt, 1) * V;
 	V = min(max(V, infn), infp);
 }
+void Scene::cam_rotate(vec4 dir, float dt) {
+	cam.rotate(dir * dt * cam.sens);
+}
 void Scene::cam_autofocus() {
 	if (cam.autofocus) {
 		ray r(cam.focus_ray());
@@ -148,19 +151,17 @@ void Scene::Render(uint* disp, uint pitch) {
 	cam.CCD.set_disp(disp, pitch);
 	cam_autofocus();
 	static bool odd = 0;
-	bool old_lisa = opt.li_sa;
-	bool old_sunsa = opt.sun_sa;
 	float blink_t = (hpi * clock()) / CLOCKS_PER_SEC;
 	float blink = 0.02f * (1 + sinf(2*blink_t));
 	opt.selected = clamp_int(opt.selected, -1, world.objects.size() - 1);
 	if (cam.moving)cam.CCD.reset();
 	bool paused = !cam.moving && opt.paused;
 	if (cam.CCD.spp < opt.max_spp && !paused && opt.samples > 0) {
-		opt.inv_sa = 1.f / opt.samples;
+		world.en_bvh = opt.en_bvh && !world.bvh.empty() && !world.objects.empty() && !world.obj_bvh.empty();
+		li_sa = opt.li_sa && !world.lights.empty();
+		sun_sa = opt.sun_sa && opt.sky && !opt.skybox;
+		inv_sa = 1.0 / opt.samples;
 		cam.CCD.dt(opt.samples);
-		world.en_bvh = opt.en_bvh && world.bvh.size() > 0;
-		opt.li_sa = opt.li_sa && world.lights.size() > 0;
-		opt.sun_sa = opt.sun_sa && opt.sky && !opt.skybox;
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
 		for (int i = 0; i < cam.h; i++) {
 			for (int j = opt.p_mode ? (i + odd) % 2 : 0; j < cam.w; j += opt.p_mode ? 2 : 1) {
@@ -202,7 +203,7 @@ void Scene::Render(uint* disp, uint pitch) {
 	for (int i = 0; i < cam.h; i++) {
 		for (int j = 0; j < cam.w; j++) {
 			vec4 rgb = cam.get_med(i, j, opt.med_thr);
-			if (i % 2 && j % 2 && opt.selected < world.objects.size() && !opt.framegen) {
+			if (i % 2 && j % 2 && opt.selected < world.objects.size() && !opt.framegen && opt.outline) {
 				hitrec rec;
 				ray r = cam.pinhole_ray(vec4(j, i));
 				aabb aura = object_at(opt.selected).get_box();
@@ -215,8 +216,6 @@ void Scene::Render(uint* disp, uint pitch) {
 		}
 	}
 	odd = !odd && opt.re_sam;
-	opt.li_sa = old_lisa;
-	opt.sun_sa = old_sunsa;
 	cam.moving = 0;
 }
 void Scene::Gen_projection(const projection& proj) {

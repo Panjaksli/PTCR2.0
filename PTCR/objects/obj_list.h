@@ -28,7 +28,8 @@ public:
 			if (en_bvh) {
 				for (const auto& obj : nonbvh)
 					rec.idx = objects[obj].hit(r, rec) ? obj : rec.idx;
-				if (bvh[0].bbox.closer_hit(r, rec.t)) traverse_bvh(r, rec, 0);
+				if (bvh[0].bbox.closer_hit(r, rec.t))
+					traverse_bvh(r, rec);
 			}
 			else {
 				for (uint obj = 0; obj < objects.size(); obj++)
@@ -112,7 +113,7 @@ public:
 	{
 		objects.emplace_back(name, tran, mat, is_bvh, is_light, has_fog);
 		if (objects.back().get_size() == 0) {
-			remove_mesh(objects.size() - 1);
+			objects.pop_back();
 			return false;
 		}
 		if (!is_bvh)nonbvh.emplace_back(objects.size());
@@ -161,7 +162,7 @@ private:
 	void obj_update();
 	uint sort(uint be, uint en, uchar axis, float plane);
 	float split_cost(uint be, uint en, uint& split, aabb bbox);
-	void split_bvh(uint parent, uint node_size);
+	void split_bvh(uint node, uint node_size);
 	void split_bvh(uint be, uint en, uint node_size);
 	aabb box_from(uint begin, uint end);
 
@@ -191,8 +192,7 @@ private:
 	//ordered bvh traversal
 	__forceinline uchar traverse_bvh(const ray& r, hitrec& rec, uint n0 = 0) const {
 		const bvh_node& node = bvh[n0];
-		if (node.parent)
-		{
+		if (node.parent) {
 			float t1 = rec.t;
 			float t2 = rec.t;
 			bool h1 = bvh[node.n1].bbox.hit(r, t1);
@@ -203,11 +203,12 @@ private:
 				uint n2 = swap ? node.n1 : node.n2;
 				float t = swap ? t1 : t2;
 				uchar first = traverse_bvh(r, rec, n1);
-				return rec.t < t ? first : traverse_bvh(r, rec, n2) | first;
+				if (first && rec.t < t) return 1;
+				else return traverse_bvh(r, rec, n2) | first;
 			}
 			else if (h1)return traverse_bvh(r, rec, node.n1);
 			else if (h2)return traverse_bvh(r, rec, node.n2);
-			else return false;
+			else return 0;
 		}
 		else {
 			uchar any_hit = 0;

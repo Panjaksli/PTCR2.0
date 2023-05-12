@@ -32,7 +32,7 @@ public:
 	float fstop = 16.f, exposure = 1.f;
 	float foc_t = 1.f, foc_l = 0.0216f;
 	const float frame = 0.035, diagonal = 0.0432;
-	float speed = 1.f;
+	float speed = 1.f, sens = 1.f;
 	bool autofocus = 1, bokeh = 1;
 	bool moving = 1, free = 0, collision = 1;
 

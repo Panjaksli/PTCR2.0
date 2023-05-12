@@ -125,8 +125,8 @@ bool scn_save(Scene& scn, const char* filename) {
 		sprintf(rgb, "%s,%g,%g,%g,%g", mat.tex._rgb.name.text(), srgb[0], srgb[1], srgb[2], srgb[3]);
 		sprintf(mer, "%s,%g,%g,%g", mat.tex._mer.name.text(), smer[0], smer[1], smer[2]);
 		sprintf(nor, "%s,%g,%g,%g", mat.tex._nor.name.text(), snor[0], snor[1], snor[2]);
-		sprintf(line, "albedo type=%u rgb=%s mer=%s nor=%s scl=%g ir=%g tint=%g,%g,%g,%g",
-			mat.type, rgb, mer, nor, mat.tex.rep, mat.tex.ir, tint[0], tint[1], tint[2], tint[3]);
+		sprintf(line, "albedo type=%u rgb=%s mer=%s nor=%s scl=%g ir=%g tint=%g,%g,%g,%g alpha=%u",
+			mat.type, rgb, mer, nor, mat.tex.rep, mat.tex.ir, tint[0], tint[1], tint[2], tint[3], mat.tex.alpha);
 		lines.push_back(line);
 	}
 	lines.push_back("*Params");
@@ -144,6 +144,8 @@ bool scn_save(Scene& scn, const char* filename) {
 	sprintf(line, "en_bvh=%u", scn.opt.en_bvh); lines.push_back(line);
 	sprintf(line, "en_sky=%u", scn.opt.sky); lines.push_back(line);
 	sprintf(line, "en_box=%u", scn.opt.skybox); lines.push_back(line);
+	sprintf(line, "select=%u", scn.opt.selected); lines.push_back(line);
+	sprintf(line, "outline=%u", scn.opt.outline); lines.push_back(line);
 	sprintf(line, "fog_dens=%g", scn.opt.ninv_fog); lines.push_back(line);
 	sprintf(line, "cam_collision=%u", scn.cam.collision); lines.push_back(line);
 	sprintf(line, "cam_blur=%u", scn.cam.bokeh); lines.push_back(line);
@@ -181,120 +183,128 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 	}
 	if(!update_only)scn.skybox.clear();
 	scn.world.clear();
-	scn.opt.en_bvh = true;
 	std::stringstream file_buff;
 	file_buff << file.rdbuf();
 	std::string line = "";
-	while (std::getline(file_buff, line))
-	{
-		vec4 tmp = 0;
-		vec4 P, A;
+	int state = -1;
+	while (std::getline(file_buff, line)){
+		vec4 tmp, P, A;
+		vec4 q, a, b, c;
 		constexpr int BUFF = 128;
 		char buff1[BUFF], buff2[BUFF], buff3[BUFF];
 		uint mat = 0, bvh = 1, lig = 0, val = 0, fog = 0;
-		float fval = 0;
-		float scl = 1, ir = 1;
-		vec4 q, a, b, c;
-		if (line[0] == '\0' || line[0] == '*') { continue; }
-		else if (sscanf_s(line.c_str(), "albedo type=%u rgb=%s mer=%s nor=%s scl=%g ir=%g tint=%g,%g,%g,%g",
-			&mat, buff1, BUFF, buff2, BUFF, buff3, BUFF, &scl, &ir, &tmp[0], &tmp[1], &tmp[2], &tmp[3]) > 0)
-		{
-			vec4 srgb, smer, snor;
-			char rgb[BUFF], mer[BUFF], nor[BUFF];
-			c_str::replace(buff1, ',', ' ', BUFF);
-			c_str::replace(buff2, ',', ' ', BUFF);
-			c_str::replace(buff3, ',', ' ', BUFF);
-			sscanf_s(buff1, "%s %g %g %g %g", rgb, BUFF, &srgb[0], &srgb[1], &srgb[2], &srgb[3]); texture t1 = texture(srgb, rgb);
-			sscanf_s(buff2, "%s %g %g %g", mer, BUFF, &smer[0], &smer[1], &smer[2]); texture t2 = texture(smer, mer);
-			sscanf_s(buff3, "%s %g %g %g", nor, BUFF, &snor[0], &snor[1], &snor[2]); texture t3 = texture(snor, nor);
-			scn.world.add_mat(albedo(t1, t2, t3, scl, ir, tmp), (mat_enum)mat);
-		}
-		else if (sscanf_s(line.c_str(), "%s P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s",
-			buff1, BUFF, &P[0], &P[1], &P[2], &P[3], &A[0], &A[1], &A[2], &mat, &bvh, &lig, &fog, buff2, BUFF) >= 4)
-		{
-			if (strcmp(buff1, "poly") == 0) {
-				vector<poly> data; data.reserve(100);
-				if (sscanf_s(buff2, "%g,%g,%g,%g,%g,%g,%g,%g,%g", &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &c[0], &c[1], &c[2]) > 1)
-					data.emplace_back(a, b, c);
-				else {
-					while (std::getline(file_buff, line)) {
-						if (line[0] == '}') break;
-						else if (sscanf_s(line.c_str(), "%g,%g,%g,%g,%g,%g,%g,%g,%g", &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &c[0], &c[1], &c[2]) > 1)
-							data.emplace_back(a, b, c);
+		float scl = 1, ir = 1, fval = 0;
+		if (line[0] == '*') { state++; }
+		else switch (state) {
+		case 0:
+			if (sscanf_s(line.c_str(), "%s P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s",
+				buff1, BUFF, &P[0], &P[1], &P[2], &P[3], &A[0], &A[1], &A[2], &mat, &bvh, &lig, &fog, buff2, BUFF) >= 4)
+			{
+				if (strcmp(buff1, "poly") == 0) {
+					vector<poly> data; data.reserve(100);
+					if (sscanf_s(buff2, "%g,%g,%g,%g,%g,%g,%g,%g,%g", &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &c[0], &c[1], &c[2]) > 1)
+						data.emplace_back(a, b, c);
+					else {
+						while (std::getline(file_buff, line)) {
+							if (line[0] == '}') break;
+							else if (sscanf_s(line.c_str(), "%g,%g,%g,%g,%g,%g,%g,%g,%g", &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &c[0], &c[1], &c[2]) > 1)
+								data.emplace_back(a, b, c);
+						}
 					}
+					scn.world.add_mesh(data, mat4(P, A), mat, bvh, lig, fog, 0);
 				}
-				scn.world.add_mesh(data, mat4(P, A), mat, bvh, lig, fog, 0);
-			}
-			else if (strcmp(buff1, "quad") == 0) {
-				vector<quad> data; data.reserve(100);
-				if (sscanf_s(buff2, "%g,%g,%g,%g,%g,%g,%g,%g,%g", &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &c[0], &c[1], &c[2]) > 1)
-					data.emplace_back(a, b, c);
-				else {
-					while (std::getline(file_buff, line)) {
-						if (line[0] == '}') break;
-						else if (sscanf_s(line.c_str(), "%g,%g,%g,%g,%g,%g,%g,%g,%g", &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &c[0], &c[1], &c[2]) > 1)
-							data.emplace_back(a, b, c);
+				else if (strcmp(buff1, "quad") == 0) {
+					vector<quad> data; data.reserve(100);
+					if (sscanf_s(buff2, "%g,%g,%g,%g,%g,%g,%g,%g,%g", &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &c[0], &c[1], &c[2]) > 1)
+						data.emplace_back(a, b, c);
+					else {
+						while (std::getline(file_buff, line)) {
+							if (line[0] == '}') break;
+							else if (sscanf_s(line.c_str(), "%g,%g,%g,%g,%g,%g,%g,%g,%g", &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &c[0], &c[1], &c[2]) > 1)
+								data.emplace_back(a, b, c);
+						}
 					}
+					scn.world.add_mesh(data, mat4(P, A), mat, bvh, lig, fog, 0);
 				}
-				scn.world.add_mesh(data, mat4(P, A), mat, bvh, lig, fog, 0);
-			}
-			else if (strcmp(buff1, "sphere") == 0) {
-				vector<sphere> data; data.reserve(100);
-				if (sscanf_s(buff2, "%g,%g,%g,%g", &q[0], &q[1], &q[2], &q[3]) > 1)
-					data.emplace_back(q);
-				else {
-					while (std::getline(file_buff, line)) {
-						if (line[0] == '}') break;
-						else if (sscanf_s(line.c_str(), "%g,%g,%g,%g", &q[0], &q[1], &q[2], &q[3]) > 1)
-							data.emplace_back(q);
+				else if (strcmp(buff1, "sphere") == 0) {
+					vector<sphere> data; data.reserve(100);
+					if (sscanf_s(buff2, "%g,%g,%g,%g", &q[0], &q[1], &q[2], &q[3]) > 1)
+						data.emplace_back(q);
+					else {
+						while (std::getline(file_buff, line)) {
+							if (line[0] == '}') break;
+							else if (sscanf_s(line.c_str(), "%g,%g,%g,%g", &q[0], &q[1], &q[2], &q[3]) > 1)
+								data.emplace_back(q);
+						}
 					}
+					scn.world.add_mesh(data, mat4(P, A), mat, bvh, lig, fog, 0);
 				}
-				scn.world.add_mesh(data, mat4(P, A), mat, bvh, lig, fog, 0);
-			}
-			else if (strcmp(buff1, "voxel") == 0) {
-				vector<voxel> data; data.reserve(100);
-				if (sscanf_s(buff2, "%g,%g,%g,%g", &q[0], &q[1], &q[2], &q[3]) > 1)
-					data.emplace_back(q);
-				else {
-					while (std::getline(file_buff, line)) {
-						if (line[0] == '}') break;
-						else if (sscanf_s(line.c_str(), "%g,%g,%g,%g", &q[0], &q[1], &q[2], &q[3]) > 1)
-							data.emplace_back(q);
+				else if (strcmp(buff1, "voxel") == 0) {
+					vector<voxel> data; data.reserve(100);
+					if (sscanf_s(buff2, "%g,%g,%g,%g", &q[0], &q[1], &q[2], &q[3]) > 1)
+						data.emplace_back(q);
+					else {
+						while (std::getline(file_buff, line)) {
+							if (line[0] == '}') break;
+							else if (sscanf_s(line.c_str(), "%g,%g,%g,%g", &q[0], &q[1], &q[2], &q[3]) > 1)
+								data.emplace_back(q);
+						}
 					}
+					scn.world.add_mesh(data, mat4(P, A), mat, bvh, lig, fog, 0);
 				}
-				scn.world.add_mesh(data, mat4(P, A), mat, bvh, lig, fog, 0);
+				else if (strcmp(buff1, "mesh") == 0) {
+					sscanf_s(buff2, "%[^}]s", buff1, BUFF);
+					scn.world.load_mesh(buff1, mat4(P, A), mat, bvh, lig, fog);
+				}
 			}
-			else if (strcmp(buff1, "mesh") == 0) {
-				sscanf_s(buff2, "%[^}]s", buff1, BUFF);
-				scn.world.load_mesh(buff1, mat4(P, A), mat, bvh, lig, fog);
+		break;
+		case 1:
+			if (sscanf_s(line.c_str(), "albedo type=%u rgb=%s mer=%s nor=%s scl=%g ir=%g tint=%g,%g,%g,%g alpha=%u",
+				&mat, buff1, BUFF, buff2, BUFF, buff3, BUFF, &scl, &ir, &tmp[0], &tmp[1], &tmp[2], &tmp[3], &val) > 0)
+			{
+				vec4 srgb, smer, snor;
+				char rgb[BUFF], mer[BUFF], nor[BUFF];
+				c_str::replace(buff1, ',', ' ', BUFF);
+				c_str::replace(buff2, ',', ' ', BUFF);
+				c_str::replace(buff3, ',', ' ', BUFF);
+				sscanf_s(buff1, "%s %g %g %g %g", rgb, BUFF, &srgb[0], &srgb[1], &srgb[2], &srgb[3]); texture t1 = texture(srgb, rgb);
+				sscanf_s(buff2, "%s %g %g %g", mer, BUFF, &smer[0], &smer[1], &smer[2]); texture t2 = texture(smer, mer);
+				sscanf_s(buff3, "%s %g %g %g", nor, BUFF, &snor[0], &snor[1], &snor[2]); texture t3 = texture(snor, nor);
+				scn.world.add_mat(albedo(t1, t2, t3, scl, ir, tmp, val), (mat_enum)mat);
 			}
-		}
-		else if (!update_only) {
-			if (sscanf_s(line.c_str(), "skybox=%s", buff1, BUFF) > 0) { scn.set_skybox(buff1); }
-			else if (sscanf_s(line.c_str(), "ambient=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.ambient = tmp; }
-			else if (sscanf_s(line.c_str(), "sky_noon=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.sky_noon = tmp; }
-			else if (sscanf_s(line.c_str(), "sky_dawn=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.sky_dawn = tmp; }
-			else if (sscanf_s(line.c_str(), "sun_noon=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.sun_noon = tmp; }
-			else if (sscanf_s(line.c_str(), "sun_dawn=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.sun_dawn = tmp; }
-			else if (sscanf_s(line.c_str(), "fog_col=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.fog_col = tmp; }
-			else if (sscanf_s(line.c_str(), "sun_pos=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.sun_pos.set_A(tmp); }
-			else if (sscanf_s(line.c_str(), "bounces=%u", &val) > 0) scn.opt.bounces = val;
-			else if (sscanf_s(line.c_str(), "samples=%u", &val) > 0) scn.opt.samples = val;
-			else if (sscanf_s(line.c_str(), "en_fog=%u", &val) > 0) scn.opt.en_fog = val;
-			else if (sscanf_s(line.c_str(), "en_bvh=%u", &val) > 0) scn.opt.en_bvh = val;
-			else if (sscanf_s(line.c_str(), "en_sky=%u", &val) > 0) scn.opt.sky = val;
-			else if (sscanf_s(line.c_str(), "en_box=%u", &val) > 0) scn.opt.skybox = val;
-			else if (sscanf_s(line.c_str(), "fog_dens=%g", &fval) > 0) scn.opt.ninv_fog = fval;
-			else if (sscanf_s(line.c_str(), "cam_collision=%u", &val) > 0) scn.cam.collision = val;
-			else if (sscanf_s(line.c_str(), "cam_blur=%u", &val) > 0) scn.cam.bokeh = val;
-			else if (sscanf_s(line.c_str(), "cam_auto=%u", &val) > 0) scn.cam.autofocus = val;
-			else if (sscanf_s(line.c_str(), "cam_fov=%g", &fval) > 0) scn.cam.set_fov(fval);
-			else if (sscanf_s(line.c_str(), "cam_fstop=%g", &fval) > 0) scn.cam.fstop = fval;
-			else if (sscanf_s(line.c_str(), "cam_exp=%g", &fval) > 0) scn.cam.exposure = fval;
-			else if (sscanf_s(line.c_str(), "cam_foc_t=%g", &fval) > 0) scn.cam.foc_t = fval;
-			else if (sscanf_s(line.c_str(), "cam_speed=%g", &fval) > 0) scn.cam.speed = fval;
-			else if (sscanf_s(line.c_str(), "cam_pos=%g,%g,%g", &P[0], &P[1], &P[2]) > 0) scn.cam.set_P(P);
-			else if (sscanf_s(line.c_str(), "cam_rot=%g,%g,%g", &A[0], &A[1], &A[2]) > 0) scn.cam.set_A(A);
+		break;
+		case 2:
+			if (!update_only) {
+				if (sscanf_s(line.c_str(), "skybox=%s", buff1, BUFF) > 0) { scn.set_skybox(buff1); }
+				else if (sscanf_s(line.c_str(), "ambient=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.ambient = tmp; }
+				else if (sscanf_s(line.c_str(), "sky_noon=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.sky_noon = tmp; }
+				else if (sscanf_s(line.c_str(), "sky_dawn=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.sky_dawn = tmp; }
+				else if (sscanf_s(line.c_str(), "sun_noon=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.sun_noon = tmp; }
+				else if (sscanf_s(line.c_str(), "sun_dawn=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.sun_dawn = tmp; }
+				else if (sscanf_s(line.c_str(), "fog_col=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.fog_col = tmp; }
+				else if (sscanf_s(line.c_str(), "sun_pos=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.sun_pos.set_A(tmp); }
+				else if (sscanf_s(line.c_str(), "bounces=%u", &val) > 0) scn.opt.bounces = val;
+				else if (sscanf_s(line.c_str(), "samples=%u", &val) > 0) scn.opt.samples = val;
+				else if (sscanf_s(line.c_str(), "en_fog=%u", &val) > 0) scn.opt.en_fog = val;
+				else if (sscanf_s(line.c_str(), "en_bvh=%u", &val) > 0) scn.opt.en_bvh = val;
+				else if (sscanf_s(line.c_str(), "en_sky=%u", &val) > 0) scn.opt.sky = val;
+				else if (sscanf_s(line.c_str(), "en_box=%u", &val) > 0) scn.opt.skybox = val;
+				else if (sscanf_s(line.c_str(), "select=%u", &val) > 0) scn.opt.selected = val;
+				else if (sscanf_s(line.c_str(), "outline=%u", &val) > 0) scn.opt.outline = val;
+				else if (sscanf_s(line.c_str(), "fog_dens=%g", &fval) > 0) scn.opt.ninv_fog = fval;
+				else if (sscanf_s(line.c_str(), "cam_collision=%u", &val) > 0) scn.cam.collision = val;
+				else if (sscanf_s(line.c_str(), "cam_blur=%u", &val) > 0) scn.cam.bokeh = val;
+				else if (sscanf_s(line.c_str(), "cam_auto=%u", &val) > 0) scn.cam.autofocus = val;
+				else if (sscanf_s(line.c_str(), "cam_fov=%g", &fval) > 0) scn.cam.set_fov(fval);
+				else if (sscanf_s(line.c_str(), "cam_fstop=%g", &fval) > 0) scn.cam.fstop = fval;
+				else if (sscanf_s(line.c_str(), "cam_exp=%g", &fval) > 0) scn.cam.exposure = fval;
+				else if (sscanf_s(line.c_str(), "cam_foc_t=%g", &fval) > 0) scn.cam.foc_t = fval;
+				else if (sscanf_s(line.c_str(), "cam_speed=%g", &fval) > 0) scn.cam.speed = fval;
+				else if (sscanf_s(line.c_str(), "cam_pos=%g,%g,%g", &P[0], &P[1], &P[2]) > 0) scn.cam.set_P(P);
+				else if (sscanf_s(line.c_str(), "cam_rot=%g,%g,%g", &A[0], &A[1], &A[2]) > 0) scn.cam.set_A(A);
+			}
+		break;
+		default: break;
 		}
 	}
 	file.close();
@@ -321,7 +331,6 @@ void scn_load(Scene& scn, int n) {
 	case 8: scn8(scn); break;
 	default: scn1(scn); break;
 	}
-	scn.opt.en_bvh = scn.world.en_bvh;
 	scn.cam.moving = 1;
 #if TEST
 	scn.opt.med_thr = 0;
@@ -354,7 +363,7 @@ void scn1(Scene& scn) {
 	scn.opt.i_life = 1.f / 0.9f;
 	scn.cam.setup(mat4(0, 0), 90, 1.f);
 	scn.opt.en_fog = false;
-	scn.world.en_bvh = 1;*/
+	scn.opt.en_bvh = 1;*/
 	albedo gre(vec4(0.7, 0.9, 0.7, 0), 0, vec4(0.5, 0.5, 1), 1, 1.2);
 	albedo carpet(vec4(0.8, 0.2, 0.2, 1), vec4(0, 0, 1), "snow_normal", 10);
 	albedo blu(vec4(0.1, 0.28, 0.8, 1), vec4(0.5, 0, 0.1));
@@ -375,7 +384,7 @@ void scn1(Scene& scn) {
 	scn.opt.i_life = 1.f / 0.9f;
 	scn.cam.setup(mat4(vec4(0.1, 1.4, 0.8), 0), 70, 1.f);
 	scn.opt.en_fog = false;
-	scn.world.en_bvh = 1;
+	scn.opt.en_bvh = 1;
 }
 
 void scn2(Scene& scn) {
@@ -398,7 +407,7 @@ void scn2(Scene& scn) {
 	scn.world.add_mesh(voxel(vec4(0, 1.9, 0, 0.1)), vec4(0, 0, 0, 1), 2, 0, 1);
 	scn.sun_pos = rotat_mat4(vec4(-1, 0, 0));
 	scn.cam.setup(mat4(vec4(2, 1, 0), vec4(0, hpi, 0)), 90, 10);
-	scn.world.en_bvh = 0;
+	scn.opt.en_bvh = 0;
 }
 void scn3(Scene& scn) {
 	for (int i = 0; i <= 10; i++) {
@@ -411,7 +420,7 @@ void scn3(Scene& scn) {
 	scn.opt.en_fog = 0;
 	scn.sun_pos = rotat_mat4(vec4(1, 0, 1));
 	scn.cam.setup(mat4(vec4(1, 1, 10), 0), 47, 10);
-	scn.world.en_bvh = 1;
+	scn.opt.en_bvh = 1;
 }
 void scn4(Scene& scn) {
 	albedo gre(vec4(0.7, 0.9, 0.7, 0), 0, vec4(0.5, 0.5, 1), 1, 1.2);
@@ -435,7 +444,7 @@ void scn4(Scene& scn) {
 	scn.opt.p_life = 0.9f;
 	scn.opt.i_life = 1.f / 0.9f;
 	scn.cam.setup(mat4(vec4(0.1, 1.4, 0.8), 0), 70, 1.f);
-	scn.world.en_bvh = 1;
+	scn.opt.en_bvh = 1;
 	scn.opt.en_fog = 1;
 }
 void scn5(Scene& scn) {
@@ -469,7 +478,7 @@ void scn5(Scene& scn) {
 	scn.opt.p_life = 0.9f;
 	scn.opt.i_life = 1.f / 0.9f;
 	scn.cam.setup(mat4(vec4(l / 2, 0.2f, l), vec4(0)), 40, 16.f);
-	scn.world.en_bvh = 0;
+	scn.opt.en_bvh = 0;
 }
 
 void scn6(Scene& scn) {
@@ -495,7 +504,7 @@ void scn6(Scene& scn) {
 	scn.opt.p_life = 0.9f;
 	scn.opt.i_life = 1.f / 0.9f;
 	scn.cam.setup(mat4(vec4(0, 1.7, 1), 0), 70, 1.f);
-	scn.world.en_bvh = 0;
+	scn.opt.en_bvh = 0;
 }
 
 void scn7(Scene& scn) {
@@ -511,7 +520,7 @@ void scn7(Scene& scn) {
 	scn.opt.ninv_fog = -0.5;
 	scn.opt.en_fog = true;
 	scn.cam.setup(mat4(vec4(0.2, 1.7, 1), 0), 70, 64.f);
-	scn.world.en_bvh = 1;
+	scn.opt.en_bvh = 1;
 }
 
 void scn8(Scene& scn) {
@@ -536,5 +545,5 @@ void scn8(Scene& scn) {
 	scn.opt.en_fog = true;
 	scn.opt.sky = 0;
 	scn.cam.setup(mat4(0, 0), 70, 64.f);
-	scn.world.en_bvh = 0;
+	scn.opt.en_bvh = 0;
 }
