@@ -55,7 +55,11 @@ namespace PTCR
 				string name = event.drop.file;
 				if (name.find(".scn") != -1) {
 					if (scn_load(scene, name.c_str()))
+					{
+						scn_n = -1;
 						scn_name = name.c_str();
+						reproject = false;
+					}
 				}
 				else if (name.find(".msh") != -1 || name.find(".obj") != -1) {
 					int x, y;
@@ -247,12 +251,15 @@ namespace PTCR
 	void Engine::Camera_menu() {
 		ImGui::SetNextWindowPos(ImVec2(menu.x, 0));
 		ImGui::SetNextWindowSize(ImVec2(menu.w, menu.h / 2));
-		ImGui::Begin("Camera settings");
-		if (ImGui::InputText("SCN File", scn_name, c_str::max_size, INPTEXT) || ImGui::Button("Load scene")) {
+		ImGui::Begin("Engine properties");
+		if (ImGui::SliderInt("Scene", &scn_n, 1, no_scn)) {
+			scn_load(scene, scn_n);
+			reproject = false;
+		}
+		if (ImGui::InputText("SCN File", scn_name, c_str::max_size, INPTEXT) + ImGui::Button("Load scene")) {
 			if (scn_load(scene, scn_name, 0)) {
-				scn_n = -1, scene.opt.en_bvh = 1;
+				scn_n = -1;
 				reproject = false;
-				fogdens = log10f(-scene.opt.ninv_fog);
 			}
 			else {
 				scn_save(scene, scn_name);
@@ -263,7 +270,6 @@ namespace PTCR
 			if (scn_load(scene, scn_name, 1)) {
 				scn_n = -1, scene.opt.en_bvh = 1;
 				reproject = false;
-				fogdens = log10f(-scene.opt.ninv_fog);
 			}
 		}
 		if (ImGui::Button("Save scene")) {
@@ -273,22 +279,24 @@ namespace PTCR
 		if (ImGui::Button("Screenshot")) {
 			scene.Screenshot(reproject);
 		}
-		if (ImGui::SliderInt("scene", &scn_n, 1, no_scn)) {
-			scn_load(scene, scn_n);
-			reproject = false;
-			fogdens = log10f(-scene.opt.ninv_fog);
-		}
 		vec4 pos = vec4(scene.cam.T.P(), scene.cam.speed);
-		vec4 rot = vec4(scene.cam.T.A(), scene.cam.sens);
+		vec4 rad = vec4(scene.cam.T.A(), scene.cam.sens);
+		vec4 deg = todeg(scene.cam.T.A());
 		if (ImGui::DragFloat4("Position##cam", pos._xyz, 0.001, infp, infp, "%g", NOROUND))
 		{
 			scene.cam.set_P(pos);
 			scene.cam.speed = pos[3];
 		}
-		if (ImGui::DragFloat4("Rotation##cam", rot._xyz, 0.001, infp, infp, "%g", NOROUND))
+		DT = rad;
+		if (ImGui::DragFloat4("Rotation##cam", rad._xyz, 0.001, infp, infp, "%g", NOROUND) && not0(DT - mod(rad, pi2)))
 		{
-			scene.cam.set_A(rot);
-			scene.cam.sens = rot[3];
+			scene.cam.set_A(rad);
+			scene.cam.sens = rad[3];
+		}
+		DT = deg;
+		if (ImGui::DragFloat3("Rot (deg)##cam", deg._xyz, 0.1, infp, infp, "%g", NOROUND) && not0(DT - mod(deg, 360)))
+		{
+			scene.cam.set_A(torad(deg));
 		}
 		if (ImGui::DragFloat("FOV", &scene.cam.fov, 0.1, 0.1, 179.9, "%.2f"))
 		{
@@ -370,6 +378,7 @@ namespace PTCR
 		scene.cam.moving |= ImGui::Checkbox("Skybox", &scene.opt.skybox); ImGui::SameLine();
 		scene.cam.moving |= ImGui::Checkbox("Fog", &scene.opt.en_fog);
 		if (scene.opt.en_fog) {
+			fogdens = log10f(-scene.opt.ninv_fog);
 			if (ImGui::DragFloat("Fog density", &fogdens, -0.01, -3, 12, "1e-%.2f")) {
 				scene.opt.ninv_fog = -1.f * pow(10, fogdens); scene.cam.moving = true;
 			}

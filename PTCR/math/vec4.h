@@ -208,6 +208,9 @@ inline vec4 med4(const vec4* x) {
 	max_vec3(y, 0, 1);
 	return 0.5f * (y[1] + y[2]);
 }
+inline vec4 avg4(const vec4* x) {
+	return 0.25f * (x[0] + x[1] + x[2] + x[3]);
+}
 inline vec4 med_n4(vec4* x, uint n) {
 	if (n == 1)return x[0];
 	else if (n == 2)return 0.5f * (x[0] + x[1]);
@@ -269,5 +272,5 @@ inline vec4 median2d3(const vec4* data, int i, int j, int h, int w, float thr) {
 	vec4 x[9];
 	if (thr <= eps)return data[i * w + j];
 	kernel<3>(data, x, i, j, h, w);
-	return mix(x[4], med9(x), sqrtf(thr));
+	return mix(x[4], med9(x), thr);
 }
