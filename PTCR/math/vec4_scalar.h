@@ -90,7 +90,7 @@ inline vec4 cross(vec4 u, vec4 v) {
 }
 inline float dot4(vec4 u, vec4 v) { return u.x() * v.x() + u.y() * v.y() + u.z() * v.z() + u.w() * v.w(); }
 
-inline vec4 operator&(vec4 u, vec4 v) { return dot(u,v); }
+inline float operator&(vec4 u, vec4 v) { return dot(u,v); }
 inline vec4 operator%(vec4 u, vec4 v) { return cross(u,v); }
 inline vec4 operator+(vec4 u, vec4 v) { return u += v; }
 inline vec4 operator-(vec4 u, vec4 v) { return u -= v; }
@@ -263,4 +263,10 @@ inline vec4 ravec() {
 }
 inline vec4 ravec(vec4 min, vec4 max) {
 	return min + (max - min) * rapvec();
+}
+inline vec4 fixnan(vec4 u)
+{
+	for (int i = 0; i < 3; i++)
+		if (isnan(u[i])) u[i] = 0;
+	return u;
 }

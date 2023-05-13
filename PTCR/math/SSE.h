@@ -29,25 +29,30 @@ inline __m128 _mm_rafl_ps(float min, float max) {
 }
 
 inline __m128 _mm_abs_ps(const __m128& x) {
-	const __m128 mask = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
-	return _mm_andnot_ps(mask, x);
+	__m128i mask = _mm_slli_epi32(_mm_castps_si128(x),1);
+	mask = _mm_srli_epi32(mask, 1);
+	return _mm_castsi128_ps(mask);
 };
 
 inline __m128 _mm_sign_ps(const __m128& x, const __m128& y) {
-	const __m128 mask = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
+	__m128 mask = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
 	__m128 sign = _mm_and_ps(mask, y);
 	__m128 absval = _mm_andnot_ps(mask, x);
 	return _mm_or_ps(sign, absval);
 };
 inline __m128 _mm_flipsign_ps(const __m128& x, const __m128& y) {
-	const __m128 mask = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
+	__m128 mask = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
 	__m128 sign = _mm_and_ps(mask, y);
 	return _mm_xor_ps(sign, x);
 };
 inline __m128 _mm_sign_ps(const __m128& x) {
 	return _mm_sign_ps(_mm_set1_ps(1.f), x);
 }
-
+inline __m128 _mm_isnan_ps(const __m128& x) {
+	__m128i ix = _mm_castps_si128(_mm_abs_ps(x));
+	__m128i mask = _mm_set1_epi32(0x7F800000);
+	return _mm_castsi128_ps(_mm_cmpgt_epi32(ix, mask));
+}
 inline __m128 _mm_fsqrt_ps(const __m128& n) {
 	__m128i i = _mm_castps_si128(n);
 	i = _mm_srli_epi32(i, 1);
@@ -97,14 +102,23 @@ __forceinline __m128 _mm_dot_ps(const __m128& u, const __m128& v) {
 	constexpr int inp = 0xf & (imm8 >> 4);
 	constexpr int outp = (15 & imm8);
 	__m128 uv = u * v;
-	if constexpr (inp == 7) {
+	if constexpr (inp == 7) {   //0/3 0/2 2/1 2/0 
 		__m128 v1 = _mm_shuffle_ps(uv, uv, _MM_SHUFFLE(2, 2, 0, 0));
 		__m128 v2 = _mm_shuffle_ps(uv, uv, _MM_SHUFFLE(0, 0, 2, 2));
 		__m128 v3 = _mm_shuffle_ps(uv, uv, _MM_SHUFFLE(1, 1, 1, 1));
-		return _mm_blend_ps(zero, v1 + v2 + v3, outp);
+		uv = v1 + v2 + v3;
 	}
-	uv = _mm_blend_ps(zero, uv, inp);
-	__m128 shuf = uv + _mm_shuffle_ps(uv, uv, _MM_SHUFFLE(2, 3, 0, 1)); //32 23 10 01
-	uv = shuf + _mm_shuffle_ps(shuf, shuf, _MM_SHUFFLE(0, 1, 2, 3));
-	return _mm_blend_ps(zero, uv, outp);
+	else {
+		uv = (inp == 0xf) ? uv : _mm_blend_ps(zero, uv, inp);
+		__m128 shuf = uv + _mm_shuffle_ps(uv, uv, _MM_SHUFFLE(2, 3, 0, 1)); //3+2 2+3 1+0 0+1
+		uv = shuf + _mm_shuffle_ps(shuf, shuf, _MM_SHUFFLE(0, 1, 2, 3)); //32+01 23+10 10+23 01+32
+	}
+	return (outp == 0xf) ? uv : _mm_blend_ps(zero, uv, outp);
+}
+//normalized vec4, only first 3 components are guaranteed to be correct!
+__forceinline __m128 _mm_norm_ps(const __m128& u) {
+	__m128 v = u * u;  
+	__m128 x = v + _mm_shuffle_ps(v, v, _MM_SHUFFLE(3, 0, 2, 2));  // 3+3 / 0+2 / 2+1 / 2+0
+	__m128 y = x + _mm_shuffle_ps(v, v, _MM_SHUFFLE(3, 1, 0, 1));  // 3+3+3 / 1+0+2 / 0+2+1 / 1+2+0
+	return u / _mm_sqrt_ps(y);
 }

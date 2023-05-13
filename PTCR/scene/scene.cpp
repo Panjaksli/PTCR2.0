@@ -223,7 +223,7 @@ void Scene::Gen_projection(const projection& proj) {
 	vec4* data = cam.CCD.data.data();
 	mat4 iT = cam.T.inverse();
 	for (int i = 0; i < cam.CCD.n; i++)
-		buff[i] = vec4(0, 0, 0, infp);
+		buff[i] = vec4(0, 0, 0, infp*infp);
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
 	for (int i = 0; i < cam.h; i++) {
 		for (int j = 0; j < cam.w; j++) {

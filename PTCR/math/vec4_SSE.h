@@ -47,10 +47,7 @@ struct vec4
 	inline float len() const { return _mm_sqrt_ps(_mm_dot_ps<0x7F>(xyz, xyz))[0]; }
 	inline vec4 dir() const
 	{
-		//return _mm_div_ps(xyz, _mm_sqrt_ps(_mm_dot_ps<0x7F>(xyz, xyz)));
-		__m128 x = _mm_dot_ps<0x7F>(xyz, xyz);
-		__m128 y = _mm_rsqrt_ps(x);
-		return 0.5f * xyz * y * (3.f - x * y * y);
+		return _mm_norm_ps(xyz);
 	}
 	inline vec4 fact() const
 	{
@@ -77,7 +74,7 @@ struct vec4
 inline vec4 norm(vec4 u) { return u.dir(); }
 inline float dot(vec4 u, vec4 v) { return _mm_dot_ps<0x7F>(u.xyz, v.xyz)[0]; }
 inline vec4 cross(vec4 u, vec4 v) { return _mm_cross_ps(u.xyz, v.xyz); }
-template <int imm8 = 0x7F>
+template <int imm8>
 inline __m128 dot(const vec4& u, const vec4& v) { return _mm_dot_ps<imm8>(u.xyz, v.xyz); }
 inline float dot4(vec4 u, vec4 v) { return _mm_dot_ps<0xFF>(u.xyz, v.xyz)[0]; }
 inline float operator&(vec4 u, vec4 v) { return dot(u, v); }
@@ -265,6 +262,10 @@ inline vec4 ravec() {
 inline vec4 ravec(vec4 min, vec4 max) {
 	return min + (max - min) * _mm_rafl_ps();
 }
-
+inline vec4 fixnan(vec4 u)
+{
+	__m128 mask = _mm_isnan_ps(u.xyz);
+	return _mm_andnot_ps(mask, u.xyz);
+}
 
 

@@ -55,10 +55,6 @@ inline vec4 clamp(vec4 u, vec4 lo, vec4 hi)
 {
 	return max(min(u, hi), lo);
 }
-inline vec4 fixnan(vec4 u)
-{
-	return max(u, 0.0f);
-}
 inline vec4 saturate(vec4 u)
 {
 	return clamp(u, 0.f, 1.f);
