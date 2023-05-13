@@ -555,13 +555,13 @@ namespace PTCR
 		}
 		else if (!scene.opt.skybox && scene.opt.sky) {
 			DT = TA;
-			if (ImGui::DragFloat3("Rot", TA._xyz, 0.001, infp, infp, "%g", NOROUND) && not0(DT - mod(TA, pi2)))
+			if (ImGui::DragFloat3("Rot##sky", TA._xyz, 0.001, infp, infp, "%g", NOROUND) && not0(DT - mod(TA, pi2)))
 			{
 				scene.set_trans(mat4(0, TA));
 				scene.cam.moving = true;
 			}
 			DT = TD;
-			if (ImGui::DragFloat3("Rot (deg)", TD._xyz, 0.1, infn, infp, "%.1f") && not0(DT - mod(TD, 360)))
+			if (ImGui::DragFloat3("Rot (deg)##sky", TD._xyz, 0.1, infn, infp, "%.1f") && not0(DT - mod(TD, 360)))
 			{
 				scene.set_trans(mat4(0, torad(TD)));
 				scene.cam.moving = true;

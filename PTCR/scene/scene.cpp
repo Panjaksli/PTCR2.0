@@ -203,7 +203,7 @@ void Scene::Render(uint* disp, uint pitch) {
 	for (int i = 0; i < cam.h; i++) {
 		for (int j = 0; j < cam.w; j++) {
 			vec4 rgb = cam.get_med(i, j, opt.med_thr);
-			if (i & 1 && j & 1 && opt.selected < world.objects.size() && !opt.framegen && opt.outline) {
+			if (i % 2 && j % 2 && opt.selected < world.objects.size() && !opt.framegen && opt.outline) {
 				hitrec rec;
 				ray r = cam.pinhole_ray(vec4(j, i));
 				aabb aura = object_at(opt.selected).get_box();

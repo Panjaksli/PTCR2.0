@@ -47,7 +47,10 @@ struct vec4
 	inline float len() const { return _mm_sqrt_ps(_mm_dot_ps<0x7F>(xyz, xyz))[0]; }
 	inline vec4 dir() const
 	{
-		return _mm_div_ps(xyz, _mm_sqrt_ps(_mm_dot_ps<0x7F>(xyz, xyz)));
+		//return _mm_div_ps(xyz, _mm_sqrt_ps(_mm_dot_ps<0x7F>(xyz, xyz)));
+		__m128 x = _mm_dot_ps<0x7F>(xyz, xyz);
+		__m128 y = _mm_rsqrt_ps(x);
+		return 0.5f * xyz * y * (3.f - x * y * y);
 	}
 	inline vec4 fact() const
 	{

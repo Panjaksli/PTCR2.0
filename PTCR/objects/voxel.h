@@ -24,7 +24,7 @@ public:
 		{
 			vec4 P = r.at(t);
 			vec4 W = (P - Qa) / Qa.w();
-			vec4 N = norm(toint(1.00001f * W) + eps2); //Fix nan propagation
+			vec4 N = copysign(vec_eq(abs(W), max(abs(W))),W);
 			vec4 UV = 0.5f * (1.f + W - N);
 			rec.N = face ? N : -N;
 			rec.P = r.at(t);
@@ -71,7 +71,7 @@ public:
 #if 1
 			vec4 r = ravec();
 			vec4 W = r / max(abs(r));
-			vec4 N = norm(toint(1.00001f * W) + eps2);
+			vec4 N = copysign(vec_eq(abs(W), max(abs(W))), W);
 			bool dir = rafl() < 0.5f;
 			//smaller waste of rejection sampling, pick one side, than eventually rotate to all 6
 			//gotta choose rotated side randomly to get unbiased results; left or right depending on beginning condition
@@ -101,7 +101,7 @@ public:
 	inline ray rand_from() const {
 		vec4 r = ravec();
 		vec4 W = r / max(fabs(r));
-		vec4 N = norm(toint(1.00001f * W) + eps2);
+		vec4 N = copysign(vec_eq(abs(W), max(abs(W))), W);
 		vec4 O = Qa + N * Qa.w();
 		vec4 L = onb(rafl() < 0.5f ? N : -N).world(sa_cos());
 		return ray(O, L);

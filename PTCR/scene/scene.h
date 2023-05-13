@@ -313,17 +313,17 @@ private:
 	}
 	//Separates lighting into direct and indirect
 	__forceinline vec4 light_at_pt(const ray& sr, const hitrec& srec, int depth) const {
-		vec4 col(0), aten(1.f); ray r = sr; float ir = 1.f;
+		vec4 col(0), aten(1.f); 
+		ray r = sr; matrec mat;
 		for (int i = 0; i <= depth; i++)
 		{
-			hitrec rec; matrec mat;
+			hitrec rec; mat.refl = refl_none;
 			if (i == 0) rec = srec;
 			else if (!world.hit<1>(r, rec))
 			{
 				if (i == depth)col += aten * sky(r.D);
 				break;
 			}
-			mat.ir = ir;
 			sample_material(r, rec, mat);
 			if (i == depth) {
 				col += mat.emis * aten;
@@ -339,7 +339,6 @@ private:
 					else break;
 				}
 				else {
-					ir = mat.ir;
 					r = ray(mat.P, mat.L, true);
 				}
 				aten *= mat.aten;

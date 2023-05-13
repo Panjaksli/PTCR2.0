@@ -109,7 +109,6 @@ namespace material {
 			mat.P = rec.P - rec.N * eps;
 			mat.L = r.D;
 			mat.refl = refl_tran * not0(mat.aten);
-			mat.ir = 1;
 			return;
 		}
 		vec4 H = n.world(sa_ggx(a));
