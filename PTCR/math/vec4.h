@@ -129,8 +129,8 @@ inline vec4 vec8bit(vec4 col) {
 	col = sqrt(col); //gamma correction to sRGB
 #endif
 	col = saturate(col);//clamp 0 - 1
-	col *= 255.f; //multiply by 8bit max value
-	col += 0.5f * ravec();//dithering using noise
+	col = col * 255.f; //multiply by 8bit max value
+	col += 0.999f * rapvec();//dithering using noise
 	return col;
 }
 inline uint vec2bgr(vec4 col)

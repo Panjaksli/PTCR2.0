@@ -118,7 +118,7 @@ __forceinline __m128 _mm_dot_ps(const __m128& u, const __m128& v) {
 //normalized vec4, only first 3 components are guaranteed to be correct!
 __forceinline __m128 _mm_norm_ps(const __m128& u) {
 	__m128 v = u * u;  
-	__m128 x = v + _mm_shuffle_ps(v, v, _MM_SHUFFLE(3, 0, 2, 2));  // 3+3 / 0+2 / 2+1 / 2+0
-	__m128 y = x + _mm_shuffle_ps(v, v, _MM_SHUFFLE(3, 1, 0, 1));  // 3+3+3 / 1+0+2 / 0+2+1 / 1+2+0
+	__m128 x = v + _mm_shuffle_ps(v, v, _MM_SHUFFLE(0, 0, 2, 2));  // 3+3 / 0+2 / 2+1 / 2+0
+	__m128 y = x + _mm_shuffle_ps(v, v, _MM_SHUFFLE(0, 1, 0, 1));  // 3+3+3 / 1+0+2 / 0+2+1 / 1+2+0
 	return u / _mm_sqrt_ps(y);
 }

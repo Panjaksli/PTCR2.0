@@ -71,7 +71,7 @@ struct vec4
 	};
 };
 
-inline vec4 norm(vec4 u) { return u.dir(); }
+inline vec4 norm(vec4 u) { return _mm_norm_ps(u.xyz); }
 inline float dot(vec4 u, vec4 v) { return _mm_dot_ps<0x7F>(u.xyz, v.xyz)[0]; }
 inline vec4 cross(vec4 u, vec4 v) { return _mm_cross_ps(u.xyz, v.xyz); }
 template <int imm8>
