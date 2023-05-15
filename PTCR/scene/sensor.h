@@ -37,7 +37,7 @@ public:
 		return data[off];
 	}
 	inline vec4 get_med(uint i, uint j, float thr) const {
-		return median2d3(data.data(), i, j, h, w, thr);
+		return median_3x3(data.data(), i, j, h, w, thr);
 	}
 	__forceinline void out(uint i, uint j) {
 		uint off = i * w + j;
@@ -50,7 +50,7 @@ public:
 	}
 	__forceinline void out_med(uint i, uint j, float thr) {
 		uint off = i * pitch + j;
-		disp[off] = vec2bgr(median2d3(data.data(), i, j, h, w, thr));
+		disp[off] = vec2bgr(median_3x3(data.data(), i, j, h, w, thr));
 	}
 	inline void set_disp(uint* _disp, uint _pitch) {
 		disp = _disp;

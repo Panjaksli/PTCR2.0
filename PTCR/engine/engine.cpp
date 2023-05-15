@@ -483,7 +483,7 @@ namespace PTCR
 				albedo& alb = scene.world.materials[mat].tex;
 				c_str srgb = alb._rgb.name, smer = alb._mer.name, snor = alb._nor.name;
 				int type = (int)scene.world.materials[mat].type;
-				bool s1 = alb._rgb.get_solid(), s2 = alb._mer.get_solid(), s3 = alb._nor.get_solid();
+				bool s1 = alb._rgb.solid(), s2 = alb._mer.solid(), s3 = alb._nor.solid();
 				if (ImGui::Button("Erase##mat")) {
 					scene.cam.moving = true;
 					scene.world.remove_mat(mat);
@@ -550,7 +550,12 @@ namespace PTCR
 				scene.cam.moving |= ImGui::ColorEdit4("Tint", alb.tint._xyz, FLOATCOL);
 				scene.cam.moving |= ImGui::DragFloat("Scale", &alb.rep, 0.1f, -1000.f, 1000.f, "%g");
 				scene.cam.moving |= ImGui::DragFloat("IOR", &alb.ir, 0.01f, 1.f, 4.f, "%.2f");
-				scene.cam.moving |= ImGui::Checkbox("Alpha", &alb.alpha);
+				bool alpha = alb.alpha();
+				bool checker = alb.checker();
+				scene.cam.moving |= ImGui::Checkbox("Alpha", &alpha); ImGui::SameLine();
+				scene.cam.moving |= ImGui::Checkbox("Checker", &checker);
+				alb.set_alpha(alpha);
+				alb.set_checker(checker);
 			}
 		}
 		else if (!scene.opt.skybox && scene.opt.sky) {

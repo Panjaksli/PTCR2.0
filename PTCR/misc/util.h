@@ -239,6 +239,24 @@ inline void kernel(const T* in, T* out, int i, int j, int h, int w) {
 	}
 }
 
+template <int ks = 3, typename T>
+inline void kernel_row(const T* in, T* out, int i, int j, int h, int w) {
+	int col = clamp_int(i, 0, h - 1) * w;
+	for (int k = 0; k < ks; k++)
+	{
+		out[k] = in[col + clamp_int(j + k - ks / 2, 0, w - 1)];
+	}
+}
+
+template <int ks = 3, typename T>
+inline void kernel_col(const T* in, T* out, int i, int j, int h, int w) {
+	int row = clamp_int(j, 0, w - 1);
+	for (int k = 0; k < ks; k++)
+	{
+		out[k] = in[clamp_int(i + k - ks / 2, 0, h - 1) * w + row];
+	}
+}
+
 template <typename T>
 inline T gauss_3x3(const T* x) {
 	T sum = 0;
@@ -308,13 +326,31 @@ struct bitfield {
 	inline operator T()const {
 		return data;
 	}
-	inline void set(uchar n, bool x) {
-		data = (data & ~(1U << n)) | (x << n);
+	inline void bit(uint n, bool x) {
+		data = (data & ~(0x1 << n)) | (x << n);
 	}
-	inline bool get(uchar n) const{
-		return (data >> n) & 1U;
+	inline void byte(uint n, uchar x) {
+		data = (data & ~(0xFF << n)) | (x << n);
 	}
-	inline bool operator[](uchar n)const {
+	inline void word(uint n, uint16_t x) {
+		data = (data & ~(0xFFFF << n)) | (x << n);
+	}
+	inline void dword(uint n, uint x) {
+		data = (data & ~(0xFFFFFFFF << n)) | (x << n);
+	}
+	inline bool bit(uint n) const{
+		return (data >> n) & 0x1;
+	}
+	inline uchar byte(uint n) const {
+		return (data >> 8*n) & 0xFF;
+	}
+	inline uint16_t word(uint n) const {
+		return (data >> 16 * n) & 0xFFFF;
+	}
+	inline uint dword(uint n) const {
+		return (data >> 32 * n) & 0xFFFFFFFF;
+	}
+	inline bool operator[](uint n)const {
 		return (data >> n) & 1U;
 	}
 	T data = 0;

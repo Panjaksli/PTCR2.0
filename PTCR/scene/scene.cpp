@@ -250,7 +250,7 @@ void Scene::Reproject(const projection& proj, uint* disp, uint pitch) {
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
 	for (int i = 0; i < cam.h; i++) {
 		for (int j = 0; j < cam.w; j++) {
-			cam.display(i, j, median2d3(buff, i, j, cam.h, cam.w, opt.med_thr));
+			cam.display(i, j, median_3x3(buff, i, j, cam.h, cam.w, opt.med_thr));
 		}
 	}
 	if(!opt.framegen)cam.moving = false;
@@ -270,11 +270,11 @@ void Scene::Screenshot(bool reproject) const {
 	file = "screenshots\\" + name_spp + ".png";
 	if (reproject) {
 		for (uint i = 0; i < wh; i++)
-			buff[i] = vec2rgb(median2d3(cam.CCD.buff.data(), i / w, i % w, h, w, opt.med_thr)) | (255 << 24);
+			buff[i] = vec2rgb(median_3x3(cam.CCD.buff.data(), i / w, i % w, h, w, opt.med_thr)) | (255 << 24);
 	}
 	else {
 		for (uint i = 0; i < wh; i++)
-			buff[i] = vec2rgb(median2d3(cam.CCD.data.data(), i / w, i % w, h, w, opt.med_thr)) | (255 << 24);
+			buff[i] = vec2rgb(median_3x3(cam.CCD.data.data(), i / w, i % w, h, w, opt.med_thr)) | (255 << 24);
 	}
 	stbi_write_png(file.c_str(), w, h, 4, buff.data(), 4 * w);
 	cout << "Saved file in: " << file << "\n";

@@ -264,7 +264,7 @@ inline vec4 bilat_5x5(const vec4* x) {
 	}
 	return y / w;
 }
-inline vec4 median2d3(const vec4* data, int i, int j, int h, int w, float thr) {
+inline vec4 median_3x3(const vec4* data, int i, int j, int h, int w, float thr) {
 	vec4 x[9];
 	if (thr <= eps)return data[i * w + j];
 	kernel<3>(data, x, i, j, h, w);

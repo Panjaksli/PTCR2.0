@@ -16,12 +16,12 @@ public:
 		fit();
 	}
 	mesh(const vector<primitive>& _prim, uint _mat) :prim(new primitive[_prim.size()]), mat(_mat), size(_prim.size()) {
-		memcpy(prim, _prim.data(), size * sizeof(primitive));
+		copy(_prim.data(), size);
 		fit();
 	}
-	mesh(const mesh& cpy) {
-		bbox = cpy.bbox, P = cpy.P, A = cpy.A, prim = new primitive[cpy.size], mat = cpy.mat, size = cpy.size;
-		memcpy(prim, cpy.prim, size * sizeof(primitive));
+	mesh(const mesh& cpy) : prim(new primitive[cpy.size]) {
+		bbox = cpy.bbox, P = cpy.P, A = cpy.A, mat = cpy.mat, size = cpy.size;
+		copy(cpy.prim.get(), size);
 	}
 	mesh(mesh&& cpy)noexcept :mesh() {
 		swap(*this, cpy);
@@ -29,9 +29,6 @@ public:
 	mesh& operator=(mesh cpy) {
 		swap(*this, cpy);
 		return *this;
-	}
-	~mesh() {
-		clean();
 	}
 	__forceinline bool hit(const ray& r, hitrec& rec) const
 	{
@@ -119,13 +116,14 @@ private:
 			bbox.join(get_box(i));
 		}
 	}
-	inline void clean() {
-		if (prim != nullptr)delete[]prim; prim = nullptr;
+	inline void copy(const primitive* cpy, uint size) {
+		for (uint i = 0; i < size; i++)
+			prim[i] = cpy[i];
 	}
 public:
 	aabb bbox;
 	vec4 P, A;
-	primitive* prim = nullptr;
+	std::unique_ptr<primitive[]> prim;
 	uint mat = -1;
 	uint size = 0;
 };
@@ -179,21 +177,13 @@ struct mesh_var {
 	mesh_var(const mesh<sphere>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :s(m), name(name), flag(o_sph, bvh, lig, fog) {}
 	mesh_var(const mesh<voxel>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :v(m), name(name), flag(o_vox, bvh, lig, fog) {}
 	mesh_var(const mesh_var& cpy) {
-		name = cpy.name;
-		flag = cpy.flag;
-		switch (type()) { //Placement new for explicit copy constructor
-		case o_pol: new(&p) auto(cpy.p); break;
-		case o_qua: new(&q) auto(cpy.q); break;
-		case o_sph:  new(&s) auto(cpy.s); break;
-		case o_vox:  new(&v) auto(cpy.v); break;
-		default: break;
-		}
+		*this = cpy;
 	}
 	mesh_var& operator=(mesh_var cpy) {
 		swap(*this, cpy);
 		return *this;
 	}
-	mesh_var(mesh_var&& cpy)noexcept:mesh_var() {
+	mesh_var(mesh_var&& cpy)noexcept :mesh_var() {
 		swap(*this, cpy);
 	}
 	~mesh_var() {
@@ -267,7 +257,7 @@ struct mesh_var {
 		return flag.type();
 	}
 	friend void swap(mesh_var& m1, mesh_var& m2) {
-		switch(m2.type()) {
+		switch (m2.type()) {
 		case o_pol: swap(m1.p, m2.p); break;
 		case o_qua: swap(m1.q, m2.q); break;
 		case o_sph: swap(m1.s, m2.s); break;

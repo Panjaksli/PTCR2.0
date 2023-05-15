@@ -5,11 +5,13 @@ class texture {
 public:
 
 	texture() {}
-	texture(vec4 _rgb, const char* filename) {
+	texture(vec4 _rgb, const char* filename, int solid = -1) {
 		*this = texture(filename);
 		rgb = _rgb;
+		if (solid != -1) flags.bit(0, solid);
+		flags.bit(2, 1);
 	}
-	texture(vec4 _rgb) : rgb(_rgb) { flags.set(0, 1); }
+	texture(vec4 _rgb) : rgb(_rgb) { flags.bit(0, 1); }
 	texture(const char* _filename) {
 		clear();
 		if (_filename != nullptr && strcmp(_filename, "0") != 0) {
@@ -19,11 +21,11 @@ public:
 				load("textures/" + filename + ".gif") || load("textures/" + filename + ".tga");
 			if (found) {
 				name = _filename;
-				flags.set(0, 0);
+				flags.bit(0, 0);
 				return;
 			}
 		}
-		flags.set(0, 1);
+		flags.bit(0, 1);
 	}
 	~texture() {
 		clear();
@@ -49,7 +51,7 @@ public:
 	}
 
 	__forceinline vec4 sample(float u, float v) const {
-		if (get_solid() || data == nullptr)return rgb;
+		if (solid() || data == nullptr)return rgb;
 		uint x = u * (w - 1);
 		uint y = v * (h - 1);
 		x %= w;
@@ -61,13 +63,14 @@ public:
 		uchar a = data[off + 3];
 		return vec4(r, g, b, a) * (1 / 255.f);
 	}
-	void set_solid(bool x) { flags.set(0, x); }
-	void set_checker(bool x) { flags.set(1, x); }
-	bool get_solid()const { return flags[0]; }
-	bool get_checker()const { return flags[1]; }
+	void set_solid(bool x) { flags.bit(0, x); }
+	void set_checker(bool x) { flags.bit(1, x); }
+	bool solid()const { return flags.bit(0); }
+	bool checker()const { return flags.bit(1); }
+	bool both()const { return flags.bit(2); }
 	void set_tex(const char* _filename) { *this = texture(rgb, _filename); }
 	void clear() { if (data != nullptr)free(data); name.clear(); data = nullptr; }
-	friend void swap(texture& t1, texture& t2){
+	friend void swap(texture& t1, texture& t2) {
 		std::swap(t1.rgb, t2.rgb);
 		std::swap(t1.name, t2.name);
 		std::swap(t1.data, t2.data);
@@ -75,7 +78,7 @@ public:
 		std::swap(t1.h, t2.h);
 		std::swap(t1.flags, t2.flags);
 	}
-	vec4 rgb = vec4(0,0,0,1);
+	vec4 rgb = vec4(0, 0, 0, 1);
 	c_str name;
 private:
 	uchar* data = nullptr;

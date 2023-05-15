@@ -106,8 +106,9 @@ private:
 		uint mat_id = object_at(rec.idx).get_mat();
 		if (mat_id < world.materials.size())
 			material_at(mat_id).sample(r, rec, mat);
-		else {
-			mat.emis = vec4(1, 0, 1);
+		else{
+			vec4 uv = sin(10*rec.P);
+			mat.emis = uv.x() * uv.y() * uv.z() > 0 ? vec4(1,0,1) : 0;
 		}
 	}
 	__forceinline ray sa_fog(const vec4& P, float ft, float& p1, float& p2) const

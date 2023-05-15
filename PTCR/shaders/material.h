@@ -33,7 +33,7 @@ inline const char* mat_enum_str(int val) {
 namespace material {
 	template <bool use_vndf = 0>
 	__forceinline void ggx(const ray& r, const hitrec& rec, const albedo& tex, matrec& mat) {
-		vec4 rgb = tex.rgb(rec.u, rec.v);
+		vec4 rgb = tex.rgb(rec.u, rec.v, rec.P);
 		vec4 mer = tex.mer(rec.u, rec.v);
 		vec4 nor = tex.nor(rec.u, rec.v);
 		float mu = mer.x();
@@ -80,7 +80,7 @@ namespace material {
 	}
 	__forceinline void mixed(const ray& r, const hitrec& rec, const albedo& tex, matrec& mat) {
 		//simple mix of lambertian and mirror reflection/transmission + emission
-		vec4 rgb = tex.rgb(rec.u, rec.v);
+		vec4 rgb = tex.rgb(rec.u, rec.v, rec.P);
 		vec4 mer = tex.mer(rec.u, rec.v);
 		vec4 nor = tex.nor(rec.u, rec.v);
 		float mu = mer.x();
@@ -103,7 +103,7 @@ namespace material {
 			return;
 		}
 		else if (opaque)return ggx(r, rec, tex, mat);
-		else if (tex.alpha) {
+		else if (tex.alpha()) {
 			mat.aten = rgb;
 			mat.N = rec.N;
 			mat.P = rec.P - rec.N * eps;
@@ -149,7 +149,7 @@ namespace material {
 		return ggx<1>(r, rec, tex, mat);
 	}
 	__forceinline void light(const ray& r, const hitrec& rec, const albedo& tex, matrec& mat) {
-		vec4 rgb = tex.rgb(rec.u, rec.v);
+		vec4 rgb = tex.rgb(rec.u, rec.v, rec.P);
 		vec4 mer = tex.mer(rec.u, rec.v);
 		float em = mer.y();
 		float nov = absdot(rec.N, r.D);
@@ -157,7 +157,7 @@ namespace material {
 		mat.N = rec.N;
 	}
 	__forceinline void laser(const ray& r, const hitrec& rec, const albedo& tex, matrec& mat) {
-		vec4 rgb = tex.rgb(rec.u, rec.v);
+		vec4 rgb = tex.rgb(rec.u, rec.v, rec.P);
 		vec4 mer = tex.mer(rec.u, rec.v);
 		float em = mer.y();
 		float nov = absdot(rec.N, r.D);

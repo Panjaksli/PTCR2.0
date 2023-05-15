@@ -121,12 +121,15 @@ bool scn_save(Scene& scn, const char* filename) {
 		vec4 smer = mat.tex._mer.rgb;
 		vec4 snor = mat.tex._nor.rgb;
 		vec4 tint = mat.tex.tint;
+		int s1 = mat.tex._rgb.solid();
+		int s2 = mat.tex._mer.solid();
+		int s3 = mat.tex._nor.solid();
 		char rgb[128], mer[128], nor[128];
-		sprintf(rgb, "%s,%g,%g,%g,%g", mat.tex._rgb.name.text(), srgb[0], srgb[1], srgb[2], srgb[3]);
-		sprintf(mer, "%s,%g,%g,%g", mat.tex._mer.name.text(), smer[0], smer[1], smer[2]);
-		sprintf(nor, "%s,%g,%g,%g", mat.tex._nor.name.text(), snor[0], snor[1], snor[2]);
-		sprintf(line, "albedo type=%u rgb=%s mer=%s nor=%s scl=%g ir=%g tint=%g,%g,%g,%g alpha=%u",
-			mat.type, rgb, mer, nor, mat.tex.rep, mat.tex.ir, tint[0], tint[1], tint[2], tint[3], mat.tex.alpha);
+		sprintf(rgb, "%s,%g,%g,%g,%g,%d", mat.tex._rgb.name.text(), srgb[0], srgb[1], srgb[2], srgb[3], s1);
+		sprintf(mer, "%s,%g,%g,%g,%d", mat.tex._mer.name.text(), smer[0], smer[1], smer[2], s2);
+		sprintf(nor, "%s,%g,%g,%g,%d", mat.tex._nor.name.text(), snor[0], snor[1], snor[2], s3);
+		sprintf(line, "albedo type=%u rgb=%s mer=%s nor=%s scl=%g ir=%g tint=%g,%g,%g,%g alpha=%u check=%u",
+			mat.type, rgb, mer, nor, mat.tex.rep, mat.tex.ir, tint[0], tint[1], tint[2], tint[3], mat.tex.alpha(), mat.tex.checker());
 		lines.push_back(line);
 	}
 	lines.push_back("*Params");
@@ -181,18 +184,19 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 			return false;
 		}
 	}
-	if(!update_only)scn.skybox.clear();
+	if (!update_only)scn.skybox.clear();
 	scn.world.clear();
 	std::stringstream file_buff;
 	file_buff << file.rdbuf();
 	std::string line = "";
 	int state = -1;
-	while (std::getline(file_buff, line)){
+	while (std::getline(file_buff, line)) {
 		vec4 tmp, P, A;
 		vec4 q, a, b, c;
 		constexpr int BUFF = 128;
 		char buff1[BUFF], buff2[BUFF], buff3[BUFF];
 		uint mat = 0, bvh = 1, lig = 0, val = 0, fog = 0;
+		uint alpha = 0, check = 0;
 		float scl = 1, ir = 1, fval = 0;
 		if (line[0] == '*') { state++; }
 		else switch (state) {
@@ -257,22 +261,31 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 					scn.world.load_mesh(buff1, mat4(P, A), mat, bvh, lig, fog);
 				}
 			}
-		break;
+			break;
 		case 1:
-			if (sscanf_s(line.c_str(), "albedo type=%u rgb=%s mer=%s nor=%s scl=%g ir=%g tint=%g,%g,%g,%g alpha=%u",
-				&mat, buff1, BUFF, buff2, BUFF, buff3, BUFF, &scl, &ir, &tmp[0], &tmp[1], &tmp[2], &tmp[3], &val) > 0)
+			if (sscanf_s(line.c_str(), "albedo type=%u rgb=%s mer=%s nor=%s scl=%g ir=%g tint=%g,%g,%g,%g alpha=%u check=%u",
+				&mat, buff1, BUFF, buff2, BUFF, buff3, BUFF, &scl, &ir, &tmp[0], &tmp[1], &tmp[2], &tmp[3], &alpha, &check) > 0)
 			{
+				int s1 = -1, s2 = -1, s3 = -1;
 				vec4 srgb, smer, snor;
 				char rgb[BUFF], mer[BUFF], nor[BUFF];
 				c_str::replace(buff1, ',', ' ', BUFF);
 				c_str::replace(buff2, ',', ' ', BUFF);
 				c_str::replace(buff3, ',', ' ', BUFF);
-				sscanf_s(buff1, "%s %g %g %g %g", rgb, BUFF, &srgb[0], &srgb[1], &srgb[2], &srgb[3]); texture t1 = texture(srgb, rgb);
-				sscanf_s(buff2, "%s %g %g %g", mer, BUFF, &smer[0], &smer[1], &smer[2]); texture t2 = texture(smer, mer);
-				sscanf_s(buff3, "%s %g %g %g", nor, BUFF, &snor[0], &snor[1], &snor[2]); texture t3 = texture(snor, nor);
-				scn.world.add_mat(albedo(t1, t2, t3, scl, ir, tmp, val), (mat_enum)mat);
+				sscanf_s(buff1, "%s %g %g %g %g %d", rgb, BUFF, &srgb[0], &srgb[1], &srgb[2], &srgb[3], &s1);
+				sscanf_s(buff2, "%s %g %g %g %d", mer, BUFF, &smer[0], &smer[1], &smer[2], &s2);
+				sscanf_s(buff3, "%s %g %g %g %d", nor, BUFF, &snor[0], &snor[1], &snor[2], &s3);
+				scn.world.add_mat(
+					albedo(
+						texture(srgb, rgb, s1),
+						texture(smer, mer, s2),
+						texture(snor, nor, s3),
+						scl, ir, tmp, alpha, check
+					),
+					(mat_enum)mat
+				);
 			}
-		break;
+			break;
 		case 2:
 			if (!update_only) {
 				if (sscanf_s(line.c_str(), "skybox=%s", buff1, BUFF) > 0) { scn.set_skybox(buff1); }
@@ -303,7 +316,7 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 				else if (sscanf_s(line.c_str(), "cam_pos=%g,%g,%g", &P[0], &P[1], &P[2]) > 0) scn.cam.set_P(P);
 				else if (sscanf_s(line.c_str(), "cam_rot=%g,%g,%g", &A[0], &A[1], &A[2]) > 0) scn.cam.set_A(A);
 			}
-		break;
+			break;
 		default: break;
 		}
 	}
