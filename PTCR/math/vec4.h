@@ -111,7 +111,6 @@ inline vec4 sincos(float x) {
 	vec4 y = fast_sin(t);
 	return vec4(y.x(), y.y());
 }
-
 inline float luminance(vec4 rgb)
 {
 	return dot(vec4(0.2126f, 0.7152f, 0.0722f), rgb);
@@ -162,51 +161,71 @@ inline bool cmp_val(const float& a, const float& b) {
 	return a < b;
 };
 
-inline vec4 avg9(vec4* x) {
-	vec4 sum;
-	for (int i = 0; i < 9; i++)
-		sum += x[i];
-	return sum * (1.f / 9.f);
+inline void sort(vec4* x, uint n) {
+	for (int j = 1; j < n; j++)
+	{
+		for (int i = 0; i < n - j; i++)
+		{
+			vec4 mint = min(x[i], x[i + 1]);
+			vec4 maxt = max(x[i], x[i + 1]);
+			x[i] = mint;
+			x[i + 1] = maxt;
+		}
+	}
 }
-inline vec4 avg_n(vec4* x, const int n) {
+
+inline vec4 avg(vec4* x, uint n) {
 	vec4 sum;
-	for (int i = 0; i < n; i++)
+	for (uint i = 0; i < n; i++)
 		sum += x[i];
 	return sum * (1.f / n);
 }
-inline void swap_vec3(vec4* x, uint i, uint j) {
+
+inline vec4 min(vec4* x, uint n) {
+	vec4 mint = x[0];
+	for (uint i = 1; i < n; i++)
+		mint = min(mint, x[i]);
+	return mint;
+}
+
+inline vec4 max(vec4* x, uint n) {
+	vec4 maxt = x[0];
+	for (uint i = 1; i < n; i++)
+		maxt = max(maxt, x[i]);
+	return maxt;
+}
+
+inline void swap_vec(vec4* x, uint i, uint j) {
 	vec4 t1 = x[i];
 	vec4 t2 = x[j];
 	x[i] = min(t1, t2);
 	x[j] = max(t1, t2);
 }
-inline void min_vec3(vec4* x, uint i, uint j) {
+inline void min_vec(vec4* x, uint i, uint j) {
 	x[i] = min(x[i], x[j]);
 }
 
-inline void max_vec3(vec4* x, uint i, uint j) {
+inline void max_vec(vec4* x, uint i, uint j) {
 	x[j] = max(x[i], x[j]);
 }
 
 inline vec4 med3(const vec4* x) {
 	vec4 y[3] = { x[0],x[1],x[2] };
-	swap_vec3(y, 0, 2);
-	min_vec3(y, 1, 2);
-	max_vec3(y, 0, 1);
+	swap_vec(y, 0, 2);
+	min_vec(y, 1, 2);
+	max_vec(y, 0, 1);
 	return y[1];
 }
 
 inline vec4 med4(const vec4* x) {
 	vec4 y[4] = { x[0],x[1],x[2],x[3] };
-	swap_vec3(y, 1, 3);
-	swap_vec3(y, 0, 2);
-	min_vec3(y, 2, 3);
-	max_vec3(y, 0, 1);
+	swap_vec(y, 1, 3);
+	swap_vec(y, 0, 2);
+	min_vec(y, 2, 3);
+	max_vec(y, 0, 1);
 	return 0.5f * (y[1] + y[2]);
 }
-inline vec4 avg4(const vec4* x) {
-	return 0.25f * (x[0] + x[1] + x[2] + x[3]);
-}
+
 inline vec4 med_n4(vec4* x, uint n) {
 	if (n == 1)return x[0];
 	else if (n == 2)return 0.5f * (x[0] + x[1]);
@@ -214,55 +233,15 @@ inline vec4 med_n4(vec4* x, uint n) {
 	else return med4(x);
 }
 inline vec4 med9(const vec4* x) {
-	vec4 y[9] = { x[0], x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[8] };
-	swap_vec3(y, 0, 1); swap_vec3(y, 3, 4); swap_vec3(y, 6, 7);
-	swap_vec3(y, 1, 2); swap_vec3(y, 4, 5); swap_vec3(y, 7, 8);
-	swap_vec3(y, 0, 1); swap_vec3(y, 3, 4); swap_vec3(y, 6, 7);
-	max_vec3(y, 0, 3);  max_vec3(y, 3, 6); swap_vec3(y, 1, 4);
-	min_vec3(y, 4, 7);  max_vec3(y, 1, 4); min_vec3(y, 5, 8);
-	min_vec3(y, 2, 5);  swap_vec3(y, 2, 4);
-	min_vec3(y, 4, 6);  max_vec3(y, 2, 4);
+	vec4 y[9] = { x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8] };
+	swap_vec(y, 0, 1); swap_vec(y, 3, 4); swap_vec(y, 6, 7);
+	swap_vec(y, 1, 2); swap_vec(y, 4, 5); swap_vec(y, 7, 8);
+	swap_vec(y, 0, 1); swap_vec(y, 3, 4); swap_vec(y, 6, 7);
+	max_vec(y, 0, 3);  max_vec(y, 3, 6); swap_vec(y, 1, 4);
+	min_vec(y, 4, 7);  max_vec(y, 1, 4); min_vec(y, 5, 8);
+	min_vec(y, 2, 5);  swap_vec(y, 2, 4);
+	min_vec(y, 4, 6);  max_vec(y, 2, 4);
 	return y[4];
-}
-
-
-inline vec4 bilat_3x3(const vec4* x) {
-	vec4 y = 0;
-	float w = 0;
-	float sd = 1, sr = 1;
-	sd *= sd; sr *= sr;
-	float d[9] = { 2,1,2,1,0,1,2,1,2 };
-	for (int i = 0; i < 9; i++)
-	{
-		vec4 dl = x[4] / x[4].w() - x[i] / x[i].w();
-		float wi = expf(-0.5f * (d[i] / sd + dl.len2() / sr));//GAUSS_3x3[i] * gauss(dl.len2(), 16);
-		y += x[i] * wi;
-		w += wi;
-	}
-	return y / w;
-}
-
-inline vec4 bilat_5x5(const vec4* x) {
-	vec4 y = 0;
-	float w = 0;
-	float sd = 1, sr = 1;
-	sd *= sd; sr *= sr;
-	float d[25] =
-	{
-	8,5,4,5,8,
-	5,2,1,2,5,
-	4,1,0,1,4,
-	5,2,1,2,5,
-	8,5,4,5,8
-	};
-	for (int i = 0; i < 25; i++)
-	{
-		vec4 dl = x[12] / x[12].w() - x[i] / x[i].w();
-		float wi = expf(-0.5f * (d[i] / sd + dl.len2() / sr));
-		y += x[i] * wi;
-		w += wi;
-	}
-	return y / w;
 }
 inline vec4 median_3x3(const vec4* data, int i, int j, int h, int w, float thr) {
 	vec4 x[9];

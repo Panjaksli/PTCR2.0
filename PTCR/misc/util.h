@@ -4,8 +4,7 @@
 #include "SSE.h"
 #endif
 #include <chrono>
-extern float GAUSS_3x3[9];
-extern float GAUSS_5x5[25];
+
 inline double timer() {
 	auto t = std::chrono::high_resolution_clock::now();
 	return std::chrono::duration<double>(t.time_since_epoch()).count();
@@ -257,21 +256,6 @@ inline void kernel_col(const T* in, T* out, int i, int j, int h, int w) {
 	}
 }
 
-template <typename T>
-inline T gauss_3x3(const T* x) {
-	T sum = 0;
-	for (int i = 0; i < 9; i++)
-		sum += GAUSS_3x3[i] * x[i];
-	return sum;
-}
-template <typename T>
-inline T gauss_5x5(const T* x) {
-	T sum = 0;
-	for (int i = 0; i < 25; i++)
-		sum += GAUSS_5x5[i] * x[i];
-	return sum;
-}
-
 inline float fract(float x) {
 	return x - floorf(x);
 }
@@ -293,29 +277,6 @@ inline constexpr int modulo(int a, int b)
 	return result >= 0 ? result : result + b;
 }
 
-struct rgba8888 {
-	rgba8888(uint rgba) : rgba(rgba) {}
-	union {
-		struct {
-			uchar r, g, b, a;
-		};
-		uint rgba;
-	};
-	inline void unpack(uint _rgba) {
-		rgba = _rgba;
-	}
-	inline uint pack() {
-		return rgba;
-	}
-};
-
-inline uint avg_rgb8888(rgba8888 x, rgba8888 y) {
-	x.r = (x.r + y.r) / 2;
-	x.g = (x.g + y.g) / 2;
-	x.b = (x.b + y.b) / 2;
-	x.a = (x.a + y.a) / 2;
-	return x.rgba;
-}
 template <typename T = uchar>
 struct bitfield {
 	bitfield() :data(0) {}
@@ -370,6 +331,21 @@ inline uint pack_rgb10(uint r, uint g, uint b, uchar a = 255)
 	return b + (g << 10) + (r << 20) + (a << 30);// a + (r << 2) + (g << 12) + (b << 12);//b + (g << 12) + (r << 20) + (a << 30);
 }
 
+inline int clamp_int(int x, int min, int max) {
+	return x < min ? min : x > max ? max : x;
+}
+inline int fmin_int(int x, int y) {
+	return x > y ? y : x;
+}
+inline int fmax_int(int x, int y) {
+	return x < y ? y : x;
+}
+
+inline float gauss(float x, float s) {
+	float is = 1.f / s;
+	return expf(-0.5f * x * x * is * is) * (1.f / sqrtpi2) * is;
+}
+
 struct uint3 {
 	uint3(uint x = 0, uint y = 0, uint z = 0) :xyz{ x,y,z } {}
 	union {
@@ -392,18 +368,3 @@ struct float3 {
 struct float3x3 {
 	float3 x[3];
 };
-
-inline int clamp_int(int x, int min, int max) {
-	return x < min ? min : x > max ? max : x;
-}
-inline int fmin_int(int x, int y) {
-	return x > y ? y : x;
-}
-inline int fmax_int(int x, int y) {
-	return x < y ? y : x;
-}
-
-inline float gauss(float x, float s) {
-	float is = 1.f / s;
-	return expf(-0.5f * x * x * is * is) * (1.f / sqrtpi2) * is;
-}

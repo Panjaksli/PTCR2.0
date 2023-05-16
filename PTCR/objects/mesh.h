@@ -112,9 +112,7 @@ private:
 	inline void fit() {
 		bbox = aabb();
 		for (uint i = 0; i < size; i++)
-		{
 			bbox.join(get_box(i));
-		}
 	}
 	inline void copy(const primitive* cpy, uint size) {
 		for (uint i = 0; i < size; i++)
@@ -298,12 +296,5 @@ struct mesh_raw {
 	uint prim_id;
 };
 
-//struct instance {
-//	mat4 T, Ti;
-//	aabb bbox;
-//	uint *_mat = nullptr;
-//	uint mat;
-//	uint idx;
-//};
 
 

@@ -182,7 +182,6 @@
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="misc\Event_handler.cpp" />
-    <ClCompile Include="misc\util.cpp" />
     <ClCompile Include="objects\mesh.cpp" />
     <ClCompile Include="scene\Scenes.cpp" />
     <ClCompile Include="shaders\texture.cpp" />

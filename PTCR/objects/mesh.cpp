@@ -44,8 +44,8 @@ void OBJ_to_MSH(const char* filename) {
 	}
 	std::stringstream file_buff;
 	file_buff << file.rdbuf();
-	std::vector<float3> vert; vert.reserve(0xfffff);
-	std::vector<uint3> face; face.reserve(0xfffff);
+	std::vector<float3> vert; vert.reserve(0xffff);
+	std::vector<uint3> face; face.reserve(0xffff);
 	std::string line = "";
 	while (std::getline(file_buff, line))
 	{
@@ -88,8 +88,8 @@ std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool fli
 	}
 	std::stringstream file_buff;
 	file_buff << file.rdbuf();
-	std::vector<vec4> vert; vert.reserve(0xfffff);
-	std::vector<uint3> face; face.reserve(0xfffff);
+	std::vector<vec4> vert; vert.reserve(0xffff);
+	std::vector<uint3> face; face.reserve(0xffff);
 	std::string line = "";
 	std::string pref = "";
 	float t1 = clock();
@@ -220,68 +220,5 @@ std::vector<poly> load_MSH(const char* filename, vec4 off, float scale, bool fli
 
 	std::cout << "Loaded: " << name << "\n";
 	std::cout << "No of tris: " << polys.size() << " Took: " << (clock() - t1) / CLOCKS_PER_SEC << "\n";
-	return polys;
-}
-
-
-std::vector<poly> generate_mesh(uint seed, vec4 off, float scale, bool flip) {
-	int dim = 128;
-	std::vector<vec4> vert2(dim * dim);
-	std::vector<vec4> vert(dim * dim);
-	std::vector<uint3> face;
-
-	for (int i = 0; i < dim; i++) {
-		for (int j = 0; j < dim; j++) {
-			vert2[i * dim + j] = vec4(i, randf(seed), j);
-		}
-	}
-
-	for (int i = 0; i < dim; i++) {
-		for (int j = 0; j < dim; j++) {
-			vec4 x[9];
-			kernel<3>(vert2.data(), x, i, j, dim, dim);
-			vert[i * dim + j] = x[4] + gauss_3x3(x);
-		}
-	}
-
-
-	for (int i = 0; i < dim - 1; i++) {
-		for (int j = 0; j < dim - 1; j++)
-		{
-			int l = i * dim + j;
-			int r = i * dim + j + 1;
-			int dl = (i + 1) * dim + j;
-			int dr = (i + 1) * dim + j + 1;
-			face.emplace_back(uint3(l, r, dr));
-			face.emplace_back(uint3(dl, l, dr));
-		}
-	}
-
-#if SMOOTH_SHADING
-	//per-vertex normals
-	std::vector<poly> polys(face.size());
-	std::vector<vec4> nrms(vert.size(), vec4());
-	for (uint j = 0; j < face.size(); j++) {
-		flip ? polys[j].set_quv(vert[face[j].x], vert[face[j].z], vert[face[j].y])
-			: polys[j].set_quv(vert[face[j].x], vert[face[j].y], vert[face[j].z]);
-		vec4 n = cross(polys[j].U, polys[j].V);
-		nrms[face[j].x] += n;
-		nrms[face[j].y] += n;
-		nrms[face[j].z] += n;
-	}
-
-	//polygons from triangles and normals
-	for (uint j = 0; j < face.size(); j++)
-		polys[j].set_nor(nrms[face[j].x], nrms[face[j].y], nrms[face[j].z]);
-#else
-	std::vector<poly> polys; polys.reserve(face.size());
-	for (const auto& f : face)
-	{
-		vec4 a = vert[f.x];
-		vec4 b = vert[f.y];
-		vec4 c = vert[f.z];
-		polys.emplace_back(flip ? poly(a, c, b) : poly(a, b, c));
-	}
-#endif
 	return polys;
 }

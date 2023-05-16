@@ -10,6 +10,21 @@ void obj_list::clear()
 	bbox = aabb();
 	en_bvh = 0;
 }
+
+bool obj_list::load_mesh(const char* name, mat4 tran, uint mat, bool is_bvh, bool is_light, bool has_fog)
+{
+	objects.emplace_back(name, tran, mat, is_bvh, is_light, has_fog);
+	if (objects.back().get_size() == 0) {
+		objects.pop_back();
+		return false;
+	}
+	if (!is_bvh)nonbvh.emplace_back(objects.size());
+	if (is_light)lights.emplace_back(objects.size());
+	bbox.join(objects.back().get_box());
+	lw_tot = 1.f / lights.size();
+	return true;
+}
+
 obj_flags obj_list::get_flag(uint id) const
 {
 	return objects[id].flag;
@@ -36,6 +51,7 @@ void obj_list::fit() {
 	bbox.pmin -= eps;
 	bbox.pmax += eps;
 }
+
 void obj_list::obj_create() {
 	obj_bvh.clear();
 	if (objects.empty()) return;
@@ -241,4 +257,70 @@ float obj_list::split_cost(uint be, uint en, uint& split, aabb bbox) {
 	return fcost;
 }
 
+
+uchar obj_list::debug_bvh(const ray& r, hitrec& rec, uint n0, uchar depth) const {
+	const bvh_node& node = bvh[n0];
+	if (node.parent)
+	{
+		float t1 = rec.t;
+		float t2 = rec.t;
+		bool e1 = 0, e2 = 0;
+		bool h1 = bvh[node.n1].bbox.hit_edge(r, t1, e1);
+		bool h2 = bvh[node.n2].bbox.hit_edge(r, t2, e2);
+		if (e1 || e2) {
+			rec.t = fminf(t1, t2);
+			return depth;
+		}
+		else if (h1 && h2) {
+			bool swap = t2 < t1;
+			uint n1 = swap ? node.n2 : node.n1;
+			uint n2 = swap ? node.n1 : node.n2;
+			uchar first = debug_bvh(r, rec, n1, depth + 1);
+			return first ? first : debug_bvh(r, rec, n2, depth + 1);
+		}
+		else if (h1)return debug_bvh(r, rec, node.n1, depth + 1);
+		else if (h2)return debug_bvh(r, rec, node.n2, depth + 1);
+		else return 0;
+	}
+	else return 0;
+}
+
+
+uchar obj_list::debug_aabb_edge(const ray& r, hitrec& rec) const {
+	if (en_bvh) {
+		uchar any = false;
+		for (const auto& obj : nonbvh)
+		{
+			bool edge = 0; float t = infp;
+			objects[obj].get_box().hit_edge(r, t, edge);
+			if (edge && t < rec.t) {
+				rec.t = t;
+				any = true;
+			}
+		}
+		bool edge = 0; float t = rec.t;
+		bool hit = bvh[0].bbox.hit_edge(r, t, edge);
+		if (edge) {
+			rec.t = t;
+			return 1;
+		}
+		else if (hit) {
+			uchar result = debug_bvh(r, rec);
+			return result ? result : any;
+		}
+		else return any;
+	}
+	else {
+		uchar any = false;
+		for (const auto& obj : objects) {
+			bool edge = 0; float t = infp;
+			bool hit = obj.get_box().hit_edge(r, t, edge);
+			if (hit && edge && t < rec.t) {
+				rec.t = t;
+				any = true;
+			}
+		}
+		return any;
+	}
+}
 

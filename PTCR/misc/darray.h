@@ -20,7 +20,7 @@ public:
 		_data = new T[_size];
 		copy(_data, cpy._data, _size);
 	}
-	darray(darray&& cpy)noexcept:darray() {
+	darray(darray&& cpy)noexcept :darray() {
 		swap(*this, cpy);
 	}
 	darray& operator=(darray cpy) {
@@ -32,6 +32,9 @@ public:
 		for (uint32_t i = idx; i < size(); i++) {
 			_data[i] = _data[i + 1];
 		}
+	}
+	inline void pop_back(const T& ref) {
+		if (_size > 0)_size--;
 	}
 	inline void push_back(const T& ref) {
 		if (_size >= _capacity)reserve(2 * _size + (_size == 0));

@@ -54,9 +54,6 @@
     <ClCompile Include="scene\Scenes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="misc\util.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="engine\Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

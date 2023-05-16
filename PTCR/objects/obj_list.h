@@ -92,6 +92,8 @@ public:
 	void get_trans(uint id, mat4& T) const;
 	obj_flags get_flag(uint id) const;
 	void set_trans(uint id, const mat4& T, uint node_size = 2);
+	uchar debug_aabb_edge(const ray& r, hitrec& rec) const;
+	bool load_mesh(const char* name, mat4 tran, uint mat, bool is_bvh = 1, bool is_light = 0, bool has_fog = 0);
 
 	void add_mat(const albedo& tex, const mat_enum type) {
 		add_mat(mat_var(tex, type));
@@ -108,19 +110,6 @@ public:
 	void add_mesh(const vector<T>& object, mat4 tran = mat4(vec4(0, 0, 0, 1)), uint mat = 0, bool is_bvh = 1, bool is_light = 0, bool has_fog = 0, bool deform = 1)
 	{
 		create_mesh(object, tran, mat, is_bvh, is_light, has_fog, deform);
-	}
-	bool load_mesh(const char* name, mat4 tran, uint mat, bool is_bvh = 1, bool is_light = 0, bool has_fog = 0)
-	{
-		objects.emplace_back(name, tran, mat, is_bvh, is_light, has_fog);
-		if (objects.back().get_size() == 0) {
-			objects.pop_back();
-			return false;
-		}
-		if (!is_bvh)nonbvh.emplace_back(objects.size());
-		if (is_light)lights.emplace_back(objects.size());
-		bbox.join(objects.back().get_box());
-		lw_tot = 1.f / lights.size();
-		return true;
 	}
 	void remove_mat(uint id) {
 		if (id < materials.size()) {
@@ -147,6 +136,16 @@ public:
 		}
 	}
 private:
+
+	void obj_create();
+	void obj_update();
+	uint sort(uint be, uint en, uchar axis, float plane);
+	float split_cost(uint be, uint en, uint& split, aabb bbox);
+	void split_bvh(uint node, uint node_size);
+	void split_bvh(uint be, uint en, uint node_size);
+	uchar debug_bvh(const ray& r, hitrec& rec, uint n0 = 0, uchar depth = 1) const;
+	aabb box_from(uint begin, uint end);
+
 	template <typename T>
 	void create_mesh(const vector<T>& object, mat4 tran, uint mat, bool is_bvh, bool is_light, bool has_fog, bool deform = 1)
 	{
@@ -158,14 +157,7 @@ private:
 		bbox.join(objects.back().get_box());
 		lw_tot = 1.f / lights.size();
 	}
-	void obj_create();
-	void obj_update();
-	uint sort(uint be, uint en, uchar axis, float plane);
-	float split_cost(uint be, uint en, uint& split, aabb bbox);
-	void split_bvh(uint node, uint node_size);
-	void split_bvh(uint be, uint en, uint node_size);
-	aabb box_from(uint begin, uint end);
-
+	
 	__forceinline float pdf(const ray& r, uint light)const {
 		return objects[light].pdf(r);
 	}
@@ -217,70 +209,5 @@ private:
 			return any_hit;
 		}
 	}
-	__forceinline uchar debug_bvh(const ray& r, hitrec& rec, uint n0 = 0, uchar depth = 1) const {
-		const bvh_node& node = bvh[n0];
-		if (node.parent)
-		{
-			float t1 = rec.t;
-			float t2 = rec.t;
-			bool e1 = 0, e2 = 0;
-			bool h1 = bvh[node.n1].bbox.hit_edge(r, t1, e1);
-			bool h2 = bvh[node.n2].bbox.hit_edge(r, t2, e2);
-			if (e1 || e2) {
-				rec.t = fminf(t1, t2);
-				return depth;
-			}
-			else if (h1 && h2) {
-				bool swap = t2 < t1;
-				uint n1 = swap ? node.n2 : node.n1;
-				uint n2 = swap ? node.n1 : node.n2;
-				uchar first = debug_bvh(r, rec, n1, depth + 1);
-				return first ? first : debug_bvh(r, rec, n2, depth + 1);
-			}
-			else if (h1)return debug_bvh(r, rec, node.n1, depth + 1);
-			else if (h2)return debug_bvh(r, rec, node.n2, depth + 1);
-			else return 0;
-		}
-		else return 0;
-	}
-public:
-	__forceinline uchar debug_aabb_edge(const ray& r, hitrec& rec) const {
-		if (en_bvh) {
-			uchar any = false;
-			for (const auto& obj : nonbvh)
-			{
-				bool edge = 0; float t = infp;
-				objects[obj].get_box().hit_edge(r, t, edge);
-				if (edge && t < rec.t) {
-					rec.t = t;
-					any = true;
-				}
-			}
-			bool edge = 0; float t = rec.t;
-			bool hit = bvh[0].bbox.hit_edge(r, t, edge);
-			if (edge) {
-				rec.t = t;
-				return 1;
-			}
-			else if (hit) {
-				uchar result = debug_bvh(r, rec);
-				return result ? result : any;
-			}
-			else return any;
-		}
-		else {
-			uchar any = false;
-			for (const auto& obj : objects) {
-				bool edge = 0; float t = infp;
-				bool hit = obj.get_box().hit_edge(r, t, edge);
-				if (hit && edge && t < rec.t) {
-					rec.t = t;
-					any = true;
-				}
-			}
-			return any;
-		}
-	}
-
 };
 

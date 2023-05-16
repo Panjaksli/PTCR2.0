@@ -1,4 +1,165 @@
 #pragma once
+
+
+//struct instance {
+//	mat4 T, Ti;
+//	aabb bbox;
+//	uint *_mat = nullptr;
+//	uint mat;
+//	uint idx;
+//};
+
+struct rgba8888 {
+	rgba8888(uint rgba) : rgba(rgba) {}
+	union {
+		struct {
+			uchar r, g, b, a;
+		};
+		uint rgba;
+	};
+	inline void unpack(uint _rgba) {
+		rgba = _rgba;
+	}
+	inline uint pack() {
+		return rgba;
+	}
+};
+
+inline uint avg_rgb8888(rgba8888 x, rgba8888 y) {
+	x.r = (x.r + y.r) / 2;
+	x.g = (x.g + y.g) / 2;
+	x.b = (x.b + y.b) / 2;
+	x.a = (x.a + y.a) / 2;
+	return x.rgba;
+}
+extern float GAUSS_3x3[9];
+extern float GAUSS_5x5[25];
+template <typename T>
+inline T gauss_3x3(const T* x) {
+	T sum = 0;
+	for (int i = 0; i < 9; i++)
+		sum += GAUSS_3x3[i] * x[i];
+	return sum;
+}
+template <typename T>
+inline T gauss_5x5(const T* x) {
+	T sum = 0;
+	for (int i = 0; i < 25; i++)
+		sum += GAUSS_5x5[i] * x[i];
+	return sum;
+}
+float GAUSS_3x3[9] = {
+	1 / 16.f, 1 / 8.f, 1 / 16.f,
+	1 / 8.f, 1 / 4.f, 1 / 8.f,
+	1 / 16.f, 1 / 8.f, 1 / 16.f
+};
+
+float GAUSS_5x5[25] = {
+	1 / 273.f,4 / 273.f,7 / 273.f,4 / 273.f,1 / 273.f,
+	4 / 273.f,16 / 273.f,26 / 273.f,16 / 273.f,4 / 273.f,
+	7 / 273.f,26 / 273.f,41 / 273.f,26 / 273.f,7 / 273.f,
+	4 / 273.f,16 / 273.f,26 / 273.f,16 / 273.f,4 / 273.f,
+	1 / 273.f,4 / 273.f,7 / 273.f,4 / 273.f,1 / 273.f
+};
+inline vec4 bilat_3x3(const vec4* x) {
+	vec4 y = 0;
+	float w = 0;
+	float sd = 1, sr = 1;
+	sd *= sd; sr *= sr;
+	float d[9] = { 2,1,2,1,0,1,2,1,2 };
+	for (int i = 0; i < 9; i++)
+	{
+		vec4 dl = x[4] / x[4].w() - x[i] / x[i].w();
+		float wi = expf(-0.5f * (d[i] / sd + dl.len2() / sr));//GAUSS_3x3[i] * gauss(dl.len2(), 16);
+		y += x[i] * wi;
+		w += wi;
+	}
+	return y / w;
+}
+
+inline vec4 bilat_5x5(const vec4* x) {
+	vec4 y = 0;
+	float w = 0;
+	float sd = 1, sr = 1;
+	sd *= sd; sr *= sr;
+	float d[25] =
+	{
+	8,5,4,5,8,
+	5,2,1,2,5,
+	4,1,0,1,4,
+	5,2,1,2,5,
+	8,5,4,5,8
+	};
+	for (int i = 0; i < 25; i++)
+	{
+		vec4 dl = x[12] / x[12].w() - x[i] / x[i].w();
+		float wi = expf(-0.5f * (d[i] / sd + dl.len2() / sr));
+		y += x[i] * wi;
+		w += wi;
+	}
+	return y / w;
+}
+std::vector<poly> generate_mesh(uint seed, vec4 off, float scale, bool flip) {
+	int dim = 128;
+	std::vector<vec4> vert2(dim * dim);
+	std::vector<vec4> vert(dim * dim);
+	std::vector<uint3> face;
+
+	for (int i = 0; i < dim; i++) {
+		for (int j = 0; j < dim; j++) {
+			vert2[i * dim + j] = vec4(i, randf(seed), j);
+		}
+	}
+
+	for (int i = 0; i < dim; i++) {
+		for (int j = 0; j < dim; j++) {
+			vec4 x[9];
+			kernel<3>(vert2.data(), x, i, j, dim, dim);
+			vert[i * dim + j] = x[4] + gauss_3x3(x);
+		}
+	}
+
+
+	for (int i = 0; i < dim - 1; i++) {
+		for (int j = 0; j < dim - 1; j++)
+		{
+			int l = i * dim + j;
+			int r = i * dim + j + 1;
+			int dl = (i + 1) * dim + j;
+			int dr = (i + 1) * dim + j + 1;
+			face.emplace_back(uint3(l, r, dr));
+			face.emplace_back(uint3(dl, l, dr));
+		}
+	}
+
+#if SMOOTH_SHADING
+	//per-vertex normals
+	std::vector<poly> polys(face.size());
+	std::vector<vec4> nrms(vert.size(), vec4());
+	for (uint j = 0; j < face.size(); j++) {
+		flip ? polys[j].set_quv(vert[face[j].x], vert[face[j].z], vert[face[j].y])
+			: polys[j].set_quv(vert[face[j].x], vert[face[j].y], vert[face[j].z]);
+		vec4 n = cross(polys[j].U, polys[j].V);
+		nrms[face[j].x] += n;
+		nrms[face[j].y] += n;
+		nrms[face[j].z] += n;
+	}
+
+	//polygons from triangles and normals
+	for (uint j = 0; j < face.size(); j++)
+		polys[j].set_nor(nrms[face[j].x], nrms[face[j].y], nrms[face[j].z]);
+#else
+	std::vector<poly> polys; polys.reserve(face.size());
+	for (const auto& f : face)
+	{
+		vec4 a = vert[f.x];
+		vec4 b = vert[f.y];
+		vec4 c = vert[f.z];
+		polys.emplace_back(flip ? poly(a, c, b) : poly(a, b, c));
+	}
+#endif
+	return polys;
+}
 template <class primitive>
 class mesh {
 public:
