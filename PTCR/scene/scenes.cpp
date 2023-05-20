@@ -1,5 +1,7 @@
+#include <filesystem>
 #include "Scenes.h"
 //Simple text format
+using std::filesystem::path;
 bool scn_save(Scene& scn, const char* filename) {
 	struct ln {
 		ln() {}
@@ -10,10 +12,15 @@ bool scn_save(Scene& scn, const char* filename) {
 	double time = timer();
 	std::string name(filename);
 	if (name.empty())return false;
-	if (name.find(".scn") == -1)name = name + ".scn";
-	std::ofstream file("scenes/" + name);
+	if (path(name).is_relative()) {
+		if (name.find(".scn") == -1)
+			name = name + ".scn";
+		if (name.find("scenes/") == -1)
+			name = "scenes/" + name;
+	}
+	std::ofstream file(name);
 	if (!file.is_open()) {
-		printf("File not open!\n");
+		std::cout << "Failed to write to file: " << name << "\n";
 		return false;
 	}
 	ln line; vector<ln> lines;
@@ -25,7 +32,7 @@ bool scn_save(Scene& scn, const char* filename) {
 		if (obj.name.empty()) {
 			if (obj.type() == o_sph) {
 				if (obj.get_size() == 1) {
-					vec4 q = obj.s.prim[0].Qr;
+					vec4 q = obj.s.get_raw(0).Qr;
 					sprintf(line, "sphere P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%g,%g,%g,%g}",
 						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), q[0], q[1], q[2], q[3]);
 					lines.push_back(line);
@@ -35,7 +42,7 @@ bool scn_save(Scene& scn, const char* filename) {
 						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
 					lines.push_back(line);
 					for (int i = 0; i < obj.get_size(); i++) {
-						vec4 q = obj.s.prim[i].Qr;
+						vec4 q = obj.s.get_raw(i).Qr;
 						sprintf(line, "%g,%g,%g,%g", q[0], q[1], q[2], q[3]); lines.push_back(line);
 					}
 					lines.push_back("}");
@@ -43,7 +50,7 @@ bool scn_save(Scene& scn, const char* filename) {
 			}
 			else if (obj.type() == o_vox) {
 				if (obj.get_size() == 1) {
-					vec4 q = obj.v.prim[0].Qa;
+					vec4 q = obj.v.get_raw(0).Qa;
 					sprintf(line, "voxel P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%g,%g,%g,%g}",
 						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), q[0], q[1], q[2], q[3]);
 					lines.push_back(line);
@@ -53,7 +60,7 @@ bool scn_save(Scene& scn, const char* filename) {
 						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
 					lines.push_back(line);
 					for (int i = 0; i < obj.get_size(); i++) {
-						vec4 q = obj.v.prim[i].Qa;
+						vec4 q = obj.v.get_raw(0).Qa;
 						sprintf(line, "%g,%g,%g,%g", q[0], q[1], q[2], q[3]); lines.push_back(line);
 					}
 					lines.push_back("}");
@@ -62,9 +69,9 @@ bool scn_save(Scene& scn, const char* filename) {
 			else if (obj.type() == o_qua) {
 				if (obj.get_size() == 1) {
 					char data[256] = {};
-					vec4 a = obj.p.prim[0].A();
-					vec4 b = obj.p.prim[0].B();
-					vec4 c = obj.p.prim[0].C();
+					vec4 a = obj.p.get_raw(0).A();
+					vec4 b = obj.p.get_raw(0).B();
+					vec4 c = obj.p.get_raw(0).C();
 					sprintf(data, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
 					sprintf(line, "quad P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s}",
 						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), data);
@@ -75,9 +82,9 @@ bool scn_save(Scene& scn, const char* filename) {
 						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
 					lines.push_back(line);
 					for (int i = 0; i < obj.get_size(); i++) {
-						vec4 a = obj.q.prim[i].A();
-						vec4 b = obj.q.prim[i].B();
-						vec4 c = obj.q.prim[i].C();
+						vec4 a = obj.q.get_raw(i).A();
+						vec4 b = obj.q.get_raw(i).B();
+						vec4 c = obj.q.get_raw(i).C();
 						sprintf(line, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]); lines.push_back(line);
 					}
 					lines.push_back("}");
@@ -86,9 +93,9 @@ bool scn_save(Scene& scn, const char* filename) {
 			else if (obj.type() == o_pol) {
 				if (obj.get_size() == 1) {
 					char data[256] = {};
-					vec4 a = obj.p.prim[0].A();
-					vec4 b = obj.p.prim[0].B();
-					vec4 c = obj.p.prim[0].C();
+					vec4 a = obj.p.get_raw(0).A();
+					vec4 b = obj.p.get_raw(0).B();
+					vec4 c = obj.p.get_raw(0).C();
 					sprintf(data, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
 					sprintf(line, "poly P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s}",
 						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), data);
@@ -99,9 +106,9 @@ bool scn_save(Scene& scn, const char* filename) {
 						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
 					lines.push_back(line);
 					for (int i = 0; i < obj.get_size(); i++) {
-						vec4 a = obj.p.prim[i].A();
-						vec4 b = obj.p.prim[i].B();
-						vec4 c = obj.p.prim[i].C();
+						vec4 a = obj.p.get_raw(i).A();
+						vec4 b = obj.p.get_raw(i).B();
+						vec4 c = obj.p.get_raw(i).C();
 						sprintf(line, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]); lines.push_back(line);
 					}
 					lines.push_back("}");
@@ -162,7 +169,7 @@ bool scn_save(Scene& scn, const char* filename) {
 	for (const auto& line : lines)
 		file << line.x << std::endl;
 	file.close();
-	cout << "Saved scene: " << filename << " took: " << timer(time) << "\n";
+	cout << "Saved scene: " << name << " took: " << timer(time) << "\n";
 	return true;
 }
 
@@ -170,14 +177,16 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 	double time = timer();
 	std::string name(filename);
 	if (name.empty())return false;
-	if (name.find(".scn") == std::string::npos)
+	if (path(name).is_relative() && name.find(".scn") == -1)
 		name = name + ".scn";
 	std::ifstream file(name);
 	if (!file.is_open()) {
-		name = "scenes/" + name;
-		file = std::ifstream(name);
+		if (path(name).is_relative()) {
+			name = "scenes/" + name;
+			file = std::ifstream(name);
+		}
 		if (!file.is_open()) {
-			printf("File not found !\n");
+			std::cout << "File not found: " << name << "\n";
 			return false;
 		}
 	}
@@ -320,7 +329,7 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 	scn.cam.moving = 1;
 	scn.world.build_bvh(1, scn.opt.node_size);
 	scn.world.update_lists();
-	cout << "Loaded scene: " << filename << " took: " << timer(time) << "\n";
+	cout << "Loaded scene: " << name << " took: " << timer(time) << "\n";
 	return true;
 }
 void scn_load(Scene& scn, int n) {

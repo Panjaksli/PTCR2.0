@@ -25,7 +25,7 @@ std::vector<poly> load_mesh(const char* filename, vec4 off, float scale, bool fl
 		return load_MSH((name + ".msh").c_str(), off, scale, flip);
 	}
 	else {
-		printf("INVALID MESH: %s!!!!!\n", filename);
+		printf("INVALID MESH: %s !!!!!\n", filename);
 		return std::vector<poly>();
 	}
 }
@@ -70,8 +70,6 @@ void OBJ_to_MSH(const char* filename) {
 	out.close();
 }
 
-
-
 std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool flip) {
 	std::string name(filename);
 	std::ifstream file(name);
@@ -85,7 +83,7 @@ std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool fli
 	std::vector<uint3> face; face.reserve(0xffff);
 	std::string line = "";
 	std::string pref = "";
-	float t1 = clock();
+	double t1 = timer();
 	while (std::getline(file_buff, line)) {
 		//C version is 2x faster
 #if 1
@@ -151,8 +149,7 @@ std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool fli
 	}
 
 #endif
-	std::cout << "Loaded: " << name << "\n";
-	std::cout << "No of tris: " << polys.size() << " Took: " << (clock() - t1) / CLOCKS_PER_SEC << "\n";
+	std::cout << "Loaded: " << name << " Polygons: " << polys.size() << " Took: " << timer(t1) << "\n";
 	return polys;
 }
 
@@ -164,7 +161,7 @@ std::vector<poly> load_MSH(const char* filename, vec4 off, float scale, bool fli
 		printf("File not found !\n");
 		return vector<poly>();
 	}
-	float t1 = clock();
+	double t1 = timer();
 	uint vf[2] = {};
 	file.read((char*)vf, 2 * sizeof(uint));
 	std::vector<float3> vert(vf[0]);
@@ -202,8 +199,6 @@ std::vector<poly> load_MSH(const char* filename, vec4 off, float scale, bool fli
 		polys.emplace_back(flip ? poly(a, c, b) : poly(a, b, c));
 	}
 #endif
-
-	std::cout << "Loaded: " << name << "\n";
-	std::cout << "No of tris: " << polys.size() << " Took: " << (clock() - t1) / CLOCKS_PER_SEC << "\n";
+	std::cout << "Loaded: " << name << " Polygons: " << polys.size() << " Took: " << timer(t1) << "\n";
 	return polys;
 }

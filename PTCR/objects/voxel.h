@@ -106,7 +106,7 @@ public:
 	inline float area()const {
 		return 24.f * Qa.w() * Qa.w();
 	}
-	inline vec4 Q() { return Qa; }
+	inline vec4 Q() const { return Qa; }
 	vec4 Qa;
 private:
 	inline vec4 A()const {

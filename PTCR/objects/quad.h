@@ -59,8 +59,8 @@ public:
 	inline float area()const {
 		return cross(U, V).len();
 	}
-	inline vec4 A() { return Q; }
-	inline vec4 B() { return Q + U; }
-	inline vec4 C() { return Q + V; }
+	inline vec4 A() const { return Q; }
+	inline vec4 B() const { return Q + U; }
+	inline vec4 C() const { return Q + V; }
 	vec4 Q, U, V, N;
 };

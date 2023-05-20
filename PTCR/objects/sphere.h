@@ -87,7 +87,7 @@ public:
 	inline float area()const {
 		return pi4 * Qr.w() * Qr.w();
 	}
-	inline vec4 Q() { return Qr; }
+	inline vec4 Q() const { return Qr; }
 	vec4 Qr;
 };
 

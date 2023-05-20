@@ -71,6 +71,9 @@ public:
 	inline primitive get_data(uint i) const {
 		return prim[i].move(P);
 	}
+	inline primitive get_raw(uint i) const {
+		return prim[i];
+	}
 	inline uint get_mat()const {
 		return mat;
 	}
@@ -116,7 +119,6 @@ private:
 		for (uint i = 0; i < size; i++)
 			prim[i] = cpy[i];
 	}
-public:
 	aabb bbox;
 	vec4 P, A;
 	std::unique_ptr<primitive[]> prim;
@@ -189,7 +191,7 @@ struct mesh_var {
 	}
 
 	__forceinline bool hit(const ray& r, hitrec& rec) const {
-		if (!s.get_box().hit(r))return false;
+		if (!p.get_box().hit(r))return false;
 		SELECT_RE(type(), hit(r, rec), false);
 	}
 
@@ -208,23 +210,24 @@ struct mesh_var {
 		SELECT_BR(type(), transform(T));
 		return *this;
 	}
+	//Does not matter which variable is used, they all have the same memory layout
 	inline void set_mat(uint mat) {
-		return s.set_mat(mat);
+		return p.set_mat(mat);
 	}
 	inline uint get_size()const {
-		return s.get_size();
+		return p.get_size();
 	}
 	inline uint get_mat()const {
-		return s.get_mat();
+		return p.get_mat();
 	}
 	inline aabb get_box()const {
-		return s.get_box();
+		return p.get_box();
 	}
 	inline aabb get_box(uint prim_id)const {
 		SELECT_RE(type(), get_box(prim_id), aabb());
 	}
 	__forceinline float pdf(const ray& r)const {
-		if (!s.get_box().hit(r))return 0;
+		if (!p.get_box().hit(r))return 0;
 		SELECT_RE(type(), pdf(r), 0);
 	}
 	__forceinline vec4 rand_to(vec4 O) const {
@@ -250,7 +253,7 @@ struct mesh_var {
 		return flag.type();
 	}
 	friend void swap(mesh_var& m1, mesh_var& m2) {
-		switch (m2.type()) {
+		switch (m2.type()) { //Also should not matter, but better be safe than sorry...
 		case o_pol: swap(m1.p, m2.p); break;
 		case o_qua: swap(m1.q, m2.q); break;
 		case o_sph: swap(m1.s, m2.s); break;
