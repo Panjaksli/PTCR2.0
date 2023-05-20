@@ -106,8 +106,7 @@ public:
 		_capacity = _size;
 	}
 	inline void reserve(uint32_t size) {
-		if (size > _capacity)
-		{
+		if (size > _capacity) {
 			T* tmp = new T[size];
 			copy(tmp, _data, _size);
 			delete[] _data;

@@ -1,7 +1,7 @@
 #include <omp.h>
 #include "sensor.h"
 void sensor::clear() {
-//#pragma omp parallel for schedule(static,100)
+	//#pragma omp parallel for schedule(static,100)
 	for (auto& buff : data)
 		buff = 0;
 	for (auto& el : buff)

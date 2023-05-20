@@ -1,6 +1,5 @@
 #include "Engine.h"
-namespace PTCR
-{
+namespace PTCR {
 
 	Engine::~Engine() {
 		SDL_DestroyTexture(frame);
@@ -36,14 +35,12 @@ namespace PTCR
 		SDL_SetTextureScaleMode(frame, SDL_ScaleModeBest);
 	}
 	void Engine::Process_input() {
-		while (SDL_PollEvent(&event))
-		{
+		while (SDL_PollEvent(&event)) {
 			ImGui_ImplSDL2_ProcessEvent(&event);
 			handle.scan(event);
 			if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_ESCAPE))
 				running = false;
-			if (event.type == SDL_WINDOWEVENT)
-			{
+			if (event.type == SDL_WINDOWEVENT) {
 				if (event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
 					running = false;
 				if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
@@ -54,8 +51,7 @@ namespace PTCR
 			if (event.type == SDL_DROPFILE) {
 				string name = event.drop.file;
 				if (name.find(".scn") != -1) {
-					if (scn_load(scene, name.c_str()))
-					{
+					if (scn_load(scene, name.c_str())) {
 						scn_n = -1;
 						scn_name = name.c_str();
 						reproject = false;
@@ -65,8 +61,7 @@ namespace PTCR
 					int x, y;
 					SDL_GetMouseState(&x, &y);
 					vec4 P = scene.get_point(scale * y, scale * x, 1);
-					if (scene.world.load_mesh(name.c_str(), vec4(P, 1), scene.world.materials.size()))
-					{
+					if (scene.world.load_mesh(name.c_str(), vec4(P, 1), scene.world.materials.size())) {
 						scene.world.add_mat(albedo(), mat_ggx);
 						scene.opt.selected = scene.world.objects.size() - 1;
 						scene.world.build_bvh(1, scene.opt.node_size);
@@ -140,8 +135,7 @@ namespace PTCR
 				scene.Render(disp, pitch / 4);
 			}
 		}
-		else
-		{
+		else {
 			if (frame_id) {
 				gen_t = timer();
 				scene.Reproject(proj, disp, pitch / 4);
@@ -158,20 +152,20 @@ namespace PTCR
 		}
 		SDL_UnlockTexture(frame);
 		SDL_RenderCopy(renderer, frame, 0, &viewport);
-		if(overlay)ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
+		if (overlay)ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
 		SDL_RenderPresent(renderer);
 		ft = timer(ft);
 	}
 
 	void Engine::Add_object() {
-		if (add_obj) {	
+		if (add_obj) {
 			static int obj_type = 0;
 			static bool is_mesh = false;
 			static bool is_bvh = true;
 			static bool is_light = false;
 			static bool is_foggy = false;
 			static int mat = 0;
-			static vec4 a, b, c, q; 
+			static vec4 a, b, c, q;
 			static vec4 offset = vec4(0, 0, 0, 1);
 			static vec4 angle = vec4(0, 0, 0, 0);
 			static c_str filename;
@@ -282,47 +276,39 @@ namespace PTCR
 		vec4 pos = vec4(scene.cam.T.P(), scene.cam.speed);
 		vec4 rad = vec4(scene.cam.T.A(), scene.cam.sens);
 		vec4 deg = todeg(scene.cam.T.A());
-		if (ImGui::DragFloat4("Position##cam", pos._xyz, 0.001, infp, infp, "%g", NOROUND))
-		{
+		if (ImGui::DragFloat4("Position##cam", pos._xyz, 0.001, infp, infp, "%g", NOROUND)) {
 			scene.cam.set_P(pos);
 			scene.cam.speed = pos[3];
 		}
 		DT = rad;
-		if (ImGui::DragFloat4("Rotation##cam", rad._xyz, 0.001, infp, infp, "%g", NOROUND) && not0(DT - mod(rad, pi2)))
-		{
+		if (ImGui::DragFloat4("Rotation##cam", rad._xyz, 0.001, infp, infp, "%g", NOROUND) && not0(DT - mod(rad, pi2))) {
 			scene.cam.set_A(rad);
 			scene.cam.sens = rad[3];
 		}
 		DT = deg;
-		if (ImGui::DragFloat3("Rot (deg)##cam", deg._xyz, 0.1, infp, infp, "%g", NOROUND) && not0(DT - mod(deg, 360)))
-		{
+		if (ImGui::DragFloat3("Rot (deg)##cam", deg._xyz, 0.1, infp, infp, "%g", NOROUND) && not0(DT - mod(deg, 360))) {
 			scene.cam.set_A(torad(deg));
 		}
-		if (ImGui::DragFloat("FOV", &scene.cam.fov, 0.1, 0.1, 179.9, "%.2f"))
-		{
+		if (ImGui::DragFloat("FOV", &scene.cam.fov, 0.1, 0.1, 179.9, "%.2f")) {
 			scene.cam.moving = true;
 			scene.cam.update();
 		}
-		if (ImGui::Checkbox("Auto focus", &scene.cam.autofocus))
-		{
+		if (ImGui::Checkbox("Auto focus", &scene.cam.autofocus)) {
 			if (scene.cam.autofocus)tap_to_focus = 0;
 			scene.cam.moving = true;
 		}
 		ImGui::SameLine();
-		if (ImGui::Checkbox("Tap to focus", &tap_to_focus) && tap_to_focus)
-		{
+		if (ImGui::Checkbox("Tap to focus", &tap_to_focus) && tap_to_focus) {
 			scene.cam.autofocus = 0;
 		}
-		if (ImGui::DragFloat("Foc dist", &scene.cam.foc_t, 0.001, 0.001, infp, "%g", NOROUND & LOGSCL))
-		{
+		if (ImGui::DragFloat("Foc dist", &scene.cam.foc_t, 0.001, 0.001, infp, "%g", NOROUND & LOGSCL)) {
 			scene.cam.moving = true;
 			scene.cam.autofocus = 0;
 		}
 		scene.cam.moving |= ImGui::DragFloat("Exposure", &scene.cam.exposure, 0.1, 0.01, 100.f, "%.2f", LOGSCL);
 		scene.cam.moving |= ImGui::DragFloat("F-stop", &scene.cam.fstop, 0.1, 0.1, 64, "%.2f", LOGSCL);
 		if (ImGui::DragFloat("Res scale", &scale, 0.01, 0.1f, 4, " %.2f", CLAMP)) Resize(), scene.cam.moving = true;
-		if (ImGui::DragFloat("Ray lifetime", &scene.opt.p_life, 0.01, 0.01, 1.f, "%.2f", CLAMP))
-		{
+		if (ImGui::DragFloat("Ray lifetime", &scene.opt.p_life, 0.01, 0.01, 1.f, "%.2f", CLAMP)) {
 			scene.opt.i_life = 1.f / scene.opt.p_life;
 			scene.cam.moving = true;
 		}
@@ -391,8 +377,7 @@ namespace PTCR
 					scene.cam.moving = true;
 				}
 			}
-			else
-			{
+			else {
 				scene.cam.moving |= ImGui::ColorEdit3("Sun noon", scene.opt.sun_noon._xyz, FLOATCOL);
 				scene.cam.moving |= ImGui::ColorEdit3("Sun dawn", scene.opt.sun_dawn._xyz, FLOATCOL);
 				scene.cam.moving |= ImGui::ColorEdit3("Sky noon", scene.opt.sky_noon._xyz, FLOATCOL);
@@ -455,20 +440,17 @@ namespace PTCR
 				obj.flag.set_fog(is_foggy);
 				scene.cam.moving = true;
 			}
-			if (ImGui::DragFloat4("Pos", TP._xyz, 0.001, infp, infp, "%g", NOROUND))
-			{
+			if (ImGui::DragFloat4("Pos", TP._xyz, 0.001, infp, infp, "%g", NOROUND)) {
 				scene.set_trans(mat4(TP, TA));
 				scene.cam.moving = true;
 			}
 			DT = TA;
-			if (ImGui::DragFloat3("Rot", TA._xyz, 0.001, infp, infp, "%g", NOROUND) && not0(DT - mod(TA, pi2)))
-			{
+			if (ImGui::DragFloat3("Rot", TA._xyz, 0.001, infp, infp, "%g", NOROUND) && not0(DT - mod(TA, pi2))) {
 				scene.set_trans(mat4(TP, TA));
 				scene.cam.moving = true;
 			}
 			DT = TD;
-			if (ImGui::DragFloat3("Rot (deg)", TD._xyz, 0.1, infn, infp, "%.1f") && not0(DT - mod(TD, 360)))
-			{
+			if (ImGui::DragFloat3("Rot (deg)", TD._xyz, 0.1, infn, infp, "%.1f") && not0(DT - mod(TD, 360))) {
 				scene.set_trans(mat4(TP, torad(TD)));
 				scene.cam.moving = true;
 			}
@@ -560,14 +542,12 @@ namespace PTCR
 		}
 		else if (!scene.opt.skybox && scene.opt.sky) {
 			DT = TA;
-			if (ImGui::DragFloat3("Rot##sky", TA._xyz, 0.001, infp, infp, "%g", NOROUND) && not0(DT - mod(TA, pi2)))
-			{
+			if (ImGui::DragFloat3("Rot##sky", TA._xyz, 0.001, infp, infp, "%g", NOROUND) && not0(DT - mod(TA, pi2))) {
 				scene.set_trans(mat4(0, TA));
 				scene.cam.moving = true;
 			}
 			DT = TD;
-			if (ImGui::DragFloat3("Rot (deg)##sky", TD._xyz, 0.1, infn, infp, "%.1f") && not0(DT - mod(TD, 360)))
-			{
+			if (ImGui::DragFloat3("Rot (deg)##sky", TD._xyz, 0.1, infn, infp, "%.1f") && not0(DT - mod(TD, 360))) {
 				scene.set_trans(mat4(0, torad(TD)));
 				scene.cam.moving = true;
 			}

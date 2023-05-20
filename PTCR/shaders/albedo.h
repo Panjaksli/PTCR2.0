@@ -34,7 +34,7 @@ public:
 	__forceinline vec4 nor(float u = 0, float v = 0)const {
 		return _nor.sample(rep * u, rep * v);
 	}
-	inline bool alpha() const{
+	inline bool alpha() const {
 		return flags.bit(0);
 	}
 	inline bool checker() const {

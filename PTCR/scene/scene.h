@@ -106,13 +106,12 @@ private:
 		uint mat_id = object_at(rec.idx).get_mat();
 		if (mat_id < world.materials.size())
 			material_at(mat_id).sample(r, rec, mat);
-		else{
-			vec4 uv = sin(10*rec.P);
-			mat.emis = uv.x() * uv.y() * uv.z() > 0 ? vec4(1,0,1) : 0;
+		else {
+			vec4 uv = sin(10 * rec.P);
+			mat.emis = uv.x() * uv.y() * uv.z() > 0 ? vec4(1, 0, 1) : 0;
 		}
 	}
-	__forceinline ray sa_fog(const vec4& P, float ft, float& p1, float& p2) const
-	{
+	__forceinline ray sa_fog(const vec4& P, float ft, float& p1, float& p2) const {
 		ray R;
 		if (li_sa && sun_sa) {
 			sph_pdf fog;
@@ -162,15 +161,13 @@ private:
 		return R;
 	}
 	//Diffuse importance sampling
-	__forceinline ray sa_diff(const matrec& mat, float& p1, float& p2) const
-	{
+	__forceinline ray sa_diff(const matrec& mat, float& p1, float& p2) const {
 		if (li_sa && sun_sa) return sa_li_sun(mat, p1, p2, cos_pdf(mat.N, mat.L));
 		else if (sun_sa) return sa_sun(mat, p1, p2, cos_pdf(mat.N, mat.L));
 		else if (li_sa) return sa_li(mat, p1, p2, cos_pdf(mat.N, mat.L));
 		else return sa_none(mat, p1, p2);
 	}
-	__forceinline ray sa_spec(const matrec& mat, const vec4& rD, float& p1, float& p2) const
-	{
+	__forceinline ray sa_spec(const matrec& mat, const vec4& rD, float& p1, float& p2) const {
 		if (mat.a < 0.001f) return sa_none(mat, p1, p2);
 		else if (li_sa && sun_sa) return sa_li_sun(mat, p1, p2, ggx_pdf(mat.N, rD, mat.L, mat.a));
 		else if (sun_sa) return sa_sun(mat, p1, p2, ggx_pdf(mat.N, rD, mat.L, mat.a));
@@ -179,8 +176,7 @@ private:
 	}
 	//Fog importance sampling
 	template<typename pdf>
-	__forceinline ray sa_li_sun(const matrec& mat, float& p1, float& p2, const pdf& base) const
-	{
+	__forceinline ray sa_li_sun(const matrec& mat, float& p1, float& p2, const pdf& base) const {
 		lig_pdf lights(world, mat.P);
 		sun_pdf sun(sun_pos, mat.P);
 		mix_pdf<sun_pdf, lig_pdf> ill(sun, lights);
@@ -191,8 +187,7 @@ private:
 		return R;
 	}
 	template<typename pdf>
-	__forceinline ray sa_li(const matrec& mat, float& p1, float& p2, const pdf& base) const
-	{
+	__forceinline ray sa_li(const matrec& mat, float& p1, float& p2, const pdf& base) const {
 		lig_pdf lights(world, mat.P);
 		mix_pdf<pdf, lig_pdf> mix(base, lights);
 		ray R(mat.P, mix.generate());
@@ -201,8 +196,7 @@ private:
 		return R;
 	}
 	template<typename pdf>
-	__forceinline ray sa_sun(const matrec& mat, float& p1, float& p2, const pdf& base) const
-	{
+	__forceinline ray sa_sun(const matrec& mat, float& p1, float& p2, const pdf& base) const {
 		sun_pdf sun(sun_pos, mat.P);
 		mix_pdf<pdf, sun_pdf> mix(base, sun);
 		ray R(mat.P, mix.generate());
@@ -210,8 +204,7 @@ private:
 		p2 = mix.value(R.D);
 		return R;
 	}
-	__forceinline ray sa_none(const matrec& mat, float& p1, float& p2) const
-	{
+	__forceinline ray sa_none(const matrec& mat, float& p1, float& p2) const {
 		ray R(mat.P, mat.L);
 		p1 = p2 = 1.f;
 		return R;
@@ -248,7 +241,8 @@ private:
 			if (!hit)return vec4(p1 / p2 * opt.fog_col * sky(sr.D),ft);
 			else return vec4(p1 / p2 * opt.fog_col * recur_pt(sr, srec, depth),ft);
 			}
-			else */ {
+			else */
+			{
 				if (!hit)return p1 / p2 * opt.fog_col * sky(sr.D);
 				else return p1 / p2 * opt.fog_col * recur_pt(sr, srec, depth);
 			}
@@ -259,7 +253,8 @@ private:
 				if (rafl() >= opt.p_life)return vec4(0,0,0,rec.t);
 				else return vec4(opt.i_life * recur_pt(r, rec, depth),rec.t);
 			}
-			else*/ {
+			else*/
+			{
 				if (!hit) return sky(r.D);
 				if (rafl() >= opt.p_life)return 0;
 				else return opt.i_life * recur_pt(r, rec, depth);
@@ -273,8 +268,7 @@ private:
 		if (mat.refl) {
 			ray R;
 			float p1, p2;
-			if (mat.refl == refl_diff || mat.refl == refl_spec)
-			{
+			if (mat.refl == refl_diff || mat.refl == refl_spec) {
 				R = mat.refl == refl_diff ? sa_diff(mat, p1, p2) : sa_spec(mat, -r.D, p1, p2);
 				if (p1 > 0) aten += (p1 / p2) * mat.aten * volumetric_pt(R, depth - 1);
 			}
@@ -295,8 +289,7 @@ private:
 			else aten *= opt.i_life;
 			sample_material(r, rec, mat);
 			col += mat.emis * aten;
-			if (mat.refl)
-			{
+			if (mat.refl) {
 				if (mat.refl == refl_diff || mat.refl == refl_spec) {
 					float p1, p2;
 					r = mat.refl == refl_diff ? sa_diff(mat, p1, p2) : sa_spec(mat, -r.D, p1, p2);
@@ -314,14 +307,12 @@ private:
 	}
 	//Separates lighting into direct and indirect
 	__forceinline vec4 light_at_pt(const ray& sr, const hitrec& srec, int depth) const {
-		vec4 col(0), aten(1.f); 
+		vec4 col(0), aten(1.f);
 		ray r = sr; matrec mat;
-		for (int i = 0; i <= depth; i++)
-		{
+		for (int i = 0; i <= depth; i++) {
 			hitrec rec; mat.refl = refl_none;
 			if (i == 0) rec = srec;
-			else if (!world.hit<1>(r, rec))
-			{
+			else if (!world.hit<1>(r, rec)) {
 				if (i == depth)col += aten * sky(r.D);
 				break;
 			}
@@ -330,11 +321,9 @@ private:
 				col += mat.emis * aten;
 				break;
 			}
-			else if (mat.refl)
-			{
+			else if (mat.refl) {
 				float p1, p2;
-				if (mat.refl == refl_diff || mat.refl == refl_spec)
-				{
+				if (mat.refl == refl_diff || mat.refl == refl_spec) {
 					r = mat.refl == refl_diff ? sa_diff(mat, p1, p2) : sa_spec(mat, -r.D, p1, p2);
 					if (p1 > 0)aten *= (p1 / p2);
 					else break;
@@ -349,16 +338,14 @@ private:
 		return col;
 	}
 	//Compute basic sky color
-	__forceinline vec4 sky(vec4 V) const
-	{
+	__forceinline vec4 sky(vec4 V) const {
 		if (!opt.sky)return GAMMA2 ? pow2n(opt.ambient, 1) : opt.ambient;
 		else if (opt.skybox) {
 			float u = (fatan2(V.z(), -V.x()) + pi) * ipi2;
 			float v = facos(V.y()) * ipi;
 			return (GAMMA2 ? skybox.sample(u, v) : 1) * skybox.sample(u, v);
 		}
-		else
-		{
+		else {
 			vec4 sun_noon = GAMMA2 ? opt.sun_noon * opt.sun_noon : opt.sun_noon;
 			vec4 sun_dawn = GAMMA2 ? opt.sun_dawn * opt.sun_dawn : opt.sun_dawn;
 			vec4 sky_noon = GAMMA2 ? opt.sky_noon * opt.sky_noon : opt.sky_noon;

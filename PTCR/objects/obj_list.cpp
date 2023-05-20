@@ -1,6 +1,5 @@
 #include "obj_list.h"
-void obj_list::clear()
-{
+void obj_list::clear() {
 	bvh.clear();
 	obj_bvh.clear();
 	objects.clear();
@@ -11,8 +10,7 @@ void obj_list::clear()
 	en_bvh = 0;
 }
 
-bool obj_list::load_mesh(const char* name, mat4 tran, uint mat, bool is_bvh, bool is_light, bool has_fog)
-{
+bool obj_list::load_mesh(const char* name, mat4 tran, uint mat, bool is_bvh, bool is_light, bool has_fog) {
 	objects.emplace_back(name, tran, mat, is_bvh, is_light, has_fog);
 	if (objects.back().get_size() == 0) {
 		objects.pop_back();
@@ -25,17 +23,14 @@ bool obj_list::load_mesh(const char* name, mat4 tran, uint mat, bool is_bvh, boo
 	return true;
 }
 
-obj_flags obj_list::get_flag(uint id) const
-{
+obj_flags obj_list::get_flag(uint id) const {
 	return objects[id].flag;
 }
-uint obj_list::get_id(const ray& r, hitrec& rec) const
-{
+uint obj_list::get_id(const ray& r, hitrec& rec) const {
 	hit(r, rec);
 	return rec.idx;
 }
-void obj_list::get_trans(uint id, mat4& T)const
-{
+void obj_list::get_trans(uint id, mat4& T)const {
 	T = objects[id].get_trans();
 }
 void obj_list::set_trans(uint id, const mat4& T, uint node_size) {
@@ -69,8 +64,7 @@ void obj_list::obj_create() {
 void obj_list::update_lights() {
 	lights.clear();
 	lw_tot = 0;
-	for (uint i = 0; i < objects.size(); i++)
-	{
+	for (uint i = 0; i < objects.size(); i++) {
 		if (objects[i].light()) {
 			lw_tot++;
 			lights.emplace_back(i);
@@ -152,8 +146,7 @@ aabb obj_list::box_from(uint beg, uint end) {
 uint obj_list::sort(uint be, uint en, uchar axis, float plane) {
 	int i = be;
 	int j = en - 1;
-	while (i <= j)
-	{
+	while (i <= j) {
 		if (obj_bvh[i].get_box(objects.data()).pmid().xyz[axis] < plane)
 			i++;
 		else
@@ -187,12 +180,10 @@ void obj_list::split_bvh(uint be, uint en, uint node_size) {
 	aabb bbox = box_from(be, en);
 	uint size = en - be;
 	float pcost = bbox.area() * size;
-	if (size > node_size)
-	{
+	if (size > node_size) {
 		uint mi = be + size / 2;
 		float cost = split_cost(be, en, mi, bbox);
-		if (mi != be && mi != en && cost < pcost)
-		{
+		if (mi != be && mi != en && cost < pcost) {
 			uint n = bvh.size();
 			bvh.emplace_back(bbox, n + 1, 0, 1);
 			split_bvh(be, mi, node_size);
@@ -224,8 +215,7 @@ float obj_list::split_cost(uint be, uint en, uint& split, aabb bbox) {
 	for (uchar a = 0; a < 3; a++) {
 		bins bin[no_bins];
 		float scale = no_bins / (bbox.pmax[a] - bbox.pmin[a]);
-		for (uint i = be; i < en; i++)
-		{
+		for (uint i = be; i < en; i++) {
 			aabb box = obj_bvh[i].get_box(objects.data());
 			int id = clamp_int((box.pmid()[a] - bbox.pmin[a]) * scale, 0, no_bins - 1);
 			bin[id].cnt++;
@@ -260,8 +250,7 @@ float obj_list::split_cost(uint be, uint en, uint& split, aabb bbox) {
 
 uchar obj_list::debug_bvh(const ray& r, hitrec& rec, uint n0, uchar depth) const {
 	const bvh_node& node = bvh[n0];
-	if (node.parent)
-	{
+	if (node.parent) {
 		float t1 = rec.t;
 		float t2 = rec.t;
 		bool e1 = 0, e2 = 0;
@@ -289,8 +278,7 @@ uchar obj_list::debug_bvh(const ray& r, hitrec& rec, uint n0, uchar depth) const
 uchar obj_list::debug_aabb_edge(const ray& r, hitrec& rec) const {
 	if (en_bvh) {
 		uchar any = false;
-		for (const auto& obj : nonbvh)
-		{
+		for (const auto& obj : nonbvh) {
 			bool edge = 0; float t = infp;
 			objects[obj].get_box().hit_edge(r, t, edge);
 			if (edge && t < rec.t) {

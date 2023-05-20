@@ -5,8 +5,7 @@ extern bool use_normal_maps;
 #else
 constexpr bool use_normal_maps = 1;
 #endif
-class onb
-{
+class onb {
 public:
 	onb() {}
 	onb(const vec4& n) { build(n); }
@@ -19,7 +18,7 @@ public:
 #if USE_SSE
 	__forceinline vec4 local(const vec4& a)const {
 		__m128 x = u.xyz, y = v.xyz, z = w.xyz, w{};
-		_MM_TRANSPOSE4_PS(x,y,z,w);
+		_MM_TRANSPOSE4_PS(x, y, z, w);
 		return a[0] * x + a[1] * y + a[2] * z;
 	}
 #else
@@ -54,8 +53,7 @@ public:
 	};
 };
 //map is texture value (0 to 1)
-__forceinline vec4 normal_map(vec4 N, vec4 map)
-{
+__forceinline vec4 normal_map(vec4 N, vec4 map) {
 	if (!use_normal_maps || eq(map, vec4(0.5f, 0.5f, 1.f)))return N;
 	onb uvw(N);
 	map = 2.f * map - 1.f;

@@ -8,8 +8,7 @@ public:
 	voxel(vec4 Q, float a) :Qa(Q, a) {}
 	voxel(vec4 Qa) :Qa(Qa) {}
 
-	inline bool hit(const ray& r, hitrec& rec) const
-	{
+	inline bool hit(const ray& r, hitrec& rec) const {
 		//Based on AABB intersection method:
 		vec4 t1 = (A() - r.O) * r.iD;
 		vec4 t2 = (B() - r.O) * r.iD;
@@ -20,11 +19,10 @@ public:
 		if (mint > maxt || maxt < 0) return false;
 		bool face = mint > 0;
 		float t = face ? mint : maxt;
-		if (inside(t, eps2, rec.t))
-		{
+		if (inside(t, eps2, rec.t)) {
 			vec4 P = r.at(t);
 			vec4 W = (P - Qa) / Qa.w();
-			vec4 N = copysign(vec_eq(abs(W), max(abs(W))),W);
+			vec4 N = copysign(vec_eq(abs(W), max(abs(W))), W);
 			vec4 UV = 0.5f * (1.f + W - N);
 			rec.N = face ? N : -N;
 			rec.P = r.at(t);
@@ -44,7 +42,7 @@ public:
 		return voxel(T.pnt(Qa));
 	}
 	inline voxel move(vec4 P) const {
-		return voxel(vec4(Qa + P,Qa.w() * P.w()));
+		return voxel(vec4(Qa + P, Qa.w() * P.w()));
 	}
 	inline float pdf(const ray& r)const {
 		hitrec rec;
@@ -66,8 +64,7 @@ public:
 	inline vec4 rand_to(vec4 O) const {
 		//sample until visible face is hit, or point is inside cuboid
 		bool inside = gt(O, A()) && lt(O, B());
-		while (1)
-		{
+		while (1) {
 #if 1
 			vec4 r = ravec();
 			vec4 W = r / max(abs(r));

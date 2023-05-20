@@ -6,29 +6,25 @@ inline vec4 sa_disk() {
 	float phi = pi2 * r[0];
 	return sqrtf(r[1]) * cossin(phi);
 }
-inline vec4 sa_sph()
-{
+inline vec4 sa_sph() {
 	float r[2]; rafl_tuple(r);
 	float phi = pi2 * r[0];
 	r[1] = 2.f * r[1] - 1.f;
 	vec4 d = sqrtf(1.f - r[1] * r[1]) * cossin(phi);
 	return d + vec4(0, 0, r[1]);
 }
-inline vec4 sa_hem(vec4 v)
-{
+inline vec4 sa_hem(vec4 v) {
 	vec4 u = sa_sph();
 	float s = dot(u, v);
 	return signf(s) * u;
 }
-inline vec4 sa_uni()
-{
+inline vec4 sa_uni() {
 	float r[2]; rafl_tuple(r);
 	const float phi = pi2 * r[0];
 	vec4 d = sqrtf(1.f - r[1] * r[1]) * cossin(phi);
 	return d + vec4(0, 0, r[1]);
 }
-inline vec4 sa_cos()
-{
+inline vec4 sa_cos() {
 	float r[2]; rafl_tuple(r);
 	const float phi = pi2 * r[0];
 	vec4 d = sqrtf(r[1]) * cossin(phi);
@@ -49,8 +45,7 @@ inline vec4 sa_ggx(float a) {
 /*https://hal.archives-ouvertes.fr/hal-01509746/document
 Also simplified by ME
 */
-inline vec4 sa_vndf(vec4 V_, float ro)
-{
+inline vec4 sa_vndf(vec4 V_, float ro) {
 	float r[2]; rafl_tuple(r);
 	vec4 scl = vec4(ro, ro, 1.f, 1.f);
 	vec4 V = norm(scl * V_);

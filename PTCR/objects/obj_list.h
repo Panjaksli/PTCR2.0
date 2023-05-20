@@ -102,13 +102,11 @@ public:
 		materials.emplace_back(mat);
 	}
 	template <typename T>
-	void add_mesh(const T& object, mat4 tran = mat4(vec4(0, 0, 0, 1)), uint mat = 0, bool is_bvh = 1, bool is_light = 0, bool has_fog = 0, bool deform = 1)
-	{
+	void add_mesh(const T& object, mat4 tran = mat4(vec4(0, 0, 0, 1)), uint mat = 0, bool is_bvh = 1, bool is_light = 0, bool has_fog = 0, bool deform = 1) {
 		create_mesh(vector<T>(1, object), tran, mat, is_bvh, is_light, has_fog, deform);
 	}
 	template <typename T>
-	void add_mesh(const vector<T>& object, mat4 tran = mat4(vec4(0, 0, 0, 1)), uint mat = 0, bool is_bvh = 1, bool is_light = 0, bool has_fog = 0, bool deform = 1)
-	{
+	void add_mesh(const vector<T>& object, mat4 tran = mat4(vec4(0, 0, 0, 1)), uint mat = 0, bool is_bvh = 1, bool is_light = 0, bool has_fog = 0, bool deform = 1) {
 		create_mesh(object, tran, mat, is_bvh, is_light, has_fog, deform);
 	}
 	void remove_mat(uint id) {
@@ -147,8 +145,7 @@ private:
 	aabb box_from(uint begin, uint end);
 
 	template <typename T>
-	void create_mesh(const vector<T>& object, mat4 tran, uint mat, bool is_bvh, bool is_light, bool has_fog, bool deform = 1)
-	{
+	void create_mesh(const vector<T>& object, mat4 tran, uint mat, bool is_bvh, bool is_light, bool has_fog, bool deform = 1) {
 		if (object.size() == 0)return;
 		if (!is_bvh)nonbvh.emplace_back(objects.size());
 		if (is_light)lights.emplace_back(objects.size());
@@ -157,7 +154,7 @@ private:
 		bbox.join(objects.back().get_box());
 		lw_tot = 1.f / lights.size();
 	}
-	
+
 	__forceinline float pdf(const ray& r, uint light)const {
 		return objects[light].pdf(r);
 	}
@@ -165,16 +162,13 @@ private:
 	__forceinline float bvh_pdf(const ray& r, uint id = 0) const {
 		const bvh_node& node = bvh[id];
 		float l = 0;
-		if (node.parent)
-		{
+		if (node.parent) {
 			if (bvh[node.n1].bbox.hit(r)) l += bvh_pdf(r, node.n1);
 			if (bvh[node.n2].bbox.hit(r)) l += bvh_pdf(r, node.n2);
 		}
 		else {
-			for (uint i = node.n1; i < node.n2; i++)
-			{
-				if (objects[obj_bvh[i].obje_id].light())
-				{
+			for (uint i = node.n1; i < node.n2; i++) {
+				if (objects[obj_bvh[i].obje_id].light()) {
 					l += obj_bvh[i].pdf(objects.data(), r);
 				}
 			}

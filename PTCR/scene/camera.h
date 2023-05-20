@@ -8,17 +8,18 @@ struct projection {
 	projection() {}
 	projection(mat4 T, float w, float h, float tfov) :T(T), wh(w, h), iwh(1 / wh), asp(w / h), tfov(tfov) { scl = tfov * vec4(asp, -1); iscl = 1 / scl; }
 	mat4 T;
-	vec4 wh,iwh;
+	vec4 wh, iwh;
 	vec4 scl, iscl;
 	float asp;
 	float tfov;
 };
 
-class camera
-{
+class camera {
 public:
 	camera() {}
-	camera(uint w, uint h, float fov, mat4 _T = mat4()) :T(_T), CCD(w, h), P(T.P()), iw(1.0 / w), ih(1.0 / h), asp((float)w / h), fov(fov), tfov(tan(0.5f * torad(fov))), speed(1){
+	camera(uint w, uint h, float fov, mat4 _T = mat4()) :
+		T(_T), CCD(w, h), P(T.P()), iw(1.0 / w), ih(1.0 / h),
+		asp((float)w / h), fov(fov), tfov(tan(0.5f * torad(fov))), speed(1) {
 		update();
 	}
 	mat4 T = mat4();
@@ -36,8 +37,7 @@ public:
 	bool autofocus = 1, bokeh = 1;
 	bool moving = 1, free = 0, collision = 1;
 
-	__forceinline ray optical_ray(vec4 xy) const
-	{
+	__forceinline ray optical_ray(vec4 xy) const {
 		if (!bokeh)return pinhole_ray(xy);
 		vec4 D = T.vec(foc_t * SS(xy));
 		vec4 r = T.vec(foc_l * sa_disk() / fstop);
@@ -48,32 +48,25 @@ public:
 	__forceinline ray pinhole_ray(float py, float px) const { return pinhole_ray(vec4(px, py)); }
 	ray focus_ray(float py = 0.5f, float px = 0.5f) const { return focus_ray(vec4(px, py)); }
 	ray focus_ray(vec4 xy) const { return pinhole_ray(xy * vec4(w, h)); }
-	__forceinline void set(uint y, uint x, vec4 rgb)
-	{
+	__forceinline void set(uint y, uint x, vec4 rgb) {
 		CCD.set(y, x, rgb);
 	}
-	__forceinline void add(uint y, uint x, vec4 rgb)
-	{
+	__forceinline void add(uint y, uint x, vec4 rgb) {
 		CCD.add(y, x, rgb);
 	}
-	__forceinline void add_raw(uint y, uint x, vec4 rgb)
-	{
+	__forceinline void add_raw(uint y, uint x, vec4 rgb) {
 		CCD.add(y, x, rgb);
 	}
-	__forceinline vec4 get(uint y, uint x)
-	{
+	__forceinline vec4 get(uint y, uint x) {
 		return CCD.get(y, x);
 	}
-	__forceinline vec4 get_med(uint y, uint x, float thr) const
-	{
+	__forceinline vec4 get_med(uint y, uint x, float thr) const {
 		return CCD.get_med(y, x, thr);
 	}
-	__forceinline void out(uint y, uint x)
-	{
+	__forceinline void out(uint y, uint x) {
 		CCD.out(y, x);
 	}
-	__forceinline void display(uint y, uint x, vec4 rgb)
-	{
+	__forceinline void display(uint y, uint x, vec4 rgb) {
 		CCD.out(y, x, (GAMMA2 ? exposure : 1) * exposure * rgb);
 	}
 	void update();

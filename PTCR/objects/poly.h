@@ -7,11 +7,10 @@ public:
 	poly(vec4 A, vec4 B, vec4 C) : Q(A), U(B - A), V(C - A), n0(poly_ns(U, V)), n1(n0), n2(n0) {}
 	poly(vec4 Q, vec4 U, vec4 V, bool param) :Q(Q), U(U), V(V), n0(poly_ns(U, V)), n1(n0), n2(n0) {}
 	poly(vec4 Q, vec4 U, vec4 V, vec4 n0, vec4 n1, vec4 n2) :Q(Q), U(U), V(V), n0(n0), n1(n1), n2(n2) {}
-	inline bool hit(const ray& r, hitrec& rec) const
-	{
+	inline bool hit(const ray& r, hitrec& rec) const {
 		//Moller-Trumbore algorithm, based on:
 		//https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
-		vec4 pV = cross(r.D, V); 
+		vec4 pV = cross(r.D, V);
 		float D = dot(U, pV);
 		float iD = 1.f / D;
 		vec4 tV = r.O - Q;
@@ -19,8 +18,7 @@ public:
 		float u = dot(tV, pV) * iD;
 		float v = dot(r.D, qV) * iD;
 		float t = dot(V, qV) * iD;
-		if (within(u, 0.f, 1.f) && within(v, 0.f, 1.f - u) && inside(t, eps2, rec.t))
-		{
+		if (within(u, 0.f, 1.f) && within(v, 0.f, 1.f - u) && inside(t, eps2, rec.t)) {
 			rec.face = D > 0;
 			vec4 N = normal(u, v);
 			rec.N = rec.face ? N : -N;
@@ -102,8 +100,7 @@ public:
 	poly(vec4 A, vec4 B, vec4 C) :Q(A), U(B - A), V(C - A), N(poly_ns(U, V)) {}
 	poly(vec4 _Q, vec4 _U, vec4 _V, bool param) :Q(_Q), U(_U), V(_V), N(poly_ns(U, V)) {}
 	poly(vec4 _Q, vec4 _U, vec4 _V, vec4 _N) :Q(_Q), U(_U), V(_V), N(_N) {}
-	inline bool hit(const ray& r, hitrec& rec) const
-	{
+	inline bool hit(const ray& r, hitrec& rec) const {
 		//Moller-Trumbore algorithm, based on:
 		//https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
 		vec4 pV = cross(r.D, V);
@@ -114,8 +111,7 @@ public:
 		float u = dot(tV, pV) * iD;
 		float v = dot(r.D, qV) * iD;
 		float t = dot(V, qV) * iD;
-		if (within(u, 0.f, 1.f) && within(v, 0.f, 1.f - u) && inside(t, eps2, rec.t))
-		{
+		if (within(u, 0.f, 1.f) && within(v, 0.f, 1.f - u) && inside(t, eps2, rec.t)) {
 			bool face = D > 0;
 			rec.N = face ? N : -N;
 			rec.P = Q + u * U + v * V;

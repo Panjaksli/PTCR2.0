@@ -42,7 +42,7 @@ public:
 	__forceinline void out(uint i, uint j) {
 		uint off = i * w + j;
 		uint off2 = i * pitch + j;
-		disp[off2]= vec2bgr(data[off]);
+		disp[off2] = vec2bgr(data[off]);
 	}
 	__forceinline void out(uint i, uint j, vec4 rgb) {
 		uint off = i * pitch + j;

@@ -30,15 +30,13 @@ public:
 		swap(*this, cpy);
 		return *this;
 	}
-	__forceinline bool hit(const ray& r, hitrec& rec) const
-	{
+	__forceinline bool hit(const ray& r, hitrec& rec) const {
 		uchar any_hit = false;
 		for (uint i = 0; i < size; i++)
 			any_hit |= prim[i].move(P).hit(r, rec);
 		return any_hit;
 	}
-	__forceinline bool hit(const ray& r, hitrec& rec, uint prim_id) const
-	{
+	__forceinline bool hit(const ray& r, hitrec& rec, uint prim_id) const {
 		bool any_hit = prim[prim_id].move(P).hit(r, rec);
 		return any_hit;
 	}
@@ -169,7 +167,7 @@ default: break;\
 
 struct mesh_var {
 	mesh_var() : flag(o_bla, 0, 0, 0) {}
-	mesh_var(const char* name, mat4 T, uint mat, bool bvh = 1, bool lig = 0, bool fog = 0) : p(load_mesh(name, 0, 1, false), mat), name(name), flag(o_pol, bvh, lig, fog) { p.transform(T); }
+	mesh_var(const char* name, mat4 T, uint mat, bool bvh = 1, bool lig = 0, bool fog = 0) : p(load_mesh(name), mat), name(name), flag(o_pol, bvh, lig, fog) { p.transform(T); }
 	mesh_var(const mesh<poly>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :p(m), name(name), flag(o_pol, bvh, lig, fog) {}
 	mesh_var(const mesh<quad>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :q(m), name(name), flag(o_qua, bvh, lig, fog) {}
 	mesh_var(const mesh<sphere>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :s(m), name(name), flag(o_sph, bvh, lig, fog) {}
@@ -190,19 +188,16 @@ struct mesh_var {
 		SELECT_BR(type(), ~mesh());
 	}
 
-	__forceinline bool hit(const ray& r, hitrec& rec) const
-	{
+	__forceinline bool hit(const ray& r, hitrec& rec) const {
 		if (!s.get_box().hit(r))return false;
 		SELECT_RE(type(), hit(r, rec), false);
 	}
 
-	__forceinline bool hit(const ray& r, hitrec& rec, uint prim_id) const
-	{
+	__forceinline bool hit(const ray& r, hitrec& rec, uint prim_id) const {
 		SELECT_RE(type(), hit(r, rec, prim_id), false);
 	}
 
-	__forceinline float pdf(const ray& r, uint prim_id) const
-	{
+	__forceinline float pdf(const ray& r, uint prim_id) const {
 		SELECT_RE(type(), pdf(r, prim_id), false);
 	}
 
@@ -277,16 +272,14 @@ struct mesh_var {
 
 struct mesh_raw {
 	mesh_raw(aabb bbox, uint obje_id, uint prim_id) : obje_id(obje_id), prim_id(prim_id) {}
-	__forceinline bool hit(const mesh_var* obj, const ray& r, hitrec& rec) const
-	{
+	__forceinline bool hit(const mesh_var* obj, const ray& r, hitrec& rec) const {
 		if (obj[obje_id].hit(r, rec, prim_id)) {
 			rec.idx = obje_id;
 			return true;
 		}
 		return false;
 	}
-	__forceinline float pdf(const mesh_var* obj, const ray& r) const
-	{
+	__forceinline float pdf(const mesh_var* obj, const ray& r) const {
 		return obj[obje_id].pdf(r, prim_id);
 	}
 	inline aabb get_box(const mesh_var* obj)const {

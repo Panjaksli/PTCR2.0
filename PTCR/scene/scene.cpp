@@ -12,8 +12,7 @@ bool use_normal_maps = 1;
 vec4 Scene::cam_collision(vec4 v, float dt) const {
 	if (!cam.collision)return 0;
 	hitrec rec;
-	for (int i = 0; i < 5; i++)
-	{
+	for (int i = 0; i < 5; i++) {
 		vec4 d = v + eps * ravec();
 		ray r = ray(cam.T.P(), d, true);
 		if (world.hit(r, rec) && rec.t - d.len() * dt <= eps) {
@@ -68,12 +67,10 @@ void Scene::cam_manufocus(float py, float px) {
 		cam.moving = 1;
 	}
 }
-uint Scene::get_id(const ray& r, hitrec& rec) const
-{
+uint Scene::get_id(const ray& r, hitrec& rec) const {
 	return world.get_id(r, rec);
 }
-vec4 Scene::get_point(float py, float px, float max_t) const
-{
+vec4 Scene::get_point(float py, float px, float max_t) const {
 	ray r(cam.pinhole_ray(vec4(px, py)));
 	hitrec rec;
 	if (world.hit(r, rec)) {
@@ -81,47 +78,40 @@ vec4 Scene::get_point(float py, float px, float max_t) const
 	}
 	else return r.at(max_t);
 }
-float Scene::get_dist(float py, float px) const
-{
+float Scene::get_dist(float py, float px) const {
 	ray r(cam.pinhole_ray(vec4(px, py)));
 	hitrec rec;
 	world.hit(r, rec);
 	return rec.t;
 }
-float Scene::get_dist_box(float py, float px) const
-{
+float Scene::get_dist_box(float py, float px) const {
 	ray r(cam.pinhole_ray(vec4(px, py)));
 	float t = infp;
-	selected().get_box().hit(r,t);
+	selected().get_box().hit(r, t);
 	return t;
 }
-uint Scene::get_id(float py, float px)
-{
+uint Scene::get_id(float py, float px) {
 	ray r(cam.pinhole_ray(vec4(px, py)));
 	hitrec rec;
 	uint id = get_id(r, rec);
 	opt.selected = id;
 	return id;
 }
-obj_flags Scene::get_flag() const
-{
+obj_flags Scene::get_flag() const {
 	if (opt.selected < world.objects.size()) return world.get_flag(opt.selected);
 	else return obj_flags(o_bla, 0, 0);
 }
-const char* Scene::get_name() const
-{
+const char* Scene::get_name() const {
 	if (opt.selected < world.objects.size()) return world.objects[opt.selected].get_name();
 	else return "Empty";
 }
 obj_flags Scene::get_trans(mat4& T) const {
-	if (opt.selected < world.objects.size())
-	{
+	if (opt.selected < world.objects.size()) {
 		world.get_trans(opt.selected, T);
 		return world.get_flag(opt.selected);
 
 	}
-	else
-	{
+	else {
 		//if nothing hit, get sky
 		T = sun_pos;
 		return obj_flags(o_bla, 0, 0);
@@ -129,20 +119,17 @@ obj_flags Scene::get_trans(mat4& T) const {
 }
 
 void Scene::set_trans(const mat4& T) {
-	if (opt.selected < world.objects.size())
-	{
+	if (opt.selected < world.objects.size()) {
 		world.set_trans(opt.selected, T, opt.node_size);
 	}
-	else
-	{
+	else {
 		sun_pos = T;
 		sun_pos.set_P(vec4());
 
 	}
 }
 
-void Scene::set_skybox(const char* name)
-{
+void Scene::set_skybox(const char* name) {
 	skybox = name;
 	opt.skybox = true;
 }
@@ -152,7 +139,7 @@ void Scene::Render(uint* disp, uint pitch) {
 	cam_autofocus();
 	static bool odd = 0;
 	float blink_t = (hpi * clock()) / CLOCKS_PER_SEC;
-	float blink = 0.02f * (1 + sinf(2*blink_t));
+	float blink = 0.02f * (1 + sinf(2 * blink_t));
 	opt.selected = clamp_int(opt.selected, -1, world.objects.size() - 1);
 	if (cam.moving)cam.CCD.reset();
 	bool paused = !cam.moving && opt.paused;
@@ -223,7 +210,7 @@ void Scene::Gen_projection(const projection& proj) {
 	vec4* data = cam.CCD.data.data();
 	mat4 iT = cam.T.inverse();
 	for (int i = 0; i < cam.CCD.n; i++)
-		buff[i] = vec4(0, 0, 0, infp*infp);
+		buff[i] = vec4(0, 0, 0, infp * infp);
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
 	for (int i = 0; i < cam.h; i++) {
 		for (int j = 0; j < cam.w; j++) {
@@ -245,7 +232,7 @@ void Scene::Gen_projection(const projection& proj) {
 void Scene::Reproject(const projection& proj, uint* disp, uint pitch) {
 	cam.CCD.set_disp(disp, pitch);
 	if (cam.moving || opt.framegen)
-	Gen_projection(proj);
+		Gen_projection(proj);
 	vec4* buff = cam.CCD.buff.data();
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
 	for (int i = 0; i < cam.h; i++) {
@@ -253,7 +240,7 @@ void Scene::Reproject(const projection& proj, uint* disp, uint pitch) {
 			cam.display(i, j, median_3x3(buff, i, j, cam.h, cam.w, opt.med_thr));
 		}
 	}
-	if(!opt.framegen)cam.moving = false;
+	if (!opt.framegen)cam.moving = false;
 }
 void Scene::Screenshot(bool reproject) const {
 	int spp = cam.CCD.spp;

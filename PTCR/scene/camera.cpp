@@ -1,6 +1,5 @@
 #include "camera.h"
-void camera::update()
-{
+void camera::update() {
 	asp = (float)w / h;
 	fov = fminf(179.9, fmaxf(0.1, fov));
 	tfov = tan(0.5f * torad(fov));
@@ -17,27 +16,23 @@ void camera::move(vec4 dir) {
 	T.add_P(dir);
 	moving = 1;
 }
-void camera::set_P(vec4 pos)
-{
+void camera::set_P(vec4 pos) {
 	P = pos;
 	T.set_P(pos);
 	moving = 1;
 }
-void camera::set_A(vec4 rot)
-{
+void camera::set_A(vec4 rot) {
 	T.set_A(rot);
 	moving = 1;
 }
-void camera::rotate(vec4 angles)
-{
+void camera::rotate(vec4 angles) {
 	if (near0(angles))return;
 	vec4 A = T.A() + fov * (1.f / 90.f) * angles;
 	A._xyz[2] = (A._xyz[2] > hpi - 0.01f && A._xyz[2] < 3 * hpi + 0.01f) ? T.A()._xyz[2] : A._xyz[2];
 	T.set_A(A);
 	moving = 1;
 }
-void camera::rotate(float alfa, float beta, float gamma)
-{
+void camera::rotate(float alfa, float beta, float gamma) {
 	vec4 angles(alfa, beta, gamma);
 	if (near0(angles))return;
 	vec4 A = T.A() + fov * (1.f / 90.f) * angles;
@@ -45,8 +40,7 @@ void camera::rotate(float alfa, float beta, float gamma)
 	T.set_A(A);
 	moving = 1;
 }
-void camera::resize(uint _w, uint _h, float scale)
-{
+void camera::resize(uint _w, uint _h, float scale) {
 	w = _w * scale;
 	h = _h * scale;
 	iw = 1.0 / w;

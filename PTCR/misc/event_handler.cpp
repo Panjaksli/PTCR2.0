@@ -1,14 +1,11 @@
 #include "Event_handler.h"
-void Event_handler::scan(SDL_Event& event)
-{
+void Event_handler::scan(SDL_Event& event) {
 	motion = 0;
-	if (event.type == SDL_KEYDOWN)
-	{
+	if (event.type == SDL_KEYDOWN) {
 		int code = event.key.keysym.scancode;
 		keys[code] = true;
 	}
-	if (event.type == SDL_KEYUP)
-	{
+	if (event.type == SDL_KEYUP) {
 		int code = event.key.keysym.scancode;
 		keys[code] = false;
 	}
@@ -25,14 +22,12 @@ void Event_handler::scan(SDL_Event& event)
 		if (code == SDL_BUTTON_MIDDLE)mmb = false;
 		if (code == SDL_BUTTON_RIGHT)rmb = false;
 	}
-	if (event.type == SDL_MOUSEMOTION)
-	{
+	if (event.type == SDL_MOUSEMOTION) {
 		motion = 1;
 		xvec = event.motion.xrel;
 		yvec = event.motion.yrel;
 	}
-	if (event.type == SDL_MOUSEWHEEL)
-	{
+	if (event.type == SDL_MOUSEWHEEL) {
 
 	}
 }

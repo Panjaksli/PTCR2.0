@@ -35,8 +35,7 @@ public:
 		flags = cpy.flags;
 		name = cpy.name;
 		rgb = cpy.rgb;
-		if (cpy.data != nullptr)
-		{
+		if (cpy.data != nullptr) {
 			w = cpy.w, h = cpy.h;
 			data = (uchar*)malloc(w * h * 4);
 			memcpy(data, cpy.data, w * h * 4);

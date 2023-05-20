@@ -54,12 +54,10 @@ struct mat4 {
 		_MM_TRANSPOSE4_PS(T.x.xyz, T.y.xyz, T.z.xyz, T.w.xyz);
 		return T;
 	}
-	inline vec4 vec(vec4 u) const
-	{
+	inline vec4 vec(vec4 u) const {
 		return vec4(*this * vec4(u, 0), u.w());
 	}
-	inline vec4 pnt(vec4 u) const
-	{
+	inline vec4 pnt(vec4 u) const {
 		return vec4(*this * vec4(u, 1), u.w());
 	}
 	inline vec4 operator*(vec4 u) const {
@@ -82,17 +80,14 @@ private:
 	}
 public:
 #else
-	inline vec4 vec(vec4 u) const
-	{
+	inline vec4 vec(vec4 u) const {
 		return vec4(dot(u, x), dot(u, y), dot(u, z), u.w());
 	}
-	inline vec4 pnt(vec4 u) const
-	{
+	inline vec4 pnt(vec4 u) const {
 		vec4 v = vec4(u, 1);
 		return vec4(dot4(v, x), dot4(v, y), dot4(v, z), u.w());
 	}
-	inline vec4 operator*(vec4 u) const
-	{
+	inline vec4 operator*(vec4 u) const {
 		return vec4(dot4(u, x), dot4(u, y), dot4(u, z), dot4(u, w));
 	}
 	inline mat4 operator*(mat4 T) const {
@@ -158,15 +153,14 @@ public:
 private:
 	void Compose(vec4 P, vec4 A, vec4 S) {
 		*this = mat4();
-		if(not0(A))Rotation(A);
+		if (not0(A))Rotation(A);
 		Scale(S);
 		Position(P);
 	}
 	void Scale(vec4 S) {
 		x *= S; y *= S; z *= S;
 	}
-	void Position(vec4 P)
-	{
+	void Position(vec4 P) {
 		x.xyz[3] = P.x();
 		y.xyz[3] = P.y();
 		z.xyz[3] = P.z();

@@ -16,82 +16,69 @@ inline double timer(double t1) {
 inline static constexpr float todeg(float a) { return a * (180.0f / pi); }
 inline static constexpr float torad(float a) { return a * (pi / 180.0f); }
 
-inline float fsqrt(float x)
-{
+inline float fsqrt(float x) {
 	uint i = *(uint*)&x;
 	i = 0x1fbd5f5f + (i >> 1); //532316802 //0x1fbd5f5f
 	return *(float*)&i;
 }
 //fast logf, pow2, expf
 //based on: http://www.machinedlearnings.com/2011/06/fast-approximate-logarithm-exponential.html
-inline float fpow2f(float p)
-{
+inline float fpow2f(float p) {
 	uint i = (1 << 23) * (p + 126.94269504f);
 	return *(float*)&i;
 }
-inline float fexpf(float p)
-{
+inline float fexpf(float p) {
 	return fpow2f(1.442695040f * p);
 }
-inline float flogf(float x)
-{
+inline float flogf(float x) {
 	return  *(uint*)&x * 8.2546954e-8f - 87.94167f;
 }
 
 inline constexpr int copysigni(int a, int b) {
 	return b > 0 ? a : -a;
 }
-inline float signf(float u)
-{
+inline float signf(float u) {
 	return copysignf(1.f, u);
 }
-inline float fast_atan(float x)
-{
+inline float fast_atan(float x) {
 	//http://nghiaho.com/?p=997
 	return qpi * x - x * (fabsf(x) - 1.f) * (0.2447f + 0.0663f * fabsf(x));
 }
 inline float mod(float u, float v) {
 	return u - v * floorf(u / v);
 }
-inline float fast_sin(float x)
-{
+inline float fast_sin(float x) {
 	float x2 = x * x;
 	return x + x * x2 * (-1.6666656684e-1f + x2 * (8.3330251389e-3f + x2 * (-1.9807418727e-4f + x2 * 2.6019030676e-6f)));
 }
-inline float fsin(float x)
-{
+inline float fsin(float x) {
 	x = mod(x - hpi, pi2);
 	x = fabsf(x - pi) - hpi;
 	return fast_sin(x);
 }
-inline float fcos(float x)
-{
+inline float fcos(float x) {
 	x = mod(x, pi2);
 	x = fabsf(x - pi) - hpi;
 	return fast_sin(x);
 }
-inline void sincos(float x, float& sinx, float& cosx)
-{
+inline void sincos(float x, float& sinx, float& cosx) {
 	sinx = fsin(x);
 	cosx = fcos(x);
 }
 
-inline float ftan(float x)
-{
+inline float ftan(float x) {
 	float sinx, cosx;
 	sincos(x, sinx, cosx);
 	return sinx / cosx;
 }
-inline float fcot(float x)
-{
+inline float fcot(float x) {
 	float sinx, cosx;
 	sincos(x, sinx, cosx);
 	return cosx / sinx;
 }
 
 //https://developer.download.nvidia.com/cg/index_stdlib.html
-inline float fasin(float x)
-{
+inline float fasin(float x) {
 	float sign = signf(x);
 	x = fabs(x);
 	float y = -0.0187293f;
@@ -101,13 +88,11 @@ inline float fasin(float x)
 	y = hpi - sqrtf(1.0f - x) * y;
 	return sign * y;
 }
-inline float facos(float x)
-{
+inline float facos(float x) {
 	return hpi - fasin(x);
 }
 //https://developer.download.nvidia.com/cg/index_stdlib.html
-inline float fatan2(float y, float x)
-{
+inline float fatan2(float y, float x) {
 	float fx, fy;
 	float t0, t1, t2, t3;
 
@@ -136,47 +121,39 @@ inline float fatan2(float y, float x)
 
 
 template <typename T>
-inline T pow2n(T x, int n)
-{
+inline T pow2n(T x, int n) {
 	for (int i = 0; i < n; i++)
 		x = x * x;
 	return x;
 }
 
 template <typename T>
-inline T pow5(T x)
-{
+inline T pow5(T x) {
 	return x * x * x * x * x;
 }
 
-inline float mix(float x, float y, float t)
-{
+inline float mix(float x, float y, float t) {
 	return x * (1.f - t) + y * t;
 }
 
-inline float lerpf(float x, float y, float t)
-{
+inline float lerpf(float x, float y, float t) {
 	return x * (1.f - t) + y * t;
 }
 
-inline float minp(float t1, float t2)
-{
+inline float minp(float t1, float t2) {
 	if (t1 < eps2)t1 = infp;
 	if (t2 < eps2)t2 = infp;
 	return fminf(t1, t2);
 }
 
-inline float clamp(float x, float min, float max)
-{
+inline float clamp(float x, float min, float max) {
 	return fmaxf(min, fminf(max, x));
 }
 
-inline bool within(float t, float min, float max)
-{
+inline bool within(float t, float min, float max) {
 	return (t >= min) && (t <= max);
 }
-inline bool inside(float t, float min, float max)
-{
+inline bool inside(float t, float min, float max) {
 	return (t > min) && (t < max);
 }
 
@@ -193,14 +170,12 @@ inline uint fastrand() {
 	return x;
 }
 
-inline float rafl()
-{
+inline float rafl() {
 	uint x = 0x3f800000 | (xorshift32() & 0x007FFFFF);
 	return *(float*)&x - 1.f;
 }
 
-inline float randf(uint &x)
-{
+inline float randf(uint& x) {
 	x ^= x << 13;
 	x ^= x >> 17;
 	x ^= x << 5;
@@ -232,8 +207,7 @@ inline void rafl_tuple_sym(float r12[2]) {
 
 template <int ks = 3, typename T>
 inline void kernel(const T* in, T* out, int i, int j, int h, int w) {
-	for (int k = 0; k < ks * ks; k++)
-	{
+	for (int k = 0; k < ks * ks; k++) {
 		out[k] = in[clamp_int(i + k / ks - ks / 2, 0, h - 1) * w + clamp_int(j + k % ks - ks / 2, 0, w - 1)];
 	}
 }
@@ -241,8 +215,7 @@ inline void kernel(const T* in, T* out, int i, int j, int h, int w) {
 template <int ks = 3, typename T>
 inline void kernel_row(const T* in, T* out, int i, int j, int h, int w) {
 	int col = clamp_int(i, 0, h - 1) * w;
-	for (int k = 0; k < ks; k++)
-	{
+	for (int k = 0; k < ks; k++) {
 		out[k] = in[col + clamp_int(j + k - ks / 2, 0, w - 1)];
 	}
 }
@@ -250,8 +223,7 @@ inline void kernel_row(const T* in, T* out, int i, int j, int h, int w) {
 template <int ks = 3, typename T>
 inline void kernel_col(const T* in, T* out, int i, int j, int h, int w) {
 	int row = clamp_int(j, 0, w - 1);
-	for (int k = 0; k < ks; k++)
-	{
+	for (int k = 0; k < ks; k++) {
 		out[k] = in[clamp_int(i + k - ks / 2, 0, h - 1) * w + row];
 	}
 }
@@ -262,17 +234,14 @@ inline float fract(float x) {
 
 inline float rafl(float min, float max) { return min + (max - min) * rafl(); }
 inline float rafl(float max) { return max * rafl(); }
-inline int raint(int min, int max)
-{
+inline int raint(int min, int max) {
 	return rafl(min, max + 1);
 }
-inline uint raint(uint max)
-{
+inline uint raint(uint max) {
 	return rafl(max + 1);
 }
 
-inline constexpr int modulo(int a, int b)
-{
+inline constexpr int modulo(int a, int b) {
 	const int result = a % b;
 	return result >= 0 ? result : result + b;
 }
@@ -299,11 +268,11 @@ struct bitfield {
 	inline void dword(uint n, uint x) {
 		data = (data & ~(0xFFFFFFFF << n)) | (x << n);
 	}
-	inline bool bit(uint n) const{
+	inline bool bit(uint n) const {
 		return (data >> n) & 0x1;
 	}
 	inline uchar byte(uint n) const {
-		return (data >> 8*n) & 0xFF;
+		return (data >> 8 * n) & 0xFF;
 	}
 	inline uint16_t word(uint n) const {
 		return (data >> 16 * n) & 0xFFFF;
@@ -317,17 +286,14 @@ struct bitfield {
 	T data = 0;
 };
 
-inline uint pack_rgb(uchar r, uchar g, uchar b, uchar a = 255)
-{
+inline uint pack_rgb(uchar r, uchar g, uchar b, uchar a = 255) {
 	return r + (g << 8) + (b << 16) + (a << 24);
 }
-inline uint pack_bgr(uchar r, uchar g, uchar b, uchar a = 255)
-{
+inline uint pack_bgr(uchar r, uchar g, uchar b, uchar a = 255) {
 	return b + (g << 8) + (r << 16) + (a << 24);
 }
 
-inline uint pack_rgb10(uint r, uint g, uint b, uchar a = 255)
-{
+inline uint pack_rgb10(uint r, uint g, uint b, uchar a = 255) {
 	return b + (g << 10) + (r << 20) + (a << 30);// a + (r << 2) + (g << 12) + (b << 12);//b + (g << 12) + (r << 20) + (a << 30);
 }
 

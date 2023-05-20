@@ -1,6 +1,5 @@
 #include "mesh.h"
-std::vector<poly> load_mesh(const char* filename, vec4 off, float scale, bool flip)
-{
+std::vector<poly> load_mesh(const char* filename, vec4 off, float scale, bool flip) {
 	std::string name(filename);
 	if (name.find(".msh") != -1) {
 		return load_MSH(name.c_str(), off, scale, flip);
@@ -15,14 +14,12 @@ std::vector<poly> load_mesh(const char* filename, vec4 off, float scale, bool fl
 		return load_MSH((name + ".msh").c_str(), off, scale, flip);
 	else if (std::ifstream("objects/" + name + ".msh").good())
 		return load_MSH(("objects/" + name + ".msh").c_str(), off, scale, flip);
-	else if (std::ifstream(name + ".obj").good())
-	{
+	else if (std::ifstream(name + ".obj").good()) {
 		OBJ_to_MSH((name + ".obj").c_str());
 		printf("Generated .msh file!\n");
 		return load_MSH((name + ".msh").c_str(), off, scale, flip);
 	}
-	else if (std::ifstream("objects/" + name + ".obj").good())
-	{
+	else if (std::ifstream("objects/" + name + ".obj").good()) {
 		OBJ_to_MSH(("objects/" + name + ".obj").c_str());
 		printf("Generated .msh file!\n");
 		return load_MSH((name + ".msh").c_str(), off, scale, flip);
@@ -37,8 +34,7 @@ void OBJ_to_MSH(const char* filename) {
 
 	std::string name(filename);
 	std::ifstream file(name);
-	if (!file.is_open())
-	{
+	if (!file.is_open()) {
 		printf("File not found !\n");
 		return;
 	}
@@ -47,8 +43,7 @@ void OBJ_to_MSH(const char* filename) {
 	std::vector<float3> vert; vert.reserve(0xffff);
 	std::vector<uint3> face; face.reserve(0xffff);
 	std::string line = "";
-	while (std::getline(file_buff, line))
-	{
+	while (std::getline(file_buff, line)) {
 		float3 ftmp; uint3 utmp; uint tmp4 = 0;
 		if (sscanf_s(line.c_str(), "v %f %f %f", &ftmp.x, &ftmp.y, &ftmp.z) > 1) {
 			vert.emplace_back(ftmp);
@@ -61,7 +56,7 @@ void OBJ_to_MSH(const char* filename) {
 		else if (sscanf_s(line.c_str(), "f %u %u %u %u", &utmp.x, &utmp.y, &utmp.z, &tmp4) >= 3) {
 			utmp.x -= 1; utmp.y -= 1; utmp.z -= 1; tmp4 -= 1;
 			face.emplace_back(utmp);
-			if(tmp4 != -1) face.emplace_back(uint3(utmp.x,utmp.z,tmp4));
+			if (tmp4 != -1) face.emplace_back(uint3(utmp.x, utmp.z, tmp4));
 		}
 	}
 	file.close();
@@ -77,12 +72,10 @@ void OBJ_to_MSH(const char* filename) {
 
 
 
-std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool flip)
-{
+std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool flip) {
 	std::string name(filename);
 	std::ifstream file(name);
-	if (!file.is_open())
-	{
+	if (!file.is_open()) {
 		printf("File not found !\n");
 		return vector<poly>();
 	}
@@ -93,8 +86,7 @@ std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool fli
 	std::string line = "";
 	std::string pref = "";
 	float t1 = clock();
-	while (std::getline(file_buff, line))
-	{
+	while (std::getline(file_buff, line)) {
 		//C version is 2x faster
 #if 1
 		float3 ftmp; uint3 utmp; uint tmp4 = 0;
@@ -115,14 +107,12 @@ std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool fli
 		std::stringstream ss;
 		ss.str(line);
 		ss >> pref;
-		if (pref == "v")
-		{
+		if (pref == "v") {
 			vec4 tmp;
 			ss >> tmp._xyz[0] >> tmp._xyz[1] >> tmp._xyz[2];
 			vert.emplace_back(tmp);
 		}
-		else if (pref == "f")
-		{
+		else if (pref == "f") {
 			uint3 tmp = {};
 			ss >> tmp.x >> tmp.y >> tmp.z;
 			tmp.x -= 1; tmp.y -= 1; tmp.z -= 1;
@@ -153,8 +143,7 @@ std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool fli
 		polys[j].set_nor(nrms[face[j].x], nrms[face[j].y], nrms[face[j].z]);
 #else
 	std::vector<poly> polys; polys.reserve(face.size());
-	for (const auto& f : face)
-	{
+	for (const auto& f : face) {
 		vec4 a = vert[f.x];
 		vec4 b = vert[f.y];
 		vec4 c = vert[f.z];
@@ -168,12 +157,10 @@ std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool fli
 }
 
 
-std::vector<poly> load_MSH(const char* filename, vec4 off, float scale, bool flip)
-{
+std::vector<poly> load_MSH(const char* filename, vec4 off, float scale, bool flip) {
 	std::string name(filename);
 	std::ifstream file(name, std::ios_base::in | std::ios_base::binary);
-	if (!file.is_open())
-	{
+	if (!file.is_open()) {
 		printf("File not found !\n");
 		return vector<poly>();
 	}
@@ -186,8 +173,7 @@ std::vector<poly> load_MSH(const char* filename, vec4 off, float scale, bool fli
 	file.read((char*)&face[0], sizeof(uint3) * vf[1]);
 	file.close();
 	if (not0(off) || scale != 1.f)
-		for (auto& v : vert)
-		{
+		for (auto& v : vert) {
 			vec4 t = vec4(v) * scale + off;
 			v = float3(t.x(), t.y(), t.z());
 		}
@@ -209,8 +195,7 @@ std::vector<poly> load_MSH(const char* filename, vec4 off, float scale, bool fli
 		polys[j].set_nor(nrms[face[j].x], nrms[face[j].y], nrms[face[j].z]);
 #else
 	std::vector<poly> polys; polys.reserve(face.size());
-	for (const auto& f : face)
-	{
+	for (const auto& f : face) {
 		vec4 a = vert[f.x];
 		vec4 b = vert[f.y];
 		vec4 c = vert[f.z];

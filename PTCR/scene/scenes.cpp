@@ -12,8 +12,7 @@ bool scn_save(Scene& scn, const char* filename) {
 	if (name.empty())return false;
 	if (name.find(".scn") == -1)name = name + ".scn";
 	std::ofstream file("scenes/" + name);
-	if (!file.is_open())
-	{
+	if (!file.is_open()) {
 		printf("File not open!\n");
 		return false;
 	}
@@ -174,12 +173,10 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 	if (name.find(".scn") == std::string::npos)
 		name = name + ".scn";
 	std::ifstream file(name);
-	if (!file.is_open())
-	{
+	if (!file.is_open()) {
 		name = "scenes/" + name;
 		file = std::ifstream(name);
-		if (!file.is_open())
-		{
+		if (!file.is_open()) {
 			printf("File not found !\n");
 			return false;
 		}
@@ -202,8 +199,7 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 		else switch (state) {
 		case 0:
 			if (sscanf_s(line.c_str(), "%s P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s",
-				buff1, BUFF, &P[0], &P[1], &P[2], &P[3], &A[0], &A[1], &A[2], &mat, &bvh, &lig, &fog, buff2, BUFF) >= 4)
-			{
+				buff1, BUFF, &P[0], &P[1], &P[2], &P[3], &A[0], &A[1], &A[2], &mat, &bvh, &lig, &fog, buff2, BUFF) >= 4) {
 				if (strcmp(buff1, "poly") == 0) {
 					vector<poly> data; data.reserve(100);
 					if (sscanf_s(buff2, "%g,%g,%g,%g,%g,%g,%g,%g,%g", &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &c[0], &c[1], &c[2]) > 1)
@@ -264,8 +260,7 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 			break;
 		case 1:
 			if (sscanf_s(line.c_str(), "albedo type=%u rgb=%s mer=%s nor=%s scl=%g ir=%g tint=%g,%g,%g,%g alpha=%u check=%u",
-				&mat, buff1, BUFF, buff2, BUFF, buff3, BUFF, &scl, &ir, &tmp[0], &tmp[1], &tmp[2], &tmp[3], &alpha, &check) > 0)
-			{
+				&mat, buff1, BUFF, buff2, BUFF, buff3, BUFF, &scl, &ir, &tmp[0], &tmp[1], &tmp[2], &tmp[3], &alpha, &check) > 0) {
 				int s1 = -1, s2 = -1, s3 = -1;
 				vec4 srgb, smer, snor;
 				char rgb[BUFF], mer[BUFF], nor[BUFF];

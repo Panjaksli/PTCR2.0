@@ -67,8 +67,7 @@ inline vec4 bilat_3x3(const vec4* x) {
 	float sd = 1, sr = 1;
 	sd *= sd; sr *= sr;
 	float d[9] = { 2,1,2,1,0,1,2,1,2 };
-	for (int i = 0; i < 9; i++)
-	{
+	for (int i = 0; i < 9; i++) {
 		vec4 dl = x[4] / x[4].w() - x[i] / x[i].w();
 		float wi = expf(-0.5f * (d[i] / sd + dl.len2() / sr));//GAUSS_3x3[i] * gauss(dl.len2(), 16);
 		y += x[i] * wi;
@@ -90,8 +89,7 @@ inline vec4 bilat_5x5(const vec4* x) {
 	5,2,1,2,5,
 	8,5,4,5,8
 	};
-	for (int i = 0; i < 25; i++)
-	{
+	for (int i = 0; i < 25; i++) {
 		vec4 dl = x[12] / x[12].w() - x[i] / x[i].w();
 		float wi = expf(-0.5f * (d[i] / sd + dl.len2() / sr));
 		y += x[i] * wi;
@@ -121,8 +119,7 @@ std::vector<poly> generate_mesh(uint seed, vec4 off, float scale, bool flip) {
 
 
 	for (int i = 0; i < dim - 1; i++) {
-		for (int j = 0; j < dim - 1; j++)
-		{
+		for (int j = 0; j < dim - 1; j++) {
 			int l = i * dim + j;
 			int r = i * dim + j + 1;
 			int dl = (i + 1) * dim + j;
@@ -150,8 +147,7 @@ std::vector<poly> generate_mesh(uint seed, vec4 off, float scale, bool flip) {
 		polys[j].set_nor(nrms[face[j].x], nrms[face[j].y], nrms[face[j].z]);
 #else
 	std::vector<poly> polys; polys.reserve(face.size());
-	for (const auto& f : face)
-	{
+	for (const auto& f : face) {
 		vec4 a = vert[f.x];
 		vec4 b = vert[f.y];
 		vec4 c = vert[f.z];
@@ -182,8 +178,7 @@ public:
 	~mesh() {
 		clean();
 	}
-	__forceinline bool hit(const ray& r, hitrec& rec) const
-	{
+	__forceinline bool hit(const ray& r, hitrec& rec) const {
 		ray tr(r.O - P, r.D, r.iD);
 		bool any_hit = false;
 		for (uint i = 0; i < size; i++)
@@ -193,8 +188,7 @@ public:
 		return any_hit;
 	}
 
-	__forceinline bool hit(const ray& r, hitrec& rec, uint prim_id) const
-	{
+	__forceinline bool hit(const ray& r, hitrec& rec, uint prim_id) const {
 		ray tr(r.O - P, r.D, r.iD);
 		bool any_hit = prim[prim_id].hit(tr, rec);
 		rec.mat = any_hit ? mat : rec.mat;
@@ -206,8 +200,7 @@ public:
 		ray tr(r.O - P, r.D, r.iD);
 		if (size == 1) return prim[0].trans(P).pdf(r);
 		float y = 0.f;
-		for (uint i = 0; i < size; i++)
-		{
+		for (uint i = 0; i < size; i++) {
 			y += lw * prim[i].trans(P).pdf(r);
 		}
 		return y;
@@ -247,8 +240,7 @@ public:
 		P = _T.P();
 		A = _T.A;
 #pragma omp parallel for schedule(static,64)
-		for (uint i = 0; i < size; i++)
-		{
+		for (uint i = 0; i < size; i++) {
 			//prim[i] = prim[i].trans(dT1);
 			prim[i] = prim[i].trans(dT2);
 			//prim[i] = prim[i].trans(dT3);
@@ -267,8 +259,7 @@ private:
 	}
 	inline void fit() {
 		bbox = aabb();
-		for (uint i = 0; i < size; i++)
-		{
+		for (uint i = 0; i < size; i++) {
 			bbox.join(get_box(i));
 		}
 	}
@@ -288,8 +279,7 @@ private:
 struct mesh_raw {
 	mesh_raw(const mesh_var* obj, uint prim_id) : bbox(obj->get_box(prim_id)), obj(obj), prim_id(prim_id) {}
 
-	__forceinline bool hit(const ray& r, hitrec& rec) const
-	{
+	__forceinline bool hit(const ray& r, hitrec& rec) const {
 		if (!bbox.hit(r))return false;
 		return obj->hit(r, rec, prim_id);
 	}
@@ -308,15 +298,13 @@ struct mesh_raw {
 //obj_bvh.emplace_back(mesh_raw(&obj, j));
 
 
-void median_filter(const vector<vec4>& in, vector<vec4>& out, int h, int w)
-{
+void median_filter(const vector<vec4>& in, vector<vec4>& out, int h, int w) {
 #pragma omp parallel for collapse(2) schedule(dynamic,100)
 	for (int i = 0; i < h; i++) {
 		for (int j = 0; j < w; j++) {
 			vec4 window[9];
 			for (int k = 0; k < 3; k++)
-				for (int l = 0; l < 3; l++)
-				{
+				for (int l = 0; l < 3; l++) {
 					int a = i + k - 1;
 					int b = j + l - 1;
 					a = (a < 0 || a >= h) ? i : a;
@@ -333,8 +321,7 @@ if (march) {
 	ray r = sr;
 	vec4 P = r.O;
 	float t = 0;
-	for (uint i = 0; i < 32; i++)
-	{
+	for (uint i = 0; i < 32; i++) {
 		uint id = 0;
 		float tmin = infp;
 		for (uint j = 0; j < objects.size(); j++) {
@@ -373,7 +360,7 @@ scn.cam.setup(matrix(vec4(1, 1, 1), vec4(0, 0, 0)), 47, 10);
 scn.world.en_bvh = 0;
 
 
-void display(double delay, SDL_Renderer* renderer, SDL_Texture* f1, SDL_Texture* f2, SDL_Rect* move) {
+void display(double delay, SDL_Renderer * renderer, SDL_Texture * f1, SDL_Texture * f2, SDL_Rect * move) {
 	delay *= 333;
 	ImGui::Render();
 	ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
@@ -449,7 +436,7 @@ return y;
 
 //REPROJECTION
 ////////////////////////////////////
-void scene::Reproject(const mat4& T, float tfov, uint* disp, uint pitch) {
+void scene::Reproject(const mat4 & T, float tfov, uint * disp, uint pitch) {
 	cam.CCD.set_disp(disp, pitch);
 	for (int i = 0; i < cam.CCD.n; i++)cam.CCD.buff[i] = vec4(0, 0, 0, infp);
 #pragma omp parallel for collapse(2) schedule(dynamic, 100)
@@ -550,22 +537,22 @@ for (int i = 0; i < cam.h; i++) {
 		}
 	}
 }
-		/*#pragma omp parallel for collapse(2) schedule(dynamic, 100)
-			for (int i = 0; i < cam.h; i++) {
-				for (int j = 0; j < cam.w; j++) {
-					uint off = i * cam.w + j;
-					uint off2 = i * pitch + j;
-					vec4 base = cam.CCD.data[off];
-					vec4 changed = cam.CCD.buff[off];
-					float fact = cam.CCD.time / cam.exposure;
-					if((base-changed).len2() < 0.001f) bgr(vec4(changed, fact), cam.CCD.disp[off]);
-					else bgr(vec4(base, fact), cam.CCD.disp[off2]);
+/*#pragma omp parallel for collapse(2) schedule(dynamic, 100)
+	for (int i = 0; i < cam.h; i++) {
+		for (int j = 0; j < cam.w; j++) {
+			uint off = i * cam.w + j;
+			uint off2 = i * pitch + j;
+			vec4 base = cam.CCD.data[off];
+			vec4 changed = cam.CCD.buff[off];
+			float fact = cam.CCD.time / cam.exposure;
+			if((base-changed).len2() < 0.001f) bgr(vec4(changed, fact), cam.CCD.disp[off]);
+			else bgr(vec4(base, fact), cam.CCD.disp[off2]);
 
-				}
-			}*/
+		}
+	}*/
 
 
-__forceinline void mixed(const ray& r, const hitrec& rec, const albedo& tex, matrec& mat) {
+__forceinline void mixed(const ray & r, const hitrec & rec, const albedo & tex, matrec & mat) {
 	//simple mix of lambertian and mirror reflection/transmission + emission
 	vec4 rgb = tex.rgb(rec.u, rec.v);
 	vec4 mer = tex.mer(rec.u, rec.v);

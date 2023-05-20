@@ -84,7 +84,7 @@ struct aabb {
 		float mint, maxt;
 		bounds_check(r, mint, maxt);
 		if (mint < maxt && maxt > 0) {
-			t = fmaxf(0,mint);
+			t = fmaxf(0, mint);
 			r.O = r.at(t);
 			return true;
 		}

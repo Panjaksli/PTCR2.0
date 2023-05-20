@@ -7,8 +7,7 @@ public:
 	quad(vec4 A, vec4 B, vec4 C) :Q(A), U(B - A), V(C - A), N(quad_ns(U, V)) {}
 	quad(vec4 _Q, vec4 _U, vec4 _V, bool param) :Q(_Q), U(_U), V(_V), N(quad_ns(U, V)) {}
 	quad(vec4 _Q, vec4 _U, vec4 _V, vec4 _N) :Q(_Q), U(_U), V(_V), N(_N) {}
-	inline bool hit(const ray& r, hitrec& rec) const
-	{
+	inline bool hit(const ray& r, hitrec& rec) const {
 		//Moller-Trumbore algorithm, based on:
 		//https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
 		vec4 pV = cross(r.D, V);
@@ -19,8 +18,7 @@ public:
 		float u = dot(tV, pV) * iD;
 		float v = dot(r.D, qV) * iD;
 		float t = dot(V, qV) * iD;
-		if (within(u, 0.f, 1.f) && within(v, 0.f, 1.f) && inside(t, eps2, rec.t))
-		{
+		if (within(u, 0.f, 1.f) && within(v, 0.f, 1.f) && inside(t, eps2, rec.t)) {
 			rec.face = true;
 			rec.N = D > 0 ? N : -N;
 			rec.P = Q + u * U + v * V;

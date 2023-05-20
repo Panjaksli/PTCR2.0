@@ -50,8 +50,8 @@ public:
 	inline vec4 generate() const {
 		return world.rand_to(O);
 	}
-	inline vec4 generate(uint &idx) const {
-		return world.rand_to(O,idx);
+	inline vec4 generate(uint& idx) const {
+		return world.rand_to(O, idx);
 	}
 	const obj_list& world;
 	vec4 O;

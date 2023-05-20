@@ -34,7 +34,7 @@ public:
 		for (uint i = 0; i < max_size; i++)
 			_data[i] = var;
 	}
-	
+
 	const c_str& copy(const char* buff) {
 		for (uint i = 0; i < size_of(buff); i++)
 			if (i < max_size) _data[i] = buff[i];
@@ -71,7 +71,7 @@ public:
 		set(0);
 	}
 	void print()const { printf("%s\n", text()); }
-	friend void swap(c_str &s1, c_str &s2) {
+	friend void swap(c_str& s1, c_str& s2) {
 		std::swap(s1._data, s2._data);
 	}
 	friend c_str operator+(c_str s1, c_str s2) {

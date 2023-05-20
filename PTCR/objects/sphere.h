@@ -8,8 +8,7 @@ public:
 	sphere(vec4 Q, float r) :Qr(Q, r) {}
 	sphere(vec4 Qr) :Qr(Qr) {}
 
-	inline bool hit(const ray& r, hitrec& rec) const
-	{
+	inline bool hit(const ray& r, hitrec& rec) const {
 		//Quadratic equation, own solution
 		vec4 OQ = Qr - r.O;
 		float b = dot(r.D, OQ);
@@ -46,8 +45,7 @@ public:
 	inline float pdf(const ray& r)const {
 		hitrec rec;
 		if (!hit(r, rec))return 0;
-		if (!rec.face)
-		{
+		if (!rec.face) {
 			float S = pi4 * Qr.w() * Qr.w();
 			float NoL = absdot(rec.N, r.D);
 			return rec.t * rec.t / (S * NoL);
@@ -66,8 +64,7 @@ public:
 		float d2 = OQ.len2();
 		float R2 = Qr.w() * Qr.w();
 		//if inside, pick uniform coordinate
-		if (d2 <= R2)
-		{
+		if (d2 <= R2) {
 			vec4 N = sa_sph();
 			vec4 P = Qr + N * Qr.w();
 			vec4 L = P - O;

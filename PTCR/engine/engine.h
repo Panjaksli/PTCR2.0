@@ -12,8 +12,7 @@
 //What is super important class/function = capital (Scene,Engine, Render(), etc...)
 //What is 20x nested or POD or math related = non-capital (basically everyhing else)
 //Sometimes it doesn't match neither, then I follow every other C/C++ math/graphics library (do whatever you want)
-namespace PTCR
-{
+namespace PTCR {
 	class Engine {
 	public:
 		Engine(double max_fps = 90, SDL_Rect screen = { 0,0,1280,720 }, SDL_Rect viewport = { 0,0,960,720 }, SDL_Rect menu = { 960,0, 320,720 });

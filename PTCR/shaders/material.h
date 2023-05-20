@@ -153,7 +153,7 @@ namespace material {
 		vec4 mer = tex.mer(rec.u, rec.v);
 		float em = mer.y();
 		float nov = absdot(rec.N, r.D);
-		mat.emis = em * mix(rgb, tex.tinted(),(1-nov)* tex.tint.w());
+		mat.emis = em * mix(rgb, tex.tinted(), (1 - nov) * tex.tint.w());
 		mat.N = rec.N;
 	}
 	__forceinline void laser(const ray& r, const hitrec& rec, const albedo& tex, matrec& mat) {
