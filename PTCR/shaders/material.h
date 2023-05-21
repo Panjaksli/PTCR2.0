@@ -41,6 +41,7 @@ namespace material {
 		float ro = mer.z();
 		float a = ro * ro;
 		vec4 N = normal_map(rec.N, nor);
+		N = N - 2.f * posdot(r.D,N) * r.D;//if(dot(r.D,N)>0) 
 		onb n = onb(N);
 		vec4 V = n.local(-r.D);
 		vec4 H = use_vndf ? sa_vndf(V, a) : sa_ggx(a);
@@ -54,7 +55,8 @@ namespace material {
 		bool metal = rafl() < mu;
 		bool spec = rafl() < F.w();
 		bool backface = NoL <= 0;
-		if (metal && !backface) {
+		if (metal) {
+			if (backface)return;
 			F = mix(F, tex.tinted(), (1 - HoV) * tex.tint.w());
 			mat.aten = F * (use_vndf ? VNDF_GGX(NoL, NoV, a) : GGX(NoL, NoV, a) * HoV / (NoV * NoH));
 			mat.L = n.world(L);
@@ -73,7 +75,7 @@ namespace material {
 		}
 		mat.a = a;
 		mat.N = N;
-		mat.P = rec.P + rec.N * eps;
+		mat.P = rec.P + N * eps;
 		mat.emis = rgb * em;
 		mat.refl *= not0(mat.aten);
 	}

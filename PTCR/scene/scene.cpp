@@ -16,7 +16,8 @@ vec4 Scene::cam_collision(vec4 v, float dt) const {
 		vec4 d = v + eps * ravec();
 		ray r = ray(cam.T.P(), d, true);
 		if (world.hit(r, rec) && rec.t - d.len() * dt <= eps) {
-			vec4 V = rec.N * (d.len() - rec.t * dt) * dot(rec.N, -r.D) / dot(r.D, norm(v));
+			vec4 N = rec.N - 2.f * posdot(r.D, rec.N) * r.D; //fix backfacing normals
+			vec4 V = N * (d.len() - rec.t * dt) * dot(N, -r.D) / dot(r.D, norm(v));
 			return clamp(V, -abs(v), abs(v));
 		}
 	}
@@ -125,7 +126,6 @@ void Scene::set_trans(const mat4& T) {
 	else {
 		sun_pos = T;
 		sun_pos.set_P(vec4());
-
 	}
 }
 
