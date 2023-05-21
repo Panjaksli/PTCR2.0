@@ -224,6 +224,7 @@ namespace PTCR {
 			static int type = 0;
 			static float ir = 1, scl = 1;
 			static bool s1 = 1, s2 = 1, s3 = 1;
+			static bool alpha = 0, checker = 0;
 			static vec4 rgb(1), mer(0), nor(0.5, 0.5, 1), tint(0);
 			static c_str srgb, smer, snor;
 			ImGui::Begin("Add material", &add_mat);
@@ -235,8 +236,12 @@ namespace PTCR {
 			s3 ? ImGui::ColorEdit3("##col3", nor._xyz, FLOATCOL) : ImGui::InputText("##text3", snor, c_str::max_size);
 			ImGui::SameLine(); ImGui::Checkbox("NOR", &s3);
 			ImGui::ColorEdit4("Tint", tint._xyz, FLOATCOL);
+			ImGui::DragFloat("Scale", &scl, 0.1f, -1000.f, 1000.f, "%g");
+			ImGui::DragFloat("IOR", &ir, 0.01f, 1.f, 4.f, "%.2f");
+			ImGui::Checkbox("Alpha##add", &alpha); ImGui::SameLine();
+			ImGui::Checkbox("Checker##add", &checker);
 			if (ImGui::Button("Add")) {
-				scene.world.add_mat(albedo(texture(rgb, srgb), texture(mer, smer), texture(nor, snor), scl, ir, tint), mat_enum(type));
+				scene.world.add_mat(albedo(texture(rgb, srgb, s1), texture(mer, smer, s2), texture(nor, snor, s3), scl, ir, tint, alpha, checker), mat_enum(type));
 			}
 			ImGui::End();
 		}
