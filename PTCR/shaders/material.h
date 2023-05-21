@@ -54,8 +54,7 @@ namespace material {
 		bool metal = rafl() < mu;
 		bool spec = rafl() < F.w();
 		bool backface = NoL <= 0;
-		if (metal) {
-			if (backface)return;
+		if (metal && !backface) {
 			F = mix(F, tex.tinted(), (1 - HoV) * tex.tint.w());
 			mat.aten = F * (use_vndf ? VNDF_GGX(NoL, NoV, a) : GGX(NoL, NoV, a) * HoV / (NoV * NoH));
 			mat.L = n.world(L);
