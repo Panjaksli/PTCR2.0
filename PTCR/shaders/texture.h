@@ -15,7 +15,7 @@ public:
 	texture(vec4 _rgb) : rgb(_rgb) { flags.bit(0, 1); flags.bit(2, 0); }
 	texture(const char* _filename) {
 		clear();
-		if (_filename != nullptr && strcmp(_filename, "0") != 0) {
+		if (_filename && strcmp(_filename, "0") != 0) {
 			std::string filename = std::string(_filename);
 			bool found = load(filename) || load(filename + ".jpg") || load(filename + ".png") || load(filename + ".gif") || load(filename + ".tga")
 				|| load("textures/" + filename) || load("textures/" + filename + ".jpg") || load("textures/" + filename + ".png") ||
@@ -38,7 +38,7 @@ public:
 		flags = cpy.flags;
 		name = cpy.name;
 		rgb = cpy.rgb;
-		if (cpy.data != nullptr) {
+		if (cpy.data) {
 			w = cpy.w, h = cpy.h;
 			data = (uchar*)malloc(w * h * 4);
 			memcpy(data, cpy.data, w * h * 4);
@@ -53,7 +53,7 @@ public:
 	}
 
 	__forceinline vec4 sample(float u, float v) const {
-		if (solid() || data == nullptr)return rgb;
+		if (solid() || !data)return rgb;
 		uint x = u * (w - 1);
 		uint y = v * (h - 1);
 		x %= w;
