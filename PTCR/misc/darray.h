@@ -11,7 +11,7 @@ public:
 	darray(uint32_t size, const T& ref) : _data(new T[size]), _size(size), _capacity(size) {
 		copy(_data, ref, _size);
 	}
-	darray(const std::vector<T>& ref) : _data(new T[ref.size()]), _size(ref.size()), _capacity(ref.size()) {
+	darray(const vector<T>& ref) : _data(new T[ref.size()]), _size(ref.size()), _capacity(ref.size()) {
 		copy(_data, ref.data(), _size);
 	}
 	darray(const darray& cpy) {
@@ -123,7 +123,7 @@ public:
 	}
 	inline void print() const {
 		for (uint32_t i = 0; i < size(); i++)
-			std::cout << _data[i] << " ";
+			cout << _data[i] << " ";
 		printf("\n");
 	}
 	friend void swap(darray& d1, darray& d2) {

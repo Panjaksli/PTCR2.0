@@ -16,7 +16,7 @@ public:
 	texture(const char* _filename) {
 		clear();
 		if (_filename && strcmp(_filename, "0") != 0) {
-			std::string filename = std::string(_filename);
+			string filename = string(_filename);
 			bool found = load(filename) || load(filename + ".jpg") || load(filename + ".png") || load(filename + ".gif") || load(filename + ".tga")
 				|| load("textures/" + filename) || load("textures/" + filename + ".jpg") || load("textures/" + filename + ".png") ||
 				load("textures/" + filename + ".gif") || load("textures/" + filename + ".tga");
@@ -86,5 +86,5 @@ private:
 	uchar* data = nullptr;
 	uint w = 0, h = 0;
 	bitfield<uint> flags;
-	bool load(const std::string filename);
+	bool load(const string filename);
 };

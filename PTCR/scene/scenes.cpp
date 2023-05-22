@@ -10,7 +10,7 @@ bool scn_save(Scene& scn, const char* filename) {
 		char x[256] = {};
 	};
 	double time = timer();
-	std::string name(filename);
+	string name(filename);
 	if (name.empty())return false;
 	if (path(name).is_relative()) {
 		if (name.find(".scn") == -1)
@@ -20,7 +20,7 @@ bool scn_save(Scene& scn, const char* filename) {
 	}
 	std::ofstream file(name);
 	if (!file.is_open()) {
-		std::cout << "Failed to write to file: " << name << "\n";
+		cout << "Failed to write to file: " << name << "\n";
 		return false;
 	}
 	ln line; vector<ln> lines;
@@ -175,7 +175,7 @@ bool scn_save(Scene& scn, const char* filename) {
 
 bool scn_load(Scene& scn, const char* filename, bool update_only) {
 	double time = timer();
-	std::string name(filename);
+	string name(filename);
 	if (name.empty())return false;
 	if (path(name).is_relative() && name.find(".scn") == -1)
 		name = name + ".scn";
@@ -186,7 +186,7 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 			file = std::ifstream(name);
 		}
 		if (!file.is_open()) {
-			std::cout << "File not found: " << name << "\n";
+			cout << "File not found: " << name << "\n";
 			return false;
 		}
 	}
@@ -194,7 +194,7 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 	scn.world.clear();
 	std::stringstream file_buff;
 	file_buff << file.rdbuf();
-	std::string line = "";
+	string line = "";
 	int state = -1;
 	while (std::getline(file_buff, line)) {
 		vec4 tmp, P, A;

@@ -4,10 +4,10 @@
 #include "quad.h"
 #include "voxel.h"
 void OBJ_to_MSH(const char* filename);
-std::vector<poly> load_mesh(const char* filename, vec4 off = 0, float scale = 1.f, bool flip_face = 0);
-std::vector<poly> load_OBJ(const char* filename, vec4 off = 0, float scale = 1.f, bool flip_face = 0);
-std::vector<poly> load_MSH(const char* filename, vec4 off = 0, float scale = 1.f, bool flip_face = 0);
-std::vector<poly> generate_mesh(uint seed, vec4 off, float scale, bool flip = 0);
+vector<poly> load_mesh(const char* filename, vec4 off = 0, float scale = 1.f, bool flip_face = 0);
+vector<poly> load_OBJ(const char* filename, vec4 off = 0, float scale = 1.f, bool flip_face = 0);
+vector<poly> load_MSH(const char* filename, vec4 off = 0, float scale = 1.f, bool flip_face = 0);
+vector<poly> generate_mesh(uint seed, vec4 off, float scale, bool flip = 0);
 template <class primitive>
 class mesh {
 public:

@@ -25,13 +25,11 @@ inline __m128 _mm_rafl_ps(float max) { return max * _mm_rafl_ps(); }
 inline __m128 _mm_rafl_ps(float min, float max) {
 	return min + (max - min) * _mm_rafl_ps();
 }
-
 inline __m128 _mm_abs_ps(const __m128& x) {
 	__m128i mask = _mm_slli_epi32(_mm_castps_si128(x), 1);
 	mask = _mm_srli_epi32(mask, 1);
 	return _mm_castsi128_ps(mask);
 };
-
 inline __m128 _mm_sign_ps(const __m128& x, const __m128& y) {
 	__m128 mask = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
 	__m128 sign = _mm_and_ps(mask, y);
@@ -57,7 +55,6 @@ inline __m128 _mm_fsqrt_ps(const __m128& n) {
 	i = _mm_add_epi32(i, _mm_set1_epi32(0x1fbd5f5f));
 	return _mm_castsi128_ps(i);
 }
-
 // FROM:
 // https://stackoverflow.com/questions/47025373/fastest-implementation-of-the-natural-exponential-function-using-sse
 inline __m128 _mm_expf_ps(const __m128& x) {
@@ -82,7 +79,6 @@ inline __m128 _mm_expf_ps(const __m128& x) {
 	r = _mm_castsi128_ps(_mm_add_epi32(j, _mm_castps_si128(p))); /* r = p * 2^i*/
 	return r;
 }
-
 // From:
 // https://geometrian.com/programming/tutorials/cross-product/index.php
 __forceinline __m128 _mm_cross_ps(const __m128& u, const __m128& v) {
@@ -107,21 +103,15 @@ __forceinline __m128 _mm_dot_ps(const __m128& u, const __m128& v) {
 	}
 	else {
 		uv = (inp == 0xf) ? uv : _mm_blend_ps(zero, uv, inp);
-		__m128 shuf = uv + _mm_shuffle_ps(
-			uv, uv, _MM_SHUFFLE(2, 3, 0, 1));  // 3+2 2+3 1+0 0+1
-		uv = shuf +
-			_mm_shuffle_ps(shuf, shuf,
-				_MM_SHUFFLE(0, 1, 2, 3));  // 32+01 23+10 10+23 01+32
+		__m128 shuf = uv + _mm_shuffle_ps(uv, uv, _MM_SHUFFLE(2, 3, 0, 1));  // 3+2 2+3 1+0 0+1
+		uv = shuf + _mm_shuffle_ps(shuf, shuf, _MM_SHUFFLE(0, 1, 2, 3));  // 32+01 23+10 10+23 01+32
 	}
 	return (outp == 0xf) ? uv : _mm_blend_ps(zero, uv, outp);
 }
 // normalized vec4, only first 3 components are guaranteed to be correct!
 __forceinline __m128 _mm_norm_ps(const __m128& u) {
 	__m128 v = u * u;
-	__m128 x = v + _mm_shuffle_ps(
-		v, v, _MM_SHUFFLE(0, 0, 2, 2));  // 3+3 / 0+2 / 2+1 / 2+0
-	__m128 y =
-		x + _mm_shuffle_ps(
-			v, v, _MM_SHUFFLE(0, 1, 0, 1));  // 3+3+3 / 1+0+2 / 0+2+1 / 1+2+0
+	__m128 x = v + _mm_shuffle_ps(v, v, _MM_SHUFFLE(0, 0, 2, 2));  // 3+3 / 0+2 / 2+1 / 2+0
+	__m128 y = x + _mm_shuffle_ps(v, v, _MM_SHUFFLE(0, 1, 0, 1));  // 3+3+3 / 1+0+2 / 0+2+1 / 1+2+0
 	return u / _mm_sqrt_ps(y);
 }

@@ -2,7 +2,7 @@
 #include <stb/stb_image.h>
 #include "texture.h"
 
-bool texture::load(const std::string filename) {
+bool texture::load(const string filename) {
 	int n = 4;
 	int width = 0, height = 0;
 	uchar* tmp = stbi_load(filename.c_str(), &width, &height, &n, 4);

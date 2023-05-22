@@ -1,6 +1,6 @@
 #include "mesh.h"
-std::vector<poly> load_mesh(const char* filename, vec4 off, float scale, bool flip) {
-	std::string name(filename);
+vector<poly> load_mesh(const char* filename, vec4 off, float scale, bool flip) {
+	string name(filename);
 	if (name.find(".msh") != -1) {
 		return load_MSH(name.c_str(), off, scale, flip);
 	}
@@ -26,13 +26,13 @@ std::vector<poly> load_mesh(const char* filename, vec4 off, float scale, bool fl
 	}
 	else {
 		printf("INVALID MESH: %s !!!!!\n", filename);
-		return std::vector<poly>();
+		return vector<poly>();
 	}
 }
 
 void OBJ_to_MSH(const char* filename) {
 
-	std::string name(filename);
+	string name(filename);
 	std::ifstream file(name);
 	if (!file.is_open()) {
 		printf("File not found !\n");
@@ -40,9 +40,9 @@ void OBJ_to_MSH(const char* filename) {
 	}
 	std::stringstream file_buff;
 	file_buff << file.rdbuf();
-	std::vector<float3> vert; vert.reserve(0xffff);
-	std::vector<uint3> face; face.reserve(0xffff);
-	std::string line = "";
+	vector<float3> vert; vert.reserve(0xffff);
+	vector<uint3> face; face.reserve(0xffff);
+	string line = "";
 	while (std::getline(file_buff, line)) {
 		float3 ftmp; uint3 utmp; uint tmp4 = 0;
 		if (sscanf_s(line.c_str(), "v %f %f %f", &ftmp.x, &ftmp.y, &ftmp.z) > 1) {
@@ -70,8 +70,8 @@ void OBJ_to_MSH(const char* filename) {
 	out.close();
 }
 
-std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool flip) {
-	std::string name(filename);
+vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool flip) {
+	string name(filename);
 	std::ifstream file(name);
 	if (!file.is_open()) {
 		printf("File not found !\n");
@@ -79,10 +79,10 @@ std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool fli
 	}
 	std::stringstream file_buff;
 	file_buff << file.rdbuf();
-	std::vector<vec4> vert; vert.reserve(0xffff);
-	std::vector<uint3> face; face.reserve(0xffff);
-	std::string line = "";
-	std::string pref = "";
+	vector<vec4> vert; vert.reserve(0xffff);
+	vector<uint3> face; face.reserve(0xffff);
+	string line = "";
+	string pref = "";
 	double t1 = timer();
 	while (std::getline(file_buff, line)) {
 		//C version is 2x faster
@@ -125,8 +125,8 @@ std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool fli
 #if SMOOTH_SHADING
 
 	//per-vertex normals
-	std::vector<poly> polys(face.size());
-	std::vector<vec4> nrms(vert.size(), vec4());
+	vector<poly> polys(face.size());
+	vector<vec4> nrms(vert.size(), vec4());
 	for (uint j = 0; j < face.size(); j++) {
 		flip ? polys[j].set_quv(vert[face[j].x], vert[face[j].z], vert[face[j].y])
 			: polys[j].set_quv(vert[face[j].x], vert[face[j].y], vert[face[j].z]);
@@ -140,7 +140,7 @@ std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool fli
 	for (uint j = 0; j < face.size(); j++)
 		polys[j].set_nor(nrms[face[j].x], nrms[face[j].y], nrms[face[j].z]);
 #else
-	std::vector<poly> polys; polys.reserve(face.size());
+	vector<poly> polys; polys.reserve(face.size());
 	for (const auto& f : face) {
 		vec4 a = vert[f.x];
 		vec4 b = vert[f.y];
@@ -149,13 +149,13 @@ std::vector<poly> load_OBJ(const char* filename, vec4 off, float scale, bool fli
 	}
 
 #endif
-	std::cout << "Loaded: " << name << " Polygons: " << polys.size() << " Took: " << timer(t1) << "\n";
+	cout << "Loaded: " << name << " Polygons: " << polys.size() << " Took: " << timer(t1) << "\n";
 	return polys;
 }
 
 
-std::vector<poly> load_MSH(const char* filename, vec4 off, float scale, bool flip) {
-	std::string name(filename);
+vector<poly> load_MSH(const char* filename, vec4 off, float scale, bool flip) {
+	string name(filename);
 	std::ifstream file(name, std::ios_base::in | std::ios_base::binary);
 	if (!file.is_open()) {
 		printf("File not found !\n");
@@ -164,8 +164,8 @@ std::vector<poly> load_MSH(const char* filename, vec4 off, float scale, bool fli
 	double t1 = timer();
 	uint vf[2] = {};
 	file.read((char*)vf, 2 * sizeof(uint));
-	std::vector<float3> vert(vf[0]);
-	std::vector<uint3> face(vf[1]);
+	vector<float3> vert(vf[0]);
+	vector<uint3> face(vf[1]);
 	file.read((char*)&vert[0], sizeof(float3) * vf[0]);
 	file.read((char*)&face[0], sizeof(uint3) * vf[1]);
 	file.close();
@@ -176,8 +176,8 @@ std::vector<poly> load_MSH(const char* filename, vec4 off, float scale, bool fli
 		}
 #if SMOOTH_SHADING
 	//per-vertex normals
-	std::vector<poly> polys(face.size());
-	std::vector<vec4> nrms(vert.size(), vec4());
+	vector<poly> polys(face.size());
+	vector<vec4> nrms(vert.size(), vec4());
 	for (uint j = 0; j < face.size(); j++) {
 		flip ? polys[j].set_quv(vert[face[j].x], vert[face[j].z], vert[face[j].y])
 			: polys[j].set_quv(vert[face[j].x], vert[face[j].y], vert[face[j].z]);
@@ -191,7 +191,7 @@ std::vector<poly> load_MSH(const char* filename, vec4 off, float scale, bool fli
 	for (uint j = 0; j < face.size(); j++)
 		polys[j].set_nor(nrms[face[j].x], nrms[face[j].y], nrms[face[j].z]);
 #else
-	std::vector<poly> polys; polys.reserve(face.size());
+	vector<poly> polys; polys.reserve(face.size());
 	for (const auto& f : face) {
 		vec4 a = vert[f.x];
 		vec4 b = vert[f.y];
@@ -199,6 +199,6 @@ std::vector<poly> load_MSH(const char* filename, vec4 off, float scale, bool fli
 		polys.emplace_back(flip ? poly(a, c, b) : poly(a, b, c));
 	}
 #endif
-	std::cout << "Loaded: " << name << " Polygons: " << polys.size() << " Took: " << timer(t1) << "\n";
+	cout << "Loaded: " << name << " Polygons: " << polys.size() << " Took: " << timer(t1) << "\n";
 	return polys;
 }

@@ -25,8 +25,8 @@
 #define LOGSCL ImGuiSliderFlags_Logarithmic
 #define FLOATCOL ImGuiColorEditFlags_Float
 #define INPTEXT ImGuiInputTextFlags_EnterReturnsTrue
-#define CONSOLE_SLOW(x) do {if(rafl() > 0.99999f) std::cout << x << "\n"}while(0)
-#define CONSOLE(x) do {std::cout << x << "\n"}while(0)
+#define CONSOLE_SLOW(x) do {if(rafl() > 0.99999f) cout << x << "\n"}while(0)
+#define CONSOLE(x) do {cout << x << "\n"}while(0)
 
 constexpr double pi_dbl = 3.14159265358979323846;
 constexpr float sqrtpi = 1.77245385091;
@@ -43,7 +43,6 @@ constexpr float infp = 1e4f;
 constexpr float infn = -1e4f;
 constexpr float eps = 1e-4f;
 constexpr float eps2 = 1e-6f;
-using std::vector;
 using std::sin;
 using std::cos;
 using std::fabs;
@@ -58,5 +57,7 @@ using std::tan;
 using std::atan2;
 using std::acos;
 using std::asin;
-using std::cout;
+
+using std::vector;
 using std::string;
+using std::cout;

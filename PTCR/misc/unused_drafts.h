@@ -97,11 +97,11 @@ inline vec4 bilat_5x5(const vec4* x) {
 	}
 	return y / w;
 }
-std::vector<poly> generate_mesh(uint seed, vec4 off, float scale, bool flip) {
+vector<poly> generate_mesh(uint seed, vec4 off, float scale, bool flip) {
 	int dim = 128;
-	std::vector<vec4> vert2(dim * dim);
-	std::vector<vec4> vert(dim * dim);
-	std::vector<uint3> face;
+	vector<vec4> vert2(dim * dim);
+	vector<vec4> vert(dim * dim);
+	vector<uint3> face;
 
 	for (int i = 0; i < dim; i++) {
 		for (int j = 0; j < dim; j++) {
@@ -131,8 +131,8 @@ std::vector<poly> generate_mesh(uint seed, vec4 off, float scale, bool flip) {
 
 #if SMOOTH_SHADING
 	//per-vertex normals
-	std::vector<poly> polys(face.size());
-	std::vector<vec4> nrms(vert.size(), vec4());
+	vector<poly> polys(face.size());
+	vector<vec4> nrms(vert.size(), vec4());
 	for (uint j = 0; j < face.size(); j++) {
 		flip ? polys[j].set_quv(vert[face[j].x], vert[face[j].z], vert[face[j].y])
 			: polys[j].set_quv(vert[face[j].x], vert[face[j].y], vert[face[j].z]);
@@ -146,7 +146,7 @@ std::vector<poly> generate_mesh(uint seed, vec4 off, float scale, bool flip) {
 	for (uint j = 0; j < face.size(); j++)
 		polys[j].set_nor(nrms[face[j].x], nrms[face[j].y], nrms[face[j].z]);
 #else
-	std::vector<poly> polys; polys.reserve(face.size());
+	vector<poly> polys; polys.reserve(face.size());
 	for (const auto& f : face) {
 		vec4 a = vert[f.x];
 		vec4 b = vert[f.y];
