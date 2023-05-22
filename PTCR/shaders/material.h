@@ -41,7 +41,7 @@ namespace material {
 		float ro = mer.z();
 		float a = ro * ro;
 		vec4 N = normal_map(rec.N, nor);
-		N = N - 2.f * posdot(r.D,N) * r.D;//if(dot(r.D,N)>0) 
+		N = N - 2.f * posdot(r.D, N) * r.D;//if(dot(r.D,N)>0) 
 		onb n = onb(N);
 		vec4 V = n.local(-r.D);
 		vec4 H = use_vndf ? sa_vndf(V, a) : sa_ggx(a);
@@ -75,7 +75,7 @@ namespace material {
 		}
 		mat.a = a;
 		mat.N = N;
-		mat.P = rec.P + N * eps;
+		mat.P = rec.P + rec.N * eps;
 		mat.emis = rgb * em;
 		mat.refl *= not0(mat.aten);
 	}
@@ -92,23 +92,25 @@ namespace material {
 		float n2 = rec.face ? tex.ir : tex.ir == n1 ? 1.f : tex.ir;
 		bool opaque = rafl() < rgb.w();
 		vec4 N = normal_map(rec.N, nor);
-		onb n(N);
-		//perfect diffuse && solid
-		if (mu < eps && ro > 1 - eps && opaque) {
-			mat.aten = rgb;
-			mat.L = n.world(sa_cos());
-			mat.N = N;
-			mat.P = rec.P + rec.N * eps;
-			mat.emis = rgb * em;
-			mat.refl = refl_diff * not0(mat.aten);
-			return;
+		N = N - 2.f * posdot(r.D, N) * r.D;
+		onb n(N);	
+		if (opaque) { //solid
+			if (mu < eps && ro > 1 - eps) { //diffuse
+				mat.aten = rgb;
+				mat.L = n.world(sa_cos());
+				mat.N = N;
+				mat.P = rec.P + rec.N * eps;
+				mat.emis = rgb * em;
+				mat.refl = refl_diff * not0(mat.aten);
+				return;
+			}
+			else return ggx(r, rec, tex, mat); //generic
 		}
-		else if (opaque)return ggx(r, rec, tex, mat);
-		else if (tex.alpha()) {
+		else if (tex.alpha()) { //completely transparent
 			mat.aten = rgb;
-			mat.N = rec.N;
-			mat.P = rec.P - rec.N * eps;
+			mat.N = N;
 			mat.L = r.D;
+			mat.P = rec.P + r.D * eps;
 			mat.refl = refl_tran * not0(mat.aten);
 			return;
 		}
@@ -133,16 +135,15 @@ namespace material {
 				mat.aten = mix(rgb, tex.tinted(), (1 - HoV) * tex.tint.w());
 				mat.refl = refl_tran;
 			}
-			mat.P = rec.P + rec.N * eps;
 		}
 		else {
-			mat.P = rec.P - rec.N * eps;
 			mat.aten = mix(rgb, tex.tinted(), (1 - HoV) * tex.tint.w());
 			mat.refl = refl_tran;
 			mat.ir = n2;
 		}
 		mat.a = a;
 		mat.N = N;
+		mat.P = rec.P + mat.L * eps;
 		mat.emis = em * rgb;
 		mat.refl *= not0(mat.aten);
 	}
