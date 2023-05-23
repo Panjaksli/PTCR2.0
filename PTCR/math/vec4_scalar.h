@@ -114,6 +114,9 @@ inline vec4 toint(vec4 u) {
 inline vec4 floor(vec4 u) {
 	return vec4(floorf(u.x()), floorf(u.y()), floorf(u.z()), floorf(u.w()));
 }
+inline vec4 round(vec4 u) {
+	return vec4(roundf(u.x()), roundf(u.y()), roundf(u.z()), roundf(u.w()));
+}
 inline vec4 ceil(vec4 u) {
 	return vec4(ceilf(u.x()), ceilf(u.y()), ceilf(u.z()), ceilf(u.w()));
 }

@@ -104,6 +104,9 @@ inline vec4 toint(const vec4& u) {
 inline vec4 floor(const vec4& u) {
 	return _mm_floor_ps(u.xyz);
 }
+inline vec4 round(const vec4& u) {
+	return _mm_round_ps(u.xyz, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+}
 inline vec4 ceil(const vec4& u) {
 	return _mm_ceil_ps(u.xyz);
 }
