@@ -134,38 +134,14 @@ using vmesh = mesh<voxel>;
 SSS -> SAVING SOURCE SPACE
 Brought to you by laziness 101
 */
-#define SELECT_RE(t,f,def)\
-switch (t) {\
-case o_pol: return p.f;\
-case o_qua: return q.f;\
-case o_sph: return s.f;\
-case o_vox: return v.f;\
-default: return def;\
-}
-#define SELECT_BR(t,f)\
-switch (t) {\
-case o_pol: p.f; break;\
-case o_qua: q.f; break;\
-case o_sph: s.f; break;\
-case o_vox: v.f; break;\
-default: break;\
-}
-#define SELECT_FUN(t,y,f,def)\
-switch (t) {\
-case o_pol: y = p.f; break;\
-case o_qua: y = q.f; break;\
-case o_sph: y = s.f; break;\
-case o_vox: y = v.f; break;\
-default: y=def; break;\
-}
-#define SELECT_EQ(t,x)\
-switch (t) {\
-case o_pol: p = x.p; break;\
-case o_qua: q = x.q; break;\
-case o_sph: s = x.s; break;\
-case o_vox: v = x.v; break;\
-default: break;\
-}
+#define SEL_MSH(id,lhs,rhs,def)\
+switch(id){ \
+    case o_pol: lhs p.rhs; break; \
+    case o_qua: lhs q.rhs; break; \
+    case o_sph: lhs s.rhs; break; \
+    case o_vox: lhs v.rhs; break; \
+    default: lhs def; break;\
+} 
 
 struct mesh_var {
 	mesh_var() : flag(o_bla, 0, 0, 0) {}
@@ -187,54 +163,54 @@ struct mesh_var {
 	~mesh_var() {
 		//Destructor DOES matter here (each type holds a different pointer, thus correct delete[] method shall be called !) maybe, possibly, not sure ?
 		//Doesn't leak memory, for now :)
-		SELECT_BR(type(), ~mesh());
+		SEL_MSH(type(), , ~mesh(), );
 	}
 
 	__forceinline bool hit(const ray& r, hitrec& rec) const {
 		if (!p.get_box().hit(r))return false;
-		SELECT_RE(type(), hit(r, rec), false);
+		SEL_MSH(type(), return , hit(r, rec), false);
 	}
 
 	__forceinline bool hit(const ray& r, hitrec& rec, uint prim_id) const {
-		SELECT_RE(type(), hit(r, rec, prim_id), false);
+		SEL_MSH(type(), return, hit(r, rec, prim_id), false);
 	}
 
 	__forceinline float pdf(const ray& r, uint prim_id) const {
-		SELECT_RE(type(), pdf(r, prim_id), false);
+		SEL_MSH(type(), return, pdf(r, prim_id), 0);
 	}
 
 	mat4 get_trans()const {
-		SELECT_RE(type(), get_trans(), mat4());
+		SEL_MSH(type(),return, get_trans(), mat4());
 	}
 	const mesh_var& transform(const mat4& T) {
-		SELECT_BR(type(), transform(T));
+		SEL_MSH(type(),,transform(T),);
 		return *this;
 	}
-	//Does not matter which variable is used, they all have the same memory layout
-	inline void set_mat(uint mat) {
+	//Does not matter which variable is used, they all have the same memory layout ?
+	void set_mat(uint mat) {
 		return p.set_mat(mat);
 	}
-	inline uint get_size()const {
+	uint get_size()const {
 		return p.get_size();
 	}
-	inline uint get_mat()const {
+	uint get_mat()const {
 		return p.get_mat();
 	}
-	inline aabb get_box()const {
+	aabb get_box()const {
 		return p.get_box();
 	}
-	inline aabb get_box(uint prim_id)const {
-		SELECT_RE(type(), get_box(prim_id), aabb());
+	aabb get_box(uint prim_id)const {
+		SEL_MSH(type(), return, get_box(prim_id), aabb());
 	}
 	__forceinline float pdf(const ray& r)const {
 		if (!p.get_box().hit(r))return 0;
-		SELECT_RE(type(), pdf(r), 0);
+		SEL_MSH(type(), return, pdf(r), 0);
 	}
 	__forceinline vec4 rand_to(vec4 O) const {
-		SELECT_RE(type(), rand_to(O), 0);
+		SEL_MSH(type(), return, rand_to(O), 0);
 	}
 	__forceinline ray rand_from() const {
-		SELECT_RE(type(), rand_from(), ray());
+		SEL_MSH(type(), return, rand_from(), ray());
 	}
 	const char* get_name() const {
 		if (!name.empty())return name;

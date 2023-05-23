@@ -6,7 +6,7 @@
 
 extern bool en_bvh;
 enum obj_enum {
-	o_pol, o_qua, o_sph, o_vox, o_bla
+	o_bla, o_pol, o_qua, o_sph, o_vox
 };
 
 inline const char* obj_enum_str(int val, bool mesh = 0) {
