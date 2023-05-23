@@ -1,23 +1,19 @@
-#include <filesystem>
 #include "Scenes.h"
+struct ln {
+	ln() {}
+	ln(const char* text) { strcpy_s(x, 255, text); }
+	operator char* () { return x; }
+	char x[256] = {};
+};
 //Simple text format
-using std::filesystem::path;
 bool scn_save(Scene& scn, const char* filename) {
-	struct ln {
-		ln() {}
-		ln(const char* text) { strcpy_s(x, 255, text); }
-		operator char* () { return x; }
-		char x[256] = {};
-	};
 	double time = timer();
-	string name(filename);
+	path name(u8path(filename));
 	if (name.empty())return false;
-	if (path(name).is_relative()) {
-		if (name.find(".scn") == -1)
-			name = name + ".scn";
-		if (name.find("scenes/") == -1)
-			name = "scenes/" + name;
-	}
+	if (!name.has_extension())
+		name.replace_extension(".scn");
+	if (!exists(name))
+		name = "scenes" / name;
 	std::ofstream file(name);
 	if (!file.is_open()) {
 		cout << "Failed to write to file: " << name << "\n";
@@ -175,28 +171,22 @@ bool scn_save(Scene& scn, const char* filename) {
 
 bool scn_load(Scene& scn, const char* filename, bool update_only) {
 	double time = timer();
-	string name(filename);
+	path name(u8path(filename));
 	if (name.empty())return false;
-	if (path(name).is_relative() && name.find(".scn") == -1)
-		name = name + ".scn";
+	if (!name.has_extension())
+		name.replace_extension(".scn");
+	if (!exists(name))
+		name = "scenes" / name;
 	std::ifstream file(name);
 	if (!file.is_open()) {
-		if (path(name).is_relative()) {
-			name = "scenes/" + name;
-			file = std::ifstream(name);
-		}
-		if (!file.is_open()) {
-			cout << "File not found: " << name << "\n";
-			return false;
-		}
+		cout << "File not found: " << name << "\n";
+		return false;
 	}
 	if (!update_only)scn.skybox.clear();
 	scn.world.clear();
-	std::stringstream file_buff;
-	file_buff << file.rdbuf();
 	string line = "";
 	int state = -1;
-	while (std::getline(file_buff, line)) {
+	while (std::getline(file, line)) {
 		vec4 tmp, P, A;
 		vec4 q, a, b, c;
 		constexpr int BUFF = 128;
@@ -214,7 +204,7 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 					if (sscanf_s(buff2, "%g,%g,%g,%g,%g,%g,%g,%g,%g", &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &c[0], &c[1], &c[2]) > 1)
 						data.emplace_back(a, b, c);
 					else {
-						while (std::getline(file_buff, line)) {
+						while (std::getline(file, line)) {
 							if (line[0] == '}') break;
 							else if (sscanf_s(line.c_str(), "%g,%g,%g,%g,%g,%g,%g,%g,%g", &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &c[0], &c[1], &c[2]) > 1)
 								data.emplace_back(a, b, c);
@@ -227,7 +217,7 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 					if (sscanf_s(buff2, "%g,%g,%g,%g,%g,%g,%g,%g,%g", &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &c[0], &c[1], &c[2]) > 1)
 						data.emplace_back(a, b, c);
 					else {
-						while (std::getline(file_buff, line)) {
+						while (std::getline(file, line)) {
 							if (line[0] == '}') break;
 							else if (sscanf_s(line.c_str(), "%g,%g,%g,%g,%g,%g,%g,%g,%g", &a[0], &a[1], &a[2], &b[0], &b[1], &b[2], &c[0], &c[1], &c[2]) > 1)
 								data.emplace_back(a, b, c);
@@ -240,7 +230,7 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 					if (sscanf_s(buff2, "%g,%g,%g,%g", &q[0], &q[1], &q[2], &q[3]) > 1)
 						data.emplace_back(q);
 					else {
-						while (std::getline(file_buff, line)) {
+						while (std::getline(file, line)) {
 							if (line[0] == '}') break;
 							else if (sscanf_s(line.c_str(), "%g,%g,%g,%g", &q[0], &q[1], &q[2], &q[3]) > 1)
 								data.emplace_back(q);
@@ -253,7 +243,7 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 					if (sscanf_s(buff2, "%g,%g,%g,%g", &q[0], &q[1], &q[2], &q[3]) > 1)
 						data.emplace_back(q);
 					else {
-						while (std::getline(file_buff, line)) {
+						while (std::getline(file, line)) {
 							if (line[0] == '}') break;
 							else if (sscanf_s(line.c_str(), "%g,%g,%g,%g", &q[0], &q[1], &q[2], &q[3]) > 1)
 								data.emplace_back(q);
@@ -358,29 +348,8 @@ void scn_load(Scene& scn, int n) {
 	scn.cam.V = 0;
 	scn.world.update_lists();
 	scn.world.build_bvh(1, scn.opt.node_size);
-}
+	}
 void scn1(Scene& scn) {
-	/*vector<quad> msh;
-	int size = sqrt(16384/4/4) / 2;
-	for (int i = -size; i < size; i++)
-		for (int j = -size; j < size; j++)
-			msh.push_back(quad(vec4(i, j,-size), vec4(1, 0, 0), vec4(0, 1, 0), true));
-	scn.opt.dbg_t = true;
-	scn.world.add_mesh(msh, vec4(0, 0, 0, 1));
-	scn.opt.med_thr = 0;
-	scn.opt.p_mode = 0;
-	scn.cam.bokeh = 0;
-	scn.cam.autofocus = 0;
-	scn.cam.foc_t = 1.556;
-	scn.cam.exposure = 1.f;
-	scn.sun_pos = rotat_mat4(vec4(1, 0, 0.32));
-	scn.opt.bounces = 10;
-	scn.opt.ninv_fog = -5;
-	scn.opt.p_life = 0.9f;
-	scn.opt.i_life = 1.f / 0.9f;
-	scn.cam.setup(mat4(0, 0), 90, 1.f);
-	scn.opt.en_fog = false;
-	scn.opt.en_bvh = 1;*/
 	albedo gre(vec4(0.7, 0.9, 0.7, 0), 0, vec4(0.5, 0.5, 1), 1, 1.2);
 	albedo carpet(vec4(0.8, 0.2, 0.2, 1), vec4(0, 0, 1), "snow_normal", 10);
 	albedo blu(vec4(0.1, 0.28, 0.8, 1), vec4(0.5, 0, 0.1));

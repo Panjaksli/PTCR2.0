@@ -3,7 +3,6 @@
 
 class texture {
 public:
-
 	texture() {}
 	texture(vec4 _rgb, const char* filename, int solid = -1) {
 		*this = texture(filename);
@@ -16,7 +15,7 @@ public:
 	texture(const char* _filename) {
 		clear();
 		if (_filename && strcmp(_filename, "0") != 0) {
-			string filename = string(_filename);
+			string filename(_filename);
 			bool found = load(filename) || load(filename + ".jpg") || load(filename + ".png") || load(filename + ".gif") || load(filename + ".tga")
 				|| load("textures/" + filename) || load("textures/" + filename + ".jpg") || load("textures/" + filename + ".png") ||
 				load("textures/" + filename + ".gif") || load("textures/" + filename + ".tga");

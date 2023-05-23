@@ -1,15 +1,5 @@
 #pragma once
-#include <math.h>
-#include <cstdio>
-#include <vector>
-#include <string>
-#include <ctime>
-#include <iostream>
-#include <fstream>
-#include <memory>
-#include <sstream>
-#include "c_str.h"
-
+#define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING
 #define uchar unsigned char
 #define uint unsigned int
 #define TEST 0
@@ -27,6 +17,19 @@
 #define INPTEXT ImGuiInputTextFlags_EnterReturnsTrue
 #define CONSOLE_SLOW(x) do {if(rafl() > 0.99999f) cout << x << "\n"}while(0)
 #define CONSOLE(x) do {cout << x << "\n"}while(0)
+
+#include <cmath>
+#include <cstdio>
+#include <vector>
+#include <string>
+#include <ctime>
+#include <iostream>
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <filesystem>
+#include <chrono>
+#include "c_str.h"
 
 constexpr double pi_dbl = 3.14159265358979323846;
 constexpr float sqrtpi = 1.77245385091;
@@ -61,3 +64,7 @@ using std::asin;
 using std::vector;
 using std::string;
 using std::cout;
+using std::filesystem::path;
+using std::filesystem::u8path;
+using std::filesystem::exists;
+

@@ -3,7 +3,6 @@
 #if USE_SSE
 #include "SSE.h"
 #endif
-#include <chrono>
 
 inline double timer() {
 	auto t = std::chrono::high_resolution_clock::now();
