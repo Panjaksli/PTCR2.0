@@ -4,7 +4,6 @@
 #include "quad.h"
 #include "voxel.h"
 vector<poly> load_mesh(const char* filename, vec4 off = 0, float scale = 1.f, bool flip_face = 0);
-vector<poly> load_OBJ(path name, vec4 off = 0, float scale = 1.f, bool flip_face = 0);
 vector<poly> load_MSH(path name, vec4 off = 0, float scale = 1.f, bool flip_face = 0);
 bool OBJ_to_MSH(path name);
 template <class primitive>

@@ -1,5 +1,67 @@
 #pragma once
 
+vector<poly> load_OBJ(path name, vec4 off = 0, float scale = 1.f, bool flip_face = 0);
+
+vector<poly> load_OBJ(path name, vec4 off, float scale, bool flip) {
+	std::ifstream file(name);
+	if (!file.is_open()) {
+		cout << "File: " << name << " not found !" << "\n";
+		return vector<poly>();
+	}
+	double t1 = timer();
+	vector<vec4> vert; vert.reserve(0xffff);
+	vector<uint3> face; face.reserve(0xffff);
+	string line; line.reserve(128);
+	while (std::getline(file, line)) {
+		float3 ftmp; uint3 utmp; uint tmp4 = 0; const char* cstr = line.c_str();
+		if (sscanf_s(cstr, "v %f %f %f", &ftmp.x, &ftmp.y, &ftmp.z) > 1) {
+			vert.emplace_back(ftmp);
+		}
+		else if (sscanf_s(cstr, "f %u%*[^ ]%u%*[^ ]%u%*[^ ]%u", &utmp.x, &utmp.y, &utmp.z, &tmp4) >= 3) {
+			utmp.x -= 1; utmp.y -= 1; utmp.z -= 1; tmp4 -= 1;
+			face.emplace_back(utmp);
+			if (tmp4 != -1) face.emplace_back(uint3(utmp.x, utmp.z, tmp4));
+		}
+		else if (sscanf_s(line.c_str(), "f %u %u %u %u", &utmp.x, &utmp.y, &utmp.z, &tmp4) >= 3) {
+			utmp.x -= 1; utmp.y -= 1; utmp.z -= 1; tmp4 -= 1;
+			face.emplace_back(utmp);
+			if (tmp4 != -1) face.emplace_back(uint3(utmp.x, utmp.z, tmp4));
+		}
+	}
+	file.close();
+	if (not0(off) || scale != 1.f)
+		for (auto& v : vert)
+			v = v * scale + off;
+#if SMOOTH_SHADING
+
+	//per-vertex normals
+	vector<poly> polys(face.size());
+	vector<vec4> nrms(vert.size(), vec4());
+	for (uint j = 0; j < face.size(); j++) {
+		flip ? polys[j].set_quv(vert[face[j].x], vert[face[j].z], vert[face[j].y])
+			: polys[j].set_quv(vert[face[j].x], vert[face[j].y], vert[face[j].z]);
+		vec4 n = cross(polys[j].U, polys[j].V);
+		nrms[face[j].x] += n;
+		nrms[face[j].y] += n;
+		nrms[face[j].z] += n;
+	}
+
+	//polygons from triangles and normals
+	for (uint j = 0; j < face.size(); j++)
+		polys[j].set_nor(nrms[face[j].x], nrms[face[j].y], nrms[face[j].z]);
+#else
+	vector<poly> polys; polys.reserve(face.size());
+	for (const auto& f : face) {
+		vec4 a = vert[f.x];
+		vec4 b = vert[f.y];
+		vec4 c = vert[f.z];
+		polys.emplace_back(flip ? poly(a, c, b) : poly(a, b, c));
+	}
+
+#endif
+	cout << "Loaded: " << name << " Polygons: " << polys.size() << " Took: " << timer(t1) << "\n";
+	return polys;
+}
 
 //struct instance {
 //	mat4 T, Ti;

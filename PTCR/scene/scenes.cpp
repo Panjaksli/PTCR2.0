@@ -7,18 +7,18 @@ struct ln {
 };
 //Simple text format
 bool scn_save(Scene& scn, const char* filename) {
-	double time = timer();
 	path name(u8path(filename));
 	if (name.empty())return false;
 	if (!name.has_extension())
 		name.replace_extension(".scn");
-	if (!exists(name))
+	if (!name.has_parent_path())
 		name = "scenes" / name;
 	std::ofstream file(name);
 	if (!file.is_open()) {
 		cout << "Failed to write to file: " << name << "\n";
 		return false;
 	}
+	double time = timer();
 	ln line; vector<ln> lines;
 	lines.reserve(256);
 	lines.push_back("*Objects");
@@ -88,13 +88,13 @@ bool scn_save(Scene& scn, const char* filename) {
 			}
 			else if (obj.type() == o_pol) {
 				if (obj.get_size() == 1) {
-					char data[256] = {};
+					ln data;
 					vec4 a = obj.p.get_raw(0).A();
 					vec4 b = obj.p.get_raw(0).B();
 					vec4 c = obj.p.get_raw(0).C();
 					sprintf(data, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
 					sprintf(line, "poly P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s}",
-						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), data);
+						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), data.x);
 					lines.push_back(line);
 				}
 				else if (obj.get_size() > 1) {
@@ -149,7 +149,7 @@ bool scn_save(Scene& scn, const char* filename) {
 	sprintf(line, "en_bvh=%u", scn.opt.en_bvh); lines.push_back(line);
 	sprintf(line, "en_sky=%u", scn.opt.sky); lines.push_back(line);
 	sprintf(line, "en_box=%u", scn.opt.skybox); lines.push_back(line);
-	sprintf(line, "select=%u", scn.opt.selected); lines.push_back(line);
+	sprintf(line, "select=%d", scn.opt.selected); lines.push_back(line);
 	sprintf(line, "outline=%u", scn.opt.outline); lines.push_back(line);
 	sprintf(line, "fog_dens=%g", scn.opt.ninv_fog); lines.push_back(line);
 	sprintf(line, "cam_collision=%u", scn.cam.collision); lines.push_back(line);
@@ -164,7 +164,6 @@ bool scn_save(Scene& scn, const char* filename) {
 	sprintf(line, "cam_rot=%g,%g,%g", scn.cam.T.A()[0], scn.cam.T.A()[1], scn.cam.T.A()[2]); lines.push_back(line);
 	for (const auto& line : lines)
 		file << line.x << std::endl;
-	file.close();
 	cout << "Saved scene: " << name << " took: " << timer(time) << "\n";
 	return true;
 }
@@ -175,7 +174,7 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 	if (name.empty())return false;
 	if (!name.has_extension())
 		name.replace_extension(".scn");
-	if (!exists(name))
+	if (!name.has_parent_path())
 		name = "scenes" / name;
 	std::ifstream file(name);
 	if (!file.is_open()) {
@@ -184,14 +183,14 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 	}
 	if (!update_only)scn.skybox.clear();
 	scn.world.clear();
-	string line = "";
+	string line; line.reserve(128);
 	int state = -1;
 	while (std::getline(file, line)) {
-		vec4 tmp, P, A;
+		vec4 V, P, A;
 		vec4 q, a, b, c;
 		constexpr int BUFF = 128;
 		char buff1[BUFF], buff2[BUFF], buff3[BUFF];
-		uint mat = 0, bvh = 1, lig = 0, val = 0, fog = 0;
+		uint mat = 0, bvh = 1, lig = 0, fog = 0, ival = 0;
 		uint alpha = 0, check = 0;
 		float scl = 1, ir = 1, fval = 0;
 		if (line[0] == '*') { state++; }
@@ -259,7 +258,7 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 			break;
 		case 1:
 			if (sscanf_s(line.c_str(), "albedo type=%u rgb=%s mer=%s nor=%s scl=%g ir=%g tint=%g,%g,%g,%g alpha=%u check=%u",
-				&mat, buff1, BUFF, buff2, BUFF, buff3, BUFF, &scl, &ir, &tmp[0], &tmp[1], &tmp[2], &tmp[3], &alpha, &check) > 0) {
+				&mat, buff1, BUFF, buff2, BUFF, buff3, BUFF, &scl, &ir, &V[0], &V[1], &V[2], &V[3], &alpha, &check) > 0) {
 				int s1 = -1, s2 = -1, s3 = -1;
 				vec4 srgb, smer, snor;
 				char rgb[BUFF], mer[BUFF], nor[BUFF];
@@ -274,7 +273,7 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 						texture(srgb, rgb, s1),
 						texture(smer, mer, s2),
 						texture(snor, nor, s3),
-						scl, ir, tmp, alpha, check
+						scl, ir, V, alpha, check
 					),
 					(mat_enum)mat
 				);
@@ -283,25 +282,25 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 		case 2:
 			if (!update_only) {
 				if (sscanf_s(line.c_str(), "skybox=%s", buff1, BUFF) > 0) { scn.set_skybox(buff1); }
-				else if (sscanf_s(line.c_str(), "ambient=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.ambient = tmp; }
-				else if (sscanf_s(line.c_str(), "sky_noon=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.sky_noon = tmp; }
-				else if (sscanf_s(line.c_str(), "sky_dawn=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.sky_dawn = tmp; }
-				else if (sscanf_s(line.c_str(), "sun_noon=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.sun_noon = tmp; }
-				else if (sscanf_s(line.c_str(), "sun_dawn=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.sun_dawn = tmp; }
-				else if (sscanf_s(line.c_str(), "fog_col=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.opt.fog_col = tmp; }
-				else if (sscanf_s(line.c_str(), "sun_pos=%g,%g,%g", &tmp[0], &tmp[1], &tmp[2]) > 0) { scn.sun_pos.set_A(tmp); }
-				else if (sscanf_s(line.c_str(), "bounces=%u", &val) > 0) scn.opt.bounces = val;
-				else if (sscanf_s(line.c_str(), "samples=%u", &val) > 0) scn.opt.samples = val;
-				else if (sscanf_s(line.c_str(), "en_fog=%u", &val) > 0) scn.opt.en_fog = val;
-				else if (sscanf_s(line.c_str(), "en_bvh=%u", &val) > 0) scn.opt.en_bvh = val;
-				else if (sscanf_s(line.c_str(), "en_sky=%u", &val) > 0) scn.opt.sky = val;
-				else if (sscanf_s(line.c_str(), "en_box=%u", &val) > 0) scn.opt.skybox = val;
-				else if (sscanf_s(line.c_str(), "select=%u", &val) > 0) scn.opt.selected = val;
-				else if (sscanf_s(line.c_str(), "outline=%u", &val) > 0) scn.opt.outline = val;
+				else if (sscanf_s(line.c_str(), "ambient=%g,%g,%g", &V[0], &V[1], &V[2]) > 0) { scn.opt.ambient = V; }
+				else if (sscanf_s(line.c_str(), "sky_noon=%g,%g,%g", &V[0], &V[1], &V[2]) > 0) { scn.opt.sky_noon = V; }
+				else if (sscanf_s(line.c_str(), "sky_dawn=%g,%g,%g", &V[0], &V[1], &V[2]) > 0) { scn.opt.sky_dawn = V; }
+				else if (sscanf_s(line.c_str(), "sun_noon=%g,%g,%g", &V[0], &V[1], &V[2]) > 0) { scn.opt.sun_noon = V; }
+				else if (sscanf_s(line.c_str(), "sun_dawn=%g,%g,%g", &V[0], &V[1], &V[2]) > 0) { scn.opt.sun_dawn = V; }
+				else if (sscanf_s(line.c_str(), "fog_col=%g,%g,%g", &V[0], &V[1], &V[2]) > 0) { scn.opt.fog_col = V; }
+				else if (sscanf_s(line.c_str(), "sun_pos=%g,%g,%g", &V[0], &V[1], &V[2]) > 0) { scn.sun_pos.set_A(V); }
+				else if (sscanf_s(line.c_str(), "bounces=%u", &ival) > 0) scn.opt.bounces = ival;
+				else if (sscanf_s(line.c_str(), "samples=%u", &ival) > 0) scn.opt.samples = ival;
+				else if (sscanf_s(line.c_str(), "en_fog=%u", &ival) > 0) scn.opt.en_fog = ival;
+				else if (sscanf_s(line.c_str(), "en_bvh=%u", &ival) > 0) scn.opt.en_bvh = ival;
+				else if (sscanf_s(line.c_str(), "en_sky=%u", &ival) > 0) scn.opt.sky = ival;
+				else if (sscanf_s(line.c_str(), "en_box=%u", &ival) > 0) scn.opt.skybox = ival;
+				else if (sscanf_s(line.c_str(), "select=%u", &ival) > 0) scn.opt.selected = ival;
+				else if (sscanf_s(line.c_str(), "outline=%u", &ival) > 0) scn.opt.outline = ival;
 				else if (sscanf_s(line.c_str(), "fog_dens=%g", &fval) > 0) scn.opt.ninv_fog = fval;
-				else if (sscanf_s(line.c_str(), "cam_collision=%u", &val) > 0) scn.cam.collision = val;
-				else if (sscanf_s(line.c_str(), "cam_blur=%u", &val) > 0) scn.cam.bokeh = val;
-				else if (sscanf_s(line.c_str(), "cam_auto=%u", &val) > 0) scn.cam.autofocus = val;
+				else if (sscanf_s(line.c_str(), "cam_collision=%u", &ival) > 0) scn.cam.collision = ival;
+				else if (sscanf_s(line.c_str(), "cam_blur=%u", &ival) > 0) scn.cam.bokeh = ival;
+				else if (sscanf_s(line.c_str(), "cam_auto=%u", &ival) > 0) scn.cam.autofocus = ival;
 				else if (sscanf_s(line.c_str(), "cam_fov=%g", &fval) > 0) scn.cam.set_fov(fval);
 				else if (sscanf_s(line.c_str(), "cam_fstop=%g", &fval) > 0) scn.cam.fstop = fval;
 				else if (sscanf_s(line.c_str(), "cam_exp=%g", &fval) > 0) scn.cam.exposure = fval;
@@ -314,7 +313,6 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 		default: break;
 		}
 	}
-	file.close();
 	scn.cam.V = 0;
 	scn.cam.moving = 1;
 	scn.world.build_bvh(1, scn.opt.node_size);
