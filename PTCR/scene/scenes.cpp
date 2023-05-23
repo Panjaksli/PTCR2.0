@@ -5,7 +5,7 @@ using std::filesystem::path;
 bool scn_save(Scene& scn, const char* filename) {
 	struct ln {
 		ln() {}
-		ln(const char* text) { strcpy_s(x, 256, text); }
+		ln(const char* text) { strcpy_s(x, 255, text); }
 		operator char* () { return x; }
 		char x[256] = {};
 	};
