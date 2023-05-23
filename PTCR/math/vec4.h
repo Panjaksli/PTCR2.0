@@ -8,45 +8,45 @@
 
 // common functions
 
-inline vec4 todeg(vec4 a) { return a * (180.0f / pi); }
-inline vec4 torad(vec4 a) { return a * (pi / 180.0f); }
+inline vec4 todeg(const vec4& a) { return a * (180.0f / pi); }
+inline vec4 torad(const vec4& a) { return a * (pi / 180.0f); }
 
-inline bool operator==(vec4 u, vec4 v) { return near0(u - v); }
-inline bool operator!=(vec4 u, vec4 v) { return !(u == v); }
+inline bool operator==(const vec4 &u, const vec4 &v) { return near0(u - v); }
+inline bool operator!=(const vec4 &u, const vec4 &v) { return !(u == v); }
 
-inline vec4 fma(vec4 a, vec4 b, vec4 c) { return a * b + c; }
-inline vec4 fract(vec4 u) { return u - floor(u); }
-inline vec4 mod(vec4 u, vec4 v) { return u - v * floor(u / v); }
-inline vec4 vec_eq_tol(vec4 u, vec4 v, float tol = eps) {
+inline vec4 fma(const vec4 &a, const vec4& b, const vec4& c) { return a * b + c; }
+inline vec4 fract(const vec4 &u) { return u - floor(u); }
+inline vec4 mod(const vec4 &u, const vec4 &v) { return u - v * floor(u / v); }
+inline vec4 vec_eq_tol(const vec4 &u, const vec4 &v, float tol = eps) {
 	vec4 w = fabs(u - v);
 	return vec_lt(w, tol);
 }
-inline float sum(vec4 u) { return dot(1.f, u); }
-inline float avg(vec4 u) { return dot(1.f / 3.f, u); }
-inline vec4 min(vec4 u, vec4 v, vec4 w) { return min(u, min(v, w)); }
-inline vec4 max(vec4 u, vec4 v, vec4 w) { return max(u, max(v, w)); }
-inline vec4 mix(vec4 x, vec4 y, vec4 t) { return (1.f - t) * x + t * y; }
-inline vec4 clamp(vec4 u, vec4 lo, vec4 hi) { return max(min(u, hi), lo); }
-inline vec4 saturate(vec4 u) { return clamp(u, 0.f, 1.f); }
-inline vec4 reflect(vec4 v, vec4 n) { return v - 2.f * dot(v, n) * n; }
-inline vec4 refract(vec4 v, vec4 n, float ir) {
+inline float sum(const vec4 &u) { return dot(1.f, u); }
+inline float avg(const vec4 &u) { return dot(1.f / 3.f, u); }
+inline vec4 min(const vec4 &u, const vec4 &v, vec4 w) { return min(u, min(v, w)); }
+inline vec4 max(const vec4 &u, const vec4 &v, vec4 w) { return max(u, max(v, w)); }
+inline vec4 mix(const vec4& x, const vec4& y, const vec4& t) { return (1.f - t) * x + t * y; }
+inline vec4 clamp(const vec4 &u, const vec4& lo, const vec4& hi) { return max(min(u, hi), lo); }
+inline vec4 saturate(const vec4 &u) { return clamp(u, 0.f, 1.f); }
+inline vec4 reflect(const vec4 &v, const vec4& n) { return v - 2.f * dot(v, n) * n; }
+inline vec4 refract(const vec4 &v, const vec4& n, float ir) {
 	float NoV = dot(v, n);
 	float k = 1.f - ir * ir * (1.f - NoV * NoV);
 	return ir * v - (ir * NoV + sqrtf(fabsf(k))) * n;
 }
-inline vec4 poly_ns(vec4 u, vec4 v) {
+inline vec4 poly_ns(const vec4 &u, const vec4 &v) {
 	vec4 uv = cross(u, v);
 	vec4 N = norm(uv);
 	N.xyz[3] = 0.5f * uv.len();
 	return N;
 }
-inline vec4 quad_ns(vec4 u, vec4 v) {
+inline vec4 quad_ns(const vec4 &u, const vec4 &v) {
 	vec4 uv = cross(u, v);
 	vec4 N = norm(uv);
 	N.xyz[3] = uv.len();
 	return N;
 }
-inline vec4 fast_sin(vec4 x) {
+inline vec4 fast_sin(const vec4& x) {
 	vec4 x2 = x * x;
 	return x + x * x2 *
 		(-1.6666656684e-1f +
@@ -77,13 +77,13 @@ inline vec4 sincos(float x) {
 	vec4 y = fast_sin(t);
 	return vec4(y.x(), y.y());
 }
-inline float luminance(vec4 rgb) {
+inline float luminance(const vec4 &rgb) {
 	return dot(vec4(0.2126f, 0.7152f, 0.0722f), rgb);
 }
-inline uint pack_rgb(vec4 rgb) {
+inline uint pack_rgb(const vec4& rgb) {
 	return pack_rgb(rgb[0], rgb[1], rgb[2], rgb[3]);
 }
-inline uint pack_bgr(vec4 rgb) {
+inline uint pack_bgr(const vec4& rgb) {
 	return pack_bgr(rgb[0], rgb[1], rgb[2], rgb[3]);
 }
 inline vec4 vec8bit(vec4 col) {
@@ -95,10 +95,10 @@ inline vec4 vec8bit(vec4 col) {
 	col += 0.999f * rapvec(); // dithering using noise
 	return col;
 }
-inline uint vec2bgr(vec4 col) {
+inline uint vec2bgr(const vec4& col) {
 	return pack_bgr(vec8bit(col)); // store to bgr pixel
 }
-inline uint vec2rgb(vec4 col) { return pack_rgb(vec8bit(col)); }
+inline uint vec2rgb(const vec4& col) { return pack_rgb(vec8bit(col)); }
 
 inline vec4 rgb2vec(const uint& rgb) {
 	vec4 v;

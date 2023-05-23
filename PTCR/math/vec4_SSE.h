@@ -64,53 +64,53 @@ struct vec4 {
 	};
 };
 
-inline vec4 norm(vec4 u) { return _mm_norm_ps(u.xyz); }
-inline float dot(vec4 u, vec4 v) { return _mm_dot_ps<0x7F>(u.xyz, v.xyz)[0]; }
-inline vec4 cross(vec4 u, vec4 v) { return _mm_cross_ps(u.xyz, v.xyz); }
+inline vec4 norm(const vec4& u) { return _mm_norm_ps(u.xyz); }
+inline float dot(const vec4& u, const vec4& v) { return _mm_dot_ps<0x7F>(u.xyz, v.xyz)[0]; }
+inline vec4 cross(const vec4& u, const vec4& v) { return _mm_cross_ps(u.xyz, v.xyz); }
 template <int imm8>
 inline __m128 dot(const vec4& u, const vec4& v) { return _mm_dot_ps<imm8>(u.xyz, v.xyz); }
-inline float dot4(vec4 u, vec4 v) { return _mm_dot_ps<0xFF>(u.xyz, v.xyz)[0]; }
-inline float operator&(vec4 u, vec4 v) { return dot(u, v); }
-inline vec4 operator%(vec4 u, vec4 v) { return cross(u, v); }
-inline vec4 operator+(vec4 u, vec4 v) { return u += v; }
-inline vec4 operator-(vec4 u, vec4 v) { return u -= v; }
-inline vec4 operator*(vec4 u, vec4 v) { return u *= v; }
-inline vec4 operator/(vec4 u, vec4 v) { return u /= v; }
+inline float dot4(const vec4& u, const vec4& v) { return _mm_dot_ps<0xFF>(u.xyz, v.xyz)[0]; }
+inline float operator&(const vec4& u, const vec4& v) { return dot(u, v); }
+inline vec4 operator%(const vec4& u, const vec4& v) { return cross(u, v); }
+inline vec4 operator+(const vec4& u, const vec4& v) { return u.xyz + v.xyz; }
+inline vec4 operator-(const vec4& u, const vec4& v) { return u.xyz - v.xyz; }
+inline vec4 operator*(const vec4& u, const vec4& v) { return u.xyz * v.xyz; }
+inline vec4 operator/(const vec4& u, const vec4& v) { return u.xyz / v.xyz; }
 
-inline vec4 expf(vec4 u) {
+inline vec4 expf(const vec4& u) {
 	return _mm_expf_ps(u.xyz);
 }
-inline vec4 sqrt(vec4 u) {
+inline vec4 sqrt(const vec4& u) {
 	return _mm_sqrt_ps(u.xyz);
 }
-inline vec4 abs(vec4 u) {
+inline vec4 abs(const vec4& u) {
 	return _mm_abs_ps(u.xyz);
 }
-inline vec4 fabs(vec4 u) {
+inline vec4 fabs(const vec4& u) {
 	return abs(u);
 }
-inline vec4 copysign(vec4 u, vec4 v) {
+inline vec4 copysign(const vec4& u, const vec4& v) {
 	return _mm_sign_ps(u.xyz, v.xyz);
 }
-inline vec4 flipsign(vec4 u, vec4 v) {
+inline vec4 flipsign(const vec4& u, const vec4& v) {
 	return _mm_flipsign_ps(u.xyz, v.xyz);
 }
-inline vec4 sign(vec4 u) {
+inline vec4 sign(const vec4& u) {
 	return _mm_sign_ps(u.xyz);
 }
-inline vec4 toint(vec4 u) {
+inline vec4 toint(const vec4& u) {
 	return _mm_cvtepi32_ps(_mm_cvttps_epi32(u.xyz));
 }
-inline vec4 floor(vec4 u) {
+inline vec4 floor(const vec4& u) {
 	return _mm_floor_ps(u.xyz);
 }
-inline vec4 ceil(vec4 u) {
+inline vec4 ceil(const vec4& u) {
 	return _mm_ceil_ps(u.xyz);
 }
 
-inline float posdot(vec4 u, vec4 v) { return fmaxf(0.f, u & v); }
-inline float absdot(vec4 u, vec4 v) { return fabsf(u & v); }
-inline float dotabs(vec4 u, vec4 v) { return (abs(u) & abs(v)); }
+inline float posdot(const vec4& u, const vec4& v) { return fmaxf(0.f, u & v); }
+inline float absdot(const vec4& u, const vec4& v) { return fabsf(u & v); }
+inline float dotabs(const vec4& u, const vec4& v) { return (abs(u) & abs(v)); }
 
 inline vec4 rotr3(vec4 x) {
 	return _mm_shuffle_ps(x.xyz, x.xyz, 0b11010010);
@@ -126,103 +126,99 @@ inline vec4 rotl4(vec4 x) {
 	return _mm_shuffle_ps(x.xyz, x.xyz, 0b00111001);
 }
 
-inline vec4 vec_ins(vec4 u, vec4 min, vec4 max) {
+inline vec4 vec_ins(const vec4& u, const vec4 &min, const vec4 &max) {
 	__m128 gt = _mm_cmpgt_ps(u.xyz, min.xyz);
 	__m128 lt = _mm_cmplt_ps(u.xyz, max.xyz);
 	return _mm_and_ps(_mm_and_ps(gt, lt), _mm_set1_ps(1.f));
 }
-inline vec4 vec_wit(vec4 u, vec4 min, vec4 max) {
+inline vec4 vec_wit(const vec4& u, const vec4& min, const vec4& max) {
 	__m128 gt = _mm_cmpge_ps(u.xyz, min.xyz);
 	__m128 lt = _mm_cmple_ps(u.xyz, max.xyz);
 	return _mm_and_ps(_mm_and_ps(gt, lt), _mm_set1_ps(1.f));
 }
-inline vec4 vec_gt(vec4 u, vec4 v) {
+inline vec4 vec_gt(const vec4& u, const vec4& v) {
 	__m128 mask = _mm_cmpgt_ps(u.xyz, v.xyz);
 	return _mm_and_ps(mask, _mm_set1_ps(1.f));
 }
-inline vec4 vec_lt(vec4 u, vec4 v) {
+inline vec4 vec_lt(const vec4& u, const vec4& v) {
 	__m128 mask = _mm_cmplt_ps(u.xyz, v.xyz);
 	return _mm_and_ps(mask, _mm_set1_ps(1.f));
 }
-inline vec4 vec_ge(vec4 u, vec4 v) {
+inline vec4 vec_ge(const vec4& u, const vec4& v) {
 	__m128 mask = _mm_cmpge_ps(u.xyz, v.xyz);
 	return _mm_and_ps(mask, _mm_set1_ps(1.f));
 }
-inline vec4 vec_le(vec4 u, vec4 v) {
+inline vec4 vec_le(const vec4& u, const vec4& v) {
 	__m128 mask = _mm_cmple_ps(u.xyz, v.xyz);
 	return _mm_and_ps(mask, _mm_set1_ps(1.f));
 }
-inline vec4 vec_eq(vec4 u, vec4 v) {
+inline vec4 vec_eq(const vec4& u, const vec4& v) {
 	__m128 mask = _mm_cmpeq_ps(u.xyz, v.xyz);
 	return _mm_and_ps(mask, _mm_set1_ps(1.f));
 }
-inline vec4 vec_neq(vec4 u, vec4 v) {
+inline vec4 vec_neq(const vec4& u, const vec4& v) {
 	__m128 mask = _mm_cmpneq_ps(u.xyz, v.xyz);
 	return _mm_and_ps(mask, _mm_set1_ps(1.f));
 }
 
-inline vec4 vec_near0(vec4 u) {
-	u = fabs(u);
-	__m128 v = _mm_cmplt_ps(u.xyz, _mm_set1_ps(eps));
+inline vec4 vec_near0(const vec4& u) {
+	__m128 v = _mm_cmplt_ps(fabs(u).xyz, _mm_set1_ps(eps));
 	return _mm_and_ps(v, _mm_set1_ps(1.f));
 }
-inline vec4 vec_not0(vec4 u) {
-	u = fabs(u);
-	__m128 v = _mm_cmpge_ps(u.xyz, _mm_set1_ps(eps));
+inline vec4 vec_not0(const vec4& u) {
+	__m128 v = _mm_cmpge_ps(fabs(u).xyz, _mm_set1_ps(eps));
 	return _mm_and_ps(v, _mm_set1_ps(1.f));
 }
 
-inline bool gt(vec4 u, vec4 v) {
+inline bool gt(const vec4& u, const vec4& v) {
 	__m128 mask = _mm_cmplt_ps(u.xyz, v.xyz);
 	return !(_mm_movemask_ps(mask) & 0b0111);
 }
-inline bool lt(vec4 u, vec4 v) {
+inline bool lt(const vec4& u, const vec4& v) {
 	__m128 mask = _mm_cmpgt_ps(u.xyz, v.xyz);
 	return !(_mm_movemask_ps(mask) & 0b0111);
 }
 
-inline bool eq(vec4 u, vec4 v) {
+inline bool eq(const vec4& u, const vec4& v) {
 	__m128 w = _mm_cmpneq_ps(u.xyz, v.xyz);
 	return !(_mm_movemask_ps(w) & 0b0111);
 }
-inline bool neq(vec4 u, vec4 v) {
+inline bool neq(const vec4& u, const vec4& v) {
 	__m128 w = _mm_cmpneq_ps(u.xyz, v.xyz);
 	return (_mm_movemask_ps(w) & 0b0111);
 }
-inline bool eq_tol(vec4 u, vec4 v, float tol = eps) {
+inline bool eq_tol(const vec4& u, const vec4& v, float tol = eps) {
 	__m128 w = _mm_cmpge_ps(fabs(u - v).xyz, _mm_set1_ps(tol));
 	return !(_mm_movemask_ps(w) & 0b0111);
 }
-inline bool eq0(vec4 u) {
+inline bool eq0(const vec4& u) {
 	__m128 v = _mm_cmpneq_ps(u.xyz, _mm_setzero_ps());
 	return !(_mm_movemask_ps(v) & 0b0111);
 }
-inline bool neq0(vec4 u) {
+inline bool neq0(const vec4& u) {
 	__m128 v = _mm_cmpneq_ps(u.xyz, _mm_setzero_ps());
 	return (_mm_movemask_ps(v) & 0b0111);
 }
 
-inline bool near0(vec4 u) {
-	u = fabs(u);
-	__m128 v = _mm_cmpge_ps(u.xyz, _mm_set1_ps(eps));
+inline bool near0(const vec4& u) {
+	__m128 v = _mm_cmpge_ps(fabs(u).xyz, _mm_set1_ps(eps));
 	return !(_mm_movemask_ps(v) & 0b0111);
 }
-inline bool not0(vec4 u) {
-	u = fabs(u);
-	__m128 v = _mm_cmpge_ps(u.xyz, _mm_set1_ps(eps));
+inline bool not0(const vec4& u) {
+	__m128 v = _mm_cmpge_ps(fabs(u).xyz, _mm_set1_ps(eps));
 	return (_mm_movemask_ps(v) & 0b0111);
 }
 
-inline float min(vec4 u) {
+inline float min(const vec4& u) {
 	return fminf(u.xyz[0], fminf(u.xyz[1], u.xyz[2]));
 }
-inline float max(vec4 u) {
+inline float max(const vec4& u) {
 	return fmaxf(u.xyz[0], fmaxf(u.xyz[1], u.xyz[2]));
 }
-inline vec4 min(vec4 u, vec4 v) {
+inline vec4 min(const vec4& u, const vec4& v) {
 	return _mm_min_ps(u.xyz, v.xyz);
 }
-inline vec4 max(vec4 u, vec4 v) {
+inline vec4 max(const vec4& u, const vec4& v) {
 	return _mm_max_ps(u.xyz, v.xyz);
 }
 inline vec4 rapvec() {
@@ -232,10 +228,10 @@ inline vec4 rapvec() {
 inline vec4 ravec() {
 	return 2 * vec4(_mm_rafl_ps()) - 1;
 }
-inline vec4 ravec(vec4 min, vec4 max) {
+inline vec4 ravec(const vec4& min, const vec4& max) {
 	return min + (max - min) * _mm_rafl_ps();
 }
-inline vec4 fixnan(vec4 u) {
+inline vec4 fixnan(const vec4& u) {
 	__m128 mask = _mm_isnan_ps(u.xyz);
 	return _mm_andnot_ps(mask, u.xyz);
 }

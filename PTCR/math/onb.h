@@ -12,18 +12,24 @@ public:
 	inline vec4 operator[](int i) const { return uvw[i]; }
 	inline vec4& operator[](int i) { return uvw[i]; }
 
-	__forceinline vec4 world(const vec4& a) const {
-		return a.x() * u + a.y() * v + a.z() * w;
-	}
 #if USE_SSE
 	__forceinline vec4 local(const vec4& a)const {
 		__m128 x = u.xyz, y = v.xyz, z = w.xyz, w{};
 		_MM_TRANSPOSE4_PS(x, y, z, w);
 		return a[0] * x + a[1] * y + a[2] * z;
 	}
+	__forceinline vec4 world(const vec4& a) const {
+		__m128 ax = _mm_shuffle_ps(a.xyz, a.xyz, _MM_SHUFFLE(0,0,0,0));
+		__m128 ay = _mm_shuffle_ps(a.xyz, a.xyz, _MM_SHUFFLE(1,1,1,1));
+		__m128 az = _mm_shuffle_ps(a.xyz, a.xyz, _MM_SHUFFLE(2,2,2,2));
+		return ax * u + ay * v + az * w;
+	}
 #else
 	__forceinline vec4 local(const vec4& a)const {
 		return vec4(dot(a, u), dot(a, v), dot(a, w));
+	}
+	__forceinline vec4 world(const vec4& a) const {
+		return a.x() * u + a.y() * v + a.z() * w;
 	}
 #endif
 	/*
@@ -53,7 +59,7 @@ public:
 	};
 };
 //map is texture value (0 to 1)
-__forceinline vec4 normal_map(vec4 N, vec4 map) {
+__forceinline vec4 normal_map(const vec4& N, vec4 map) {
 	if (!use_normal_maps || eq(map, vec4(0.5f, 0.5f, 1.f)))return N;
 	onb uvw(N);
 	map = 2.f * map - 1.f;

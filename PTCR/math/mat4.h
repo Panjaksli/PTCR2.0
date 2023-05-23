@@ -15,7 +15,7 @@ struct mat4 {
 	mat4(vec4 P, vec4 A = 0, vec4 S = 1) {
 		Compose(P, A, S);
 	}
-	mat4(vec4 r0, vec4 r1, vec4 r2, vec4 r3) : R{ r0,r1,r2,r3 } {}
+	mat4(const vec4 &r0, const vec4& r1, const vec4& r2, const vec4& r3) : R{ r0,r1,r2,r3 } {}
 	inline vec4 operator[](uchar id) const { return R[id]; }
 	inline vec4& operator[](uchar id) { return R[id]; }
 
