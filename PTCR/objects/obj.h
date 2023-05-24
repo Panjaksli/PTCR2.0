@@ -51,7 +51,7 @@ struct obj_flags {
 	obj_enum type() const {
 		return obj_enum(flag & 0x0F);
 	}
-	uchar flag = 0;
+	uint flag = 0;
 };
 
 struct bvh_node {
