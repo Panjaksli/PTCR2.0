@@ -11,13 +11,11 @@ void obj_list::clear() {
 }
 
 bool obj_list::load_mesh(const char* name, mat4 tran, uint mat, bool is_bvh, bool is_light, bool has_fog) {
-	objects.emplace_back(name, tran, mat, is_bvh, is_light, has_fog);
-	if (objects.back().get_size() == 0) {
-		objects.pop_back();
-		return false;
-	}
+	mesh_var tmp(name, tran, mat, is_bvh, is_light, has_fog);
+	if (tmp.get_size() == 0) return false;
 	if (!is_bvh)nonbvh.emplace_back(objects.size());
 	if (is_light)lights.emplace_back(objects.size());
+	objects.emplace_back(std::move(tmp));
 	bbox.join(objects.back().get_box());
 	lw_tot = 1.f / lights.size();
 	return true;

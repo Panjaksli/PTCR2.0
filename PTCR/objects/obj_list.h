@@ -98,16 +98,17 @@ public:
 	void add_mat(const albedo& tex, const mat_enum type) {
 		add_mat(mat_var(tex, type));
 	}
-	void add_mat(const mat_var& mat) {
-		materials.emplace_back(mat);
+	void add_mat(mat_var&& mat) {
+		materials.emplace_back(std::forward<mat_var>(mat));
 	}
 	template <typename T>
 	void add_mesh(const T& object, mat4 tran = mat4(vec4(0, 0, 0, 1)), uint mat = 0, bool is_bvh = 1, bool is_light = 0, bool has_fog = 0, bool deform = 1) {
-		create_mesh(vector<T>(1, object), tran, mat, is_bvh, is_light, has_fog, deform);
+		create_mesh(std::move(mesh<T>(object, mat).transform(tran, deform)), is_bvh, is_light, has_fog);
 	}
 	template <typename T>
 	void add_mesh(const vector<T>& object, mat4 tran = mat4(vec4(0, 0, 0, 1)), uint mat = 0, bool is_bvh = 1, bool is_light = 0, bool has_fog = 0, bool deform = 1) {
-		create_mesh(object, tran, mat, is_bvh, is_light, has_fog, deform);
+		if (object.size() == 0)return;
+		create_mesh(std::move(mesh<T>(object, mat).transform(tran, deform)), is_bvh, is_light, has_fog);
 	}
 	void remove_mat(uint id) {
 		if (id < materials.size()) {
@@ -143,14 +144,11 @@ private:
 	void split_bvh(uint be, uint en, uint node_size);
 	uchar debug_bvh(const ray& r, hitrec& rec, uint n0 = 0, uchar depth = 1) const;
 	aabb box_from(uint begin, uint end);
-
 	template <typename T>
-	void create_mesh(const vector<T>& object, mat4 tran, uint mat, bool is_bvh, bool is_light, bool has_fog, bool deform = 1) {
-		if (object.size() == 0)return;
+	void create_mesh(mesh<T>&& object, bool is_bvh, bool is_light, bool has_fog) {
 		if (!is_bvh)nonbvh.emplace_back(objects.size());
 		if (is_light)lights.emplace_back(objects.size());
-		if (deform)objects.emplace_back(mesh<T>(object, mat).transform(tran), is_bvh, is_light, has_fog);
-		else objects.emplace_back(mesh<T>(object, mat).set_trans(tran), is_bvh, is_light, has_fog);
+		objects.emplace_back(object, is_bvh, is_light, has_fog);
 		bbox.join(objects.back().get_box());
 		lw_tot = 1.f / lights.size();
 	}

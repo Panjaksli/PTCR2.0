@@ -73,7 +73,7 @@ public:
 	void clear() { if (data) free(data); name.clear(); data = nullptr; }
 	friend void swap(texture& t1, texture& t2) {
 		std::swap(t1.rgb, t2.rgb);
-		std::swap(t1.name, t2.name);
+		swap(t1.name, t2.name);
 		std::swap(t1.data, t2.data);
 		std::swap(t1.w, t2.w);
 		std::swap(t1.h, t2.h);

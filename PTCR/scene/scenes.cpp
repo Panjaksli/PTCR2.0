@@ -25,96 +25,98 @@ bool scn_save(Scene& scn, const char* filename) {
 	for (const auto& obj : scn.world.objects) {
 		mat4 T = obj.get_trans();
 		vec4 P = T.P(), A = T.A();
-		if (obj.name.empty()) {
-			if (obj.type() == o_sph) {
-				if (obj.get_size() == 1) {
-					vec4 q = obj.s.get_raw(0).Qr;
-					sprintf(line, "sphere P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%g,%g,%g,%g}",
-						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), q[0], q[1], q[2], q[3]);
-					lines.push_back(line);
-				}
-				else if (obj.get_size() > 1) {
-					sprintf(line, "sphere P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {",
-						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
-					lines.push_back(line);
-					for (int i = 0; i < obj.get_size(); i++) {
-						vec4 q = obj.s.get_raw(i).Qr;
-						sprintf(line, "%g,%g,%g,%g", q[0], q[1], q[2], q[3]); lines.push_back(line);
+		if (obj.get_size() > 0) {
+			if (obj.name.empty()) {
+				if (obj.type() == o_sph) {
+					if (obj.get_size() == 1) {
+						vec4 q = obj.s.get_raw(0).Qr;
+						sprintf(line, "sphere P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%g,%g,%g,%g}",
+							P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), q[0], q[1], q[2], q[3]);
+						lines.push_back(line);
 					}
-					lines.push_back("}");
+					else if (obj.get_size() > 1) {
+						sprintf(line, "sphere P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {",
+							P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
+						lines.push_back(line);
+						for (int i = 0; i < obj.get_size(); i++) {
+							vec4 q = obj.s.get_raw(i).Qr;
+							sprintf(line, "%g,%g,%g,%g", q[0], q[1], q[2], q[3]); lines.push_back(line);
+						}
+						lines.push_back("}");
+					}
 				}
-			}
-			else if (obj.type() == o_vox) {
-				if (obj.get_size() == 1) {
-					vec4 q = obj.v.get_raw(0).Qa;
-					sprintf(line, "voxel P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%g,%g,%g,%g}",
-						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), q[0], q[1], q[2], q[3]);
-					lines.push_back(line);
-				}
-				else if (obj.get_size() > 1) {
-					sprintf(line, "voxel P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {",
-						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
-					lines.push_back(line);
-					for (int i = 0; i < obj.get_size(); i++) {
+				else if (obj.type() == o_vox) {
+					if (obj.get_size() == 1) {
 						vec4 q = obj.v.get_raw(0).Qa;
-						sprintf(line, "%g,%g,%g,%g", q[0], q[1], q[2], q[3]); lines.push_back(line);
+						sprintf(line, "voxel P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%g,%g,%g,%g}",
+							P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), q[0], q[1], q[2], q[3]);
+						lines.push_back(line);
 					}
-					lines.push_back("}");
+					else if (obj.get_size() > 1) {
+						sprintf(line, "voxel P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {",
+							P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
+						lines.push_back(line);
+						for (int i = 0; i < obj.get_size(); i++) {
+							vec4 q = obj.v.get_raw(0).Qa;
+							sprintf(line, "%g,%g,%g,%g", q[0], q[1], q[2], q[3]); lines.push_back(line);
+						}
+						lines.push_back("}");
+					}
+				}
+				else if (obj.type() == o_qua) {
+					if (obj.get_size() == 1) {
+						char data[256] = {};
+						vec4 a = obj.p.get_raw(0).A();
+						vec4 b = obj.p.get_raw(0).B();
+						vec4 c = obj.p.get_raw(0).C();
+						sprintf(data, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+						sprintf(line, "quad P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s}",
+							P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), data);
+						lines.push_back(line);
+					}
+					else if (obj.get_size() > 1) {
+						sprintf(line, "quad P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {",
+							P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
+						lines.push_back(line);
+						for (int i = 0; i < obj.get_size(); i++) {
+							vec4 a = obj.q.get_raw(i).A();
+							vec4 b = obj.q.get_raw(i).B();
+							vec4 c = obj.q.get_raw(i).C();
+							sprintf(line, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]); lines.push_back(line);
+						}
+						lines.push_back("}");
+					}
+				}
+				else if (obj.type() == o_pol) {
+					if (obj.get_size() == 1) {
+						ln data;
+						vec4 a = obj.p.get_raw(0).A();
+						vec4 b = obj.p.get_raw(0).B();
+						vec4 c = obj.p.get_raw(0).C();
+						sprintf(data, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+						sprintf(line, "poly P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s}",
+							P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), data.x);
+						lines.push_back(line);
+					}
+					else if (obj.get_size() > 1) {
+						sprintf(line, "poly P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {",
+							P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
+						lines.push_back(line);
+						for (int i = 0; i < obj.get_size(); i++) {
+							vec4 a = obj.p.get_raw(i).A();
+							vec4 b = obj.p.get_raw(i).B();
+							vec4 c = obj.p.get_raw(i).C();
+							sprintf(line, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]); lines.push_back(line);
+						}
+						lines.push_back("}");
+					}
 				}
 			}
-			else if (obj.type() == o_qua) {
-				if (obj.get_size() == 1) {
-					char data[256] = {};
-					vec4 a = obj.p.get_raw(0).A();
-					vec4 b = obj.p.get_raw(0).B();
-					vec4 c = obj.p.get_raw(0).C();
-					sprintf(data, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
-					sprintf(line, "quad P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s}",
-						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), data);
-					lines.push_back(line);
-				}
-				else if (obj.get_size() > 1) {
-					sprintf(line, "quad P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {",
-						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
-					lines.push_back(line);
-					for (int i = 0; i < obj.get_size(); i++) {
-						vec4 a = obj.q.get_raw(i).A();
-						vec4 b = obj.q.get_raw(i).B();
-						vec4 c = obj.q.get_raw(i).C();
-						sprintf(line, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]); lines.push_back(line);
-					}
-					lines.push_back("}");
-				}
+			else {
+				sprintf(line, "mesh P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s}",
+					P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), obj.name.text());
+				lines.push_back(line);
 			}
-			else if (obj.type() == o_pol) {
-				if (obj.get_size() == 1) {
-					ln data;
-					vec4 a = obj.p.get_raw(0).A();
-					vec4 b = obj.p.get_raw(0).B();
-					vec4 c = obj.p.get_raw(0).C();
-					sprintf(data, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
-					sprintf(line, "poly P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s}",
-						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), data.x);
-					lines.push_back(line);
-				}
-				else if (obj.get_size() > 1) {
-					sprintf(line, "poly P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {",
-						P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog());
-					lines.push_back(line);
-					for (int i = 0; i < obj.get_size(); i++) {
-						vec4 a = obj.p.get_raw(i).A();
-						vec4 b = obj.p.get_raw(i).B();
-						vec4 c = obj.p.get_raw(i).C();
-						sprintf(line, "%g,%g,%g,%g,%g,%g,%g,%g,%g", a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]); lines.push_back(line);
-					}
-					lines.push_back("}");
-				}
-			}
-		}
-		else {
-			sprintf(line, "mesh P=%g,%g,%g,%g A=%g,%g,%g mat=%u bvh=%u lig=%u fog=%u {%s}",
-				P[0], P[1], P[2], P[3], A[0], A[1], A[2], obj.get_mat(), obj.bvh(), obj.light(), obj.fog(), obj.name.text());
-			lines.push_back(line);
 		}
 	}
 	lines.push_back("*Materials");
@@ -346,7 +348,7 @@ void scn_load(Scene& scn, int n) {
 	scn.cam.V = 0;
 	scn.world.update_lists();
 	scn.world.build_bvh(1, scn.opt.node_size);
-	}
+}
 void scn1(Scene& scn) {
 	albedo gre(vec4(0.7, 0.9, 0.7, 0), 0, vec4(0.5, 0.5, 1), 1, 1.2);
 	albedo carpet(vec4(0.8, 0.2, 0.2, 1), vec4(0, 0, 1), "snow_normal", 10);

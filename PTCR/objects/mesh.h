@@ -10,16 +10,16 @@ template <class primitive>
 class mesh {
 public:
 	mesh() {}
-	mesh(const primitive& _prim, uint _mat) :prim(new primitive[1]{ _prim }), mat(_mat), size(1) {
+	mesh(const primitive& _prim, uint _mat) : prim(new primitive[1]{ _prim }), mat(_mat), size(1) {
 		fit();
 	}
-	mesh(const vector<primitive>& _prim, uint _mat) :prim(new primitive[_prim.size()]), mat(_mat), size(_prim.size()) {
-		copy(_prim.data(), size);
+	mesh(const vector<primitive>& _prim, uint _mat) : prim(new primitive[_prim.size()]), mat(_mat), size(_prim.size()) {
+		copy(_prim.data());
 		fit();
 	}
 	mesh(const mesh& cpy) : prim(new primitive[cpy.size]) {
 		bbox = cpy.bbox, P = cpy.P, A = cpy.A, mat = cpy.mat, size = cpy.size;
-		copy(cpy.prim.get(), size);
+		copy(cpy.prim.get());
 	}
 	mesh(mesh&& cpy)noexcept :mesh() {
 		swap(*this, cpy);
@@ -87,12 +87,14 @@ public:
 		fit();
 		return *this;
 	}
-	inline mesh& transform(const mat4& T) {
+	inline mesh& transform(const mat4& T, bool deform = 1) {
 		mat4 dT(0, T.A() - A);
 		P = T.P();
 		A = T.A();
-		for (uint i = 0; i < size; i++)
-			prim[i] = prim[i].trans(dT);
+		if (deform) {
+			for (uint i = 0; i < size; i++)
+				prim[i] = prim[i].trans(dT);
+		}
 		fit();
 		return *this;
 	}
@@ -113,7 +115,7 @@ private:
 		for (uint i = 0; i < size; i++)
 			bbox.join(get_box(i));
 	}
-	inline void copy(const primitive* cpy, uint size) {
+	inline void copy(const primitive* cpy) {
 		for (uint i = 0; i < size; i++)
 			prim[i] = cpy[i];
 	}
@@ -142,31 +144,38 @@ switch(id){ \
 } 
 
 struct mesh_var {
-	mesh_var() : flag(o_bla, 0, 0, 0) {}
+	mesh_var() {}
 	mesh_var(const char* name, mat4 T, uint mat, bool bvh = 1, bool lig = 0, bool fog = 0) : p(load_mesh(name), mat), name(name), flag(o_pol, bvh, lig, fog) { p.transform(T); }
 	mesh_var(const mesh<poly>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :p(m), name(name), flag(o_pol, bvh, lig, fog) {}
 	mesh_var(const mesh<quad>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :q(m), name(name), flag(o_qua, bvh, lig, fog) {}
 	mesh_var(const mesh<sphere>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :s(m), name(name), flag(o_sph, bvh, lig, fog) {}
 	mesh_var(const mesh<voxel>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :v(m), name(name), flag(o_vox, bvh, lig, fog) {}
-	mesh_var(const mesh_var& cpy) {
-		*this = cpy;
+	mesh_var(const mesh_var& cpy) : name(cpy.name), flag(cpy.flag) {
+		switch (type()) { //Placement new for explicit copy constructor, as assignment operator doesn't work!!!
+		case o_pol: new(&p) auto(cpy.p); break;
+		case o_qua: new(&q) auto(cpy.q); break;
+		case o_sph:  new(&s) auto(cpy.s); break;
+		case o_vox:  new(&v) auto(cpy.v); break;
+		default: break;
+		}
 	}
 	mesh_var& operator=(mesh_var cpy) {
 		swap(*this, cpy);
 		return *this;
 	}
-	mesh_var(mesh_var&& cpy)noexcept :mesh_var() {
+	mesh_var(mesh_var&& cpy)noexcept : mesh_var() {
 		swap(*this, cpy);
 	}
 	~mesh_var() {
-		//Destructor DOES matter here (each type holds a different pointer, thus correct delete[] method shall be called !) maybe, possibly, not sure ?
+		//Destructor DOES matter here (each type holds a different pointer, thus correct delete[] method shall be called !)
+		//Also handles blank objects.
 		//Doesn't leak memory, for now :)
 		SEL_MSH(type(), , ~mesh(), );
 	}
 
 	__forceinline bool hit(const ray& r, hitrec& rec) const {
 		if (!p.get_box().hit(r))return false;
-		SEL_MSH(type(), return , hit(r, rec), false);
+		SEL_MSH(type(), return, hit(r, rec), false);
 	}
 
 	__forceinline bool hit(const ray& r, hitrec& rec, uint prim_id) const {
@@ -178,10 +187,10 @@ struct mesh_var {
 	}
 
 	mat4 get_trans()const {
-		SEL_MSH(type(),return, get_trans(), mat4());
+		SEL_MSH(type(), return, get_trans(), mat4());
 	}
 	const mesh_var& transform(const mat4& T) {
-		SEL_MSH(type(),,transform(T),);
+		SEL_MSH(type(), , transform(T), );
 		return *this;
 	}
 	//Does not matter which variable is used, they all have the same memory layout ?
@@ -226,15 +235,16 @@ struct mesh_var {
 	obj_enum type() const {
 		return flag.type();
 	}
+	//one way swap m1 gets type of m2. Thus m2 can become blank
 	friend void swap(mesh_var& m1, mesh_var& m2) {
-		switch (m2.type()) { //Also should not matter, but better be safe than sorry...
+		switch (m2.type()) {
 		case o_pol: swap(m1.p, m2.p); break;
 		case o_qua: swap(m1.q, m2.q); break;
 		case o_sph: swap(m1.s, m2.s); break;
 		case o_vox: swap(m1.v, m2.v); break;
 		default: break;
 		}
-		std::swap(m1.name, m2.name);
+		swap(m1.name, m2.name);
 		std::swap(m1.flag, m2.flag);
 	}
 	union {
