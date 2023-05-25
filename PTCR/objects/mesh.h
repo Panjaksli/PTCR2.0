@@ -151,11 +151,11 @@ struct mesh_var {
 	mesh_var(const mesh<sphere>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :s(m), name(name), flag(o_sph, bvh, lig, fog) {}
 	mesh_var(const mesh<voxel>& m, bool bvh = 0, bool lig = 0, bool fog = 0, const char* name = nullptr) :v(m), name(name), flag(o_vox, bvh, lig, fog) {}
 	mesh_var(const mesh_var& cpy) : name(cpy.name), flag(cpy.flag) {
-		switch (type()) { //Placement new for explicit copy constructor, as assignment operator doesn't work!!!
+		switch (type()) { //Assignment operator doesn't work, since union is not initialized...
 		case o_pol: new(&p) auto(cpy.p); break;
 		case o_qua: new(&q) auto(cpy.q); break;
-		case o_sph:  new(&s) auto(cpy.s); break;
-		case o_vox:  new(&v) auto(cpy.v); break;
+		case o_sph: new(&s) auto(cpy.s); break;
+		case o_vox: new(&v) auto(cpy.v); break;
 		default: break;
 		}
 	}
