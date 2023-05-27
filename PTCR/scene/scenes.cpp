@@ -128,7 +128,7 @@ bool scn_save(Scene& scn, const char* filename) {
 		int s1 = mat.tex._rgb.solid();
 		int s2 = mat.tex._mer.solid();
 		int s3 = mat.tex._nor.solid();
-		char rgb[128], mer[128], nor[128];
+		char rgb[256], mer[256], nor[256];
 		sprintf(rgb, "%s,%g,%g,%g,%g,%d", mat.tex._rgb.name.text(), srgb[0], srgb[1], srgb[2], srgb[3], s1);
 		sprintf(mer, "%s,%g,%g,%g,%d", mat.tex._mer.name.text(), smer[0], smer[1], smer[2], s2);
 		sprintf(nor, "%s,%g,%g,%g,%d", mat.tex._nor.name.text(), snor[0], snor[1], snor[2], s3);
@@ -185,12 +185,12 @@ bool scn_load(Scene& scn, const char* filename, bool update_only) {
 	}
 	if (!update_only)scn.skybox.clear();
 	scn.world.clear();
-	string line; line.reserve(128);
+	constexpr int BUFF = 256;
+	string line; line.reserve(BUFF);
 	int state = -1;
 	while (std::getline(file, line)) {
 		vec4 V, P, A;
 		vec4 q, a, b, c;
-		constexpr int BUFF = 128;
 		char buff1[BUFF], buff2[BUFF], buff3[BUFF];
 		int mat = 0, bvh = 1, lig = 0, fog = 0, ival = 0;
 		int alpha = 0, check = 0;

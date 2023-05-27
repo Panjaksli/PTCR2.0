@@ -186,7 +186,7 @@ namespace PTCR {
 			T = mat4(offset, angle);
 			if (is_mesh) {
 				is_bvh = true;
-				ImGui::InputText("Mesh name", filename, c_str::max_size);
+				ImGui::InputText("Mesh name", filename, c_str::max_len);
 			}
 			else if (obj_type == o_pol || obj_type == o_qua) {
 				ImGui::DragFloat3("A", a._xyz, 0.001);
@@ -229,11 +229,11 @@ namespace PTCR {
 			static c_str srgb, smer, snor;
 			ImGui::Begin("Add material", &add_mat);
 			ImGui::SliderInt("Type", &type, 0, mat_cnt - 1, mat_enum_str(type));
-			s1 ? ImGui::ColorEdit4("##col1", rgb._xyz, FLOATCOL) : ImGui::InputText("##text1", srgb, c_str::max_size);
+			s1 ? ImGui::ColorEdit4("##col1", rgb._xyz, FLOATCOL) : ImGui::InputText("##text1", srgb, c_str::max_len);
 			ImGui::SameLine(); ImGui::Checkbox("RGB", &s1);
-			s2 ? ImGui::ColorEdit3("##col2", mer._xyz, FLOATCOL) : ImGui::InputText("##text2", smer, c_str::max_size);
+			s2 ? ImGui::ColorEdit3("##col2", mer._xyz, FLOATCOL) : ImGui::InputText("##text2", smer, c_str::max_len);
 			ImGui::SameLine(); ImGui::Checkbox("MER", &s2);
-			s3 ? ImGui::ColorEdit3("##col3", nor._xyz, FLOATCOL) : ImGui::InputText("##text3", snor, c_str::max_size);
+			s3 ? ImGui::ColorEdit3("##col3", nor._xyz, FLOATCOL) : ImGui::InputText("##text3", snor, c_str::max_len);
 			ImGui::SameLine(); ImGui::Checkbox("NOR", &s3);
 			ImGui::ColorEdit4("Tint", tint._xyz, FLOATCOL);
 			ImGui::DragFloat("Scale", &scl, 0.1f, -1000.f, 1000.f, "%g");
@@ -255,7 +255,7 @@ namespace PTCR {
 			scn_load(scene, scn_n);
 			reproject = false;
 		}
-		if (ImGui::InputText("SCN File", scn_name, c_str::max_size, INPTEXT) + ImGui::Button("Load scene")) {
+		if (ImGui::InputText("SCN File", scn_name, c_str::max_len, INPTEXT) + ImGui::Button("Load scene")) {
 			if (scn_load(scene, scn_name, 0)) {
 				scn_n = -1;
 				reproject = false;
@@ -377,7 +377,7 @@ namespace PTCR {
 		}
 		if (scene.opt.sky) {
 			if (scene.opt.skybox) {
-				if (ImGui::InputText("Load skybox", skybox, c_str::max_size, INPTEXT)) {
+				if (ImGui::InputText("Load skybox", skybox, c_str::max_len, INPTEXT)) {
 					scene.set_skybox(skybox);
 					scene.cam.moving = true;
 				}
@@ -486,7 +486,7 @@ namespace PTCR {
 					scene.world.materials[mat].type = (mat_enum)type;
 				}
 				if (!s1) {
-					if (ImGui::InputText("##t1", srgb, c_str::max_size, INPTEXT)) {
+					if (ImGui::InputText("##t1", srgb, c_str::max_len, INPTEXT)) {
 						scene.cam.moving = true;
 						alb._rgb.set_tex(srgb);
 					}
@@ -503,7 +503,7 @@ namespace PTCR {
 				}
 
 				if (!s2) {
-					if (ImGui::InputText("##t2", smer, c_str::max_size, INPTEXT)) {
+					if (ImGui::InputText("##t2", smer, c_str::max_len, INPTEXT)) {
 						scene.cam.moving = true;
 						alb._mer.set_tex(smer);
 					}
@@ -519,7 +519,7 @@ namespace PTCR {
 					scene.cam.moving = true;
 				}
 				if (!s3) {
-					if (ImGui::InputText("##t3", snor, c_str::max_size, INPTEXT)) {
+					if (ImGui::InputText("##t3", snor, c_str::max_len, INPTEXT)) {
 						scene.cam.moving = true;
 						alb._nor.set_tex(snor);
 					}

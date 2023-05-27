@@ -25,7 +25,7 @@ bool OBJ_to_MSH(path name) {
 	}
 	vector<float3> vert; vert.reserve(0xffff);
 	vector<uint3> face; face.reserve(0xffff);
-	string line; line.reserve(128);
+	string line; line.reserve(256);
 	while (std::getline(file, line)) {
 		float3 f3; uint3 u3; uint u4 = 0; const char* cstr = line.c_str();
 		if (sscanf_s(cstr, "v %f %f %f", &f3.x, &f3.y, &f3.z) > 1) {

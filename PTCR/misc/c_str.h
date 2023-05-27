@@ -95,7 +95,7 @@ public:
 		while (buff[i++] != '\0');
 		return i;
 	}
-	static constexpr uint max_size = 128;
+	static constexpr uint max_size = 256;
 	static constexpr uint max_len = max_size - 1;
 private:
 	char* _data = new char[max_size] {};
