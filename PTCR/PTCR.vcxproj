@@ -152,7 +152,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalOptions>-Ofast -march=haswell -openmp -fms-extensions  </AdditionalOptions>
+      <AdditionalOptions>-Ofast -march=haswell -openmp -fms-extensions</AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir)\engine;$(ProjectDir)\imgui;$(ProjectDir)\scene;$(ProjectDir)\math;$(ProjectDir);$(ProjectDir)\objects;$(ProjectDir)\misc;$(ProjectDir)\sdl2\include;$(ProjectDir)\shaders;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FloatingPointModel>Fast</FloatingPointModel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>

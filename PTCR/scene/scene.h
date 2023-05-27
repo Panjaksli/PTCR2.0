@@ -104,7 +104,7 @@ private:
 
 	__forceinline void sample_material(const ray& r, const hitrec& rec, matrec& mat) const {
 		uint mat_id = object_at(rec.idx).get_mat();
-		if (mat_id < world.materials.size())
+		if (mat_id < world.materials.size()) [[likely]]
 			material_at(mat_id).sample(r, rec, mat);
 		else {
 			vec4 uv = sin(10 * rec.P);

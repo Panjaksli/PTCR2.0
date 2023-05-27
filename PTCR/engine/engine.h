@@ -28,10 +28,7 @@ namespace PTCR {
 		void Camera_menu();
 		void Add_object();
 		void Add_material();
-		void Delay(double sec) { SDL_Delay(1000 * fmax(0, sec)); }
-		static double timer_ms(double t1) {
-			return 1000.0 * (SDL_GetPerformanceCounter() - t1) / SDL_GetPerformanceFrequency();
-		}
+		void Delay(double sec) { if (sec > 0) SDL_Delay(1000 * sec); }
 		Scene scene;
 		SDL_Window* window;
 		SDL_Renderer* renderer;
