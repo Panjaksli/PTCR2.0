@@ -216,6 +216,7 @@
     <ClInclude Include="misc\Event_handler.h" />
     <ClInclude Include="misc\unused_drafts.h" />
     <ClInclude Include="objects\physics.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="scene\Scenes.h" />
     <ClInclude Include="shaders\albedo.h" />
     <ClInclude Include="shaders\texture.h" />
@@ -240,6 +241,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="PTCR.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
