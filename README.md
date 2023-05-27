@@ -1,5 +1,5 @@
 # PTCR 2.0
-![20230301_215113_10122SPP_](https://user-images.githubusercontent.com/82727531/225427902-f169c899-4eaa-43dc-887f-7c754391b7cd.png)
+![20230527_161632_3270SPP_](https://github.com/Panjaksli/PTCR2.0/assets/82727531/62732e90-a41e-4346-9fbc-b35a8d27d9a5)
 ## Requirements
 CPU with **at least** SSE 4.1 support. <br>
 Release version is compiled with -march=haswell. <br>
