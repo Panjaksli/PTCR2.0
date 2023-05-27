@@ -109,6 +109,8 @@ private:
 		else {
 			vec4 uv = sin(10 * rec.P);
 			mat.emis = uv.x() * uv.y() * uv.z() > 0 ? vec4(1, 0, 1) : 0;
+			mat.N = rec.N;
+			mat.refl = refl_none;
 		}
 	}
 	__forceinline ray sa_fog(const vec4& P, float ft, float& p1, float& p2) const {

@@ -6,7 +6,7 @@
 
 extern bool en_bvh;
 enum obj_enum {
-	o_bla, o_pol, o_qua, o_sph, o_vox
+	o_pol, o_qua, o_sph, o_vox, o_bla
 };
 
 inline const char* obj_enum_str(int val, bool mesh = 0) {
@@ -20,7 +20,7 @@ inline const char* obj_enum_str(int val, bool mesh = 0) {
 }
 
 struct obj_flags {
-	obj_flags() {}
+	obj_flags() : flag(o_bla & 0x0F) {}
 	obj_flags(obj_enum type, bool bvh, bool lig, bool fog = 0) : flag((type & 0x0F) | (bvh << 7) | (lig << 6) | (fog << 5)) {}
 	operator obj_enum() const { return obj_enum(flag & 0x0F); }
 	void set_bvh(bool x) {
@@ -51,7 +51,7 @@ struct obj_flags {
 	obj_enum type() const {
 		return obj_enum(flag & 0x0F);
 	}
-	uint flag = 0;
+	uint flag;
 };
 
 struct bvh_node {
